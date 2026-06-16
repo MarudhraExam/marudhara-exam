@@ -1,1 +1,123 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - मरुधरा एग्जाम</title>
 
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f6fa;
+    padding:30px;
+}
+
+.container{
+    max-width:800px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#002B5B;
+}
+
+input, textarea{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    margin-bottom:20px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    background:#FF8C00;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:18px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h1>⚙️ Admin Panel</h1>
+
+<label>Exam Name</label>
+<input type="text" id="examName">
+
+<label>Paper Code</label>
+<input type="text" id="paperCode">
+
+<label>Total Questions</label>
+<input type="number" id="totalQuestions">
+
+<label>Correct Marks</label>
+<input type="number" id="correctMarks" value="2">
+
+<label>Negative Marks</label>
+<input type="number" id="negativeMarks" value="0.33" step="0.01">
+
+<label>Answer Key</label>
+
+<textarea id="answerKey" rows="8"
+placeholder="उदाहरण:
+B,D,A,C,B,A,D,C,A,B">
+</textarea>
+
+<button onclick="saveExam()">
+Save Exam
+</button>
+
+</div>
+
+<script>
+
+function saveExam(){
+
+const examData = {
+
+examName:
+document.getElementById("examName").value,
+
+paperCode:
+document.getElementById("paperCode").value,
+
+totalQuestions:
+document.getElementById("totalQuestions").value,
+
+correctMarks:
+document.getElementById("correctMarks").value,
+
+negativeMarks:
+document.getElementById("negativeMarks").value,
+
+answerKey:
+document.getElementById("answerKey").value
+
+};
+
+localStorage.setItem(
+"examData",
+JSON.stringify(examData)
+);
+
+alert("Exam Saved Successfully ✅");
+
+}
+
+</script>
+
+</body>
+</html>
