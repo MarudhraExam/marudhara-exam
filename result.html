@@ -76,7 +76,11 @@ h1{
 <p><strong>कुल उत्तर :</strong> <span id="total"></span></p>
 
 <p><strong>भरे गए उत्तर :</strong> <span id="attempted"></span></p>
+<p><strong>✅ सही :</strong> <span id="correctShow"></span></p>
 
+<p><strong>❌ गलत :</strong> <span id="wrongShow"></span></p>
+
+<p><strong>⚪ छोड़े गए :</strong> <span id="skipShow"></span></p>
 </div>
 
 <a href="index.html" class="btn">
@@ -115,3 +119,11 @@ correct + wrong;
 
 document.getElementById("score").innerText =
 percentage + "%";
+document.getElementById("correctShow").innerText =
+correct;
+
+document.getElementById("wrongShow").innerText =
+wrong;
+
+document.getElementById("skipShow").innerText =
+skipped;
