@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -102,22 +103,28 @@ button{
 
 <script>
 
+// Admin Panel से डेटा पढ़ो
 const examData =
 JSON.parse(localStorage.getItem("examData"));
 
+if(!examData){
+    alert("पहले Admin Panel में Exam Save करें");
+    window.location.href = "admin.html";
+}
+
+// Answer Key तैयार करो
 const answerArray =
 examData.answerKey.split(",");
 
 let answerKey = {};
 
 answerArray.forEach((ans,index)=>{
-answerKey[index+1] = ans.trim();
+    answerKey[index+1] = ans.trim();
 });
 
+// Total Questions
 const totalQuestions =
 parseInt(examData.totalQuestions);
-
-const totalQuestions = 20;
 
 let current = 1;
 let answers = {};
@@ -218,3 +225,4 @@ loadQuestion();
 
 </body>
 </html>
+```
