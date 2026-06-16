@@ -1,15 +1,13 @@
-console.log(localStorage);
 <!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OMR Test</title>
+<title>मरुधरा एग्जाम - टेस्ट</title>
 
 <style>
-
 body{
-    font-family:Arial,sans-serif;
+    font-family: Arial, sans-serif;
     background:#f5f6fa;
     margin:0;
     padding:20px;
@@ -24,37 +22,37 @@ body{
     box-shadow:0 5px 15px rgba(0,0,0,.1);
 }
 
+h2{
+    color:#002B5B;
+}
+
 .progress{
     width:100%;
     height:20px;
     background:#ddd;
     border-radius:20px;
     overflow:hidden;
-    margin-bottom:25px;
+    margin:20px 0;
 }
 
 .progress-bar{
     height:100%;
-    width:10%;
+    width:0%;
     background:#FF8C00;
 }
 
 .question{
     font-size:24px;
-    margin-bottom:20px;
+    margin:25px 0;
 }
 
 .option{
     display:block;
-    padding:15px;
+    padding:12px;
     border:1px solid #ccc;
     border-radius:10px;
-    margin-bottom:12px;
+    margin-bottom:10px;
     cursor:pointer;
-}
-
-.option input{
-    margin-right:10px;
 }
 
 .btns{
@@ -67,8 +65,8 @@ button{
     padding:12px 25px;
     border:none;
     border-radius:10px;
-    cursor:pointer;
     color:white;
+    cursor:pointer;
 }
 
 .prev{
@@ -78,13 +76,7 @@ button{
 .next{
     background:#FF8C00;
 }
-
-.submit{
-    background:#28a745;
-}
-
 </style>
-
 </head>
 
 <body>
@@ -97,27 +89,19 @@ button{
 <div class="progress-bar" id="bar"></div>
 </div>
 
-<div class="question" id="questionText">
-प्रश्न 1
-</div>
+<div class="question" id="questionText"></div>
 
 <div id="options"></div>
 
 <div class="btns">
-
-<button class="prev" onclick="prevQuestion()">
-Previous
-</button>
-
-<button class="next" onclick="nextQuestion()">
-Next
-</button>
-
+<button class="prev" onclick="prevQuestion()">Previous</button>
+<button class="next" onclick="nextQuestion()">Next</button>
 </div>
 
 </div>
 
 <script>
+
 const answerKey = {
 1:"B",
 2:"D",
@@ -140,21 +124,21 @@ const answerKey = {
 19:"B",
 20:"D"
 };
+
 const totalQuestions = 20;
 
 let current = 1;
-
 let answers = {};
 
 document.getElementById("studentInfo").innerHTML =
-localStorage.getItem("studentName") +
+(localStorage.getItem("studentName") || "") +
 " | Roll No: " +
-localStorage.getItem("rollNo");
+(localStorage.getItem("rollNo") || "");
 
 function loadQuestion(){
 
 document.getElementById("questionText").innerHTML =
-"प्रश्न " + current;
+"प्रश्न " + current + " / " + totalQuestions;
 
 document.getElementById("bar").style.width =
 (current/totalQuestions*100)+"%";
@@ -176,34 +160,28 @@ ${option}
 });
 
 document.getElementById("options").innerHTML = html;
-
 }
 
 function saveAnswer(){
 
-let selected =
+const selected =
 document.querySelector('input[name="answer"]:checked');
 
 if(selected){
-
-answers[current]=selected.value;
-
+answers[current] = selected.value;
 }
-
 }
 
 function nextQuestion(){
 
 saveAnswer();
 
-if(current<totalQuestions){
+if(current < totalQuestions){
 
 current++;
-
 loadQuestion();
 
-}
-else{
+}else{
 
 let correct = 0;
 let wrong = 0;
@@ -214,7 +192,7 @@ for(let i=1;i<=totalQuestions;i++){
 if(!answers[i]){
 skipped++;
 }
-else if(answers[i]===answerKey[i]){
+else if(answers[i] === answerKey[i]){
 correct++;
 }
 else{
@@ -223,35 +201,23 @@ wrong++;
 
 }
 
-localStorage.setItem("correct",correct);
-localStorage.setItem("wrong",wrong);
-localStorage.setItem("skipped",skipped);
+localStorage.setItem("correct", correct);
+localStorage.setItem("wrong", wrong);
+localStorage.setItem("skipped", skipped);
 localStorage.setItem("answers", JSON.stringify(answers));
 
-alert(
-"Correct = " + correct +
-"\nWrong = " + wrong +
-"\nSkipped = " + skipped
-); 
-console.log("TEST WORKING");
-alert("TEST WORKING");    
-window.location.href="result.html";
+window.location.href = "result.html";
 }
-
 }
 
 function prevQuestion(){
 
 saveAnswer();
 
-if(current>1){
-
+if(current > 1){
 current--;
-
 loadQuestion();
-
 }
-
 }
 
 loadQuestion();
