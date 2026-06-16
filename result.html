@@ -91,6 +91,14 @@ h1{
 
 <script>
 
+console.log("correct =", localStorage.getItem("correct"));
+console.log("wrong =", localStorage.getItem("wrong"));
+console.log("skipped =", localStorage.getItem("skipped"));
+console.log("studentName =", localStorage.getItem("studentName"));
+
+const correct =
+Number(localStorage.getItem("correct")) || 0;
+
 const correct =
 Number(localStorage.getItem("correct")) || 0;
 
