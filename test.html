@@ -1,1 +1,216 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMR Test</title>
 
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f6fa;
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:800px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+.progress{
+    width:100%;
+    height:20px;
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+    margin-bottom:25px;
+}
+
+.progress-bar{
+    height:100%;
+    width:10%;
+    background:#FF8C00;
+}
+
+.question{
+    font-size:24px;
+    margin-bottom:20px;
+}
+
+.option{
+    display:block;
+    padding:15px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    margin-bottom:12px;
+    cursor:pointer;
+}
+
+.option input{
+    margin-right:10px;
+}
+
+.btns{
+    display:flex;
+    justify-content:space-between;
+    margin-top:25px;
+}
+
+button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    color:white;
+}
+
+.prev{
+    background:#666;
+}
+
+.next{
+    background:#FF8C00;
+}
+
+.submit{
+    background:#28a745;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2 id="studentInfo"></h2>
+
+<div class="progress">
+<div class="progress-bar" id="bar"></div>
+</div>
+
+<div class="question" id="questionText">
+प्रश्न 1
+</div>
+
+<div id="options"></div>
+
+<div class="btns">
+
+<button class="prev" onclick="prevQuestion()">
+Previous
+</button>
+
+<button class="next" onclick="nextQuestion()">
+Next
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const totalQuestions = 20;
+
+let current = 1;
+
+let answers = {};
+
+document.getElementById("studentInfo").innerHTML =
+localStorage.getItem("studentName") +
+" | Roll No: " +
+localStorage.getItem("rollNo");
+
+function loadQuestion(){
+
+document.getElementById("questionText").innerHTML =
+"प्रश्न " + current;
+
+document.getElementById("bar").style.width =
+(current/totalQuestions*100)+"%";
+
+let html = "";
+
+["A","B","C","D"].forEach(option=>{
+
+html += `
+<label class="option">
+<input type="radio"
+name="answer"
+value="${option}"
+${answers[current]===option?"checked":""}>
+${option}
+</label>
+`;
+
+});
+
+document.getElementById("options").innerHTML = html;
+
+}
+
+function saveAnswer(){
+
+let selected =
+document.querySelector('input[name="answer"]:checked');
+
+if(selected){
+
+answers[current]=selected.value;
+
+}
+
+}
+
+function nextQuestion(){
+
+saveAnswer();
+
+if(current<totalQuestions){
+
+current++;
+
+loadQuestion();
+
+}
+else{
+
+localStorage.setItem(
+"answers",
+JSON.stringify(answers)
+);
+
+window.location.href="result.html";
+
+}
+
+}
+
+function prevQuestion(){
+
+saveAnswer();
+
+if(current>1){
+
+current--;
+
+loadQuestion();
+
+}
+
+}
+
+loadQuestion();
+
+</script>
+
+</body>
+</html>
