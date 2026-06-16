@@ -1,1 +1,119 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result - मरुधरा एग्जाम</title>
 
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f6fa;
+    padding:30px;
+}
+
+.card{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#002B5B;
+}
+
+.result-box{
+    margin-top:25px;
+    font-size:20px;
+    line-height:2;
+}
+
+.score{
+    text-align:center;
+    font-size:50px;
+    color:#FF8C00;
+    margin:25px 0;
+    font-weight:bold;
+}
+
+.btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:15px;
+    background:#002B5B;
+    color:white;
+    text-decoration:none;
+    border-radius:10px;
+    margin-top:25px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>📊 मरुधरा एग्जाम</h1>
+
+<div class="result-box">
+
+<p><strong>नाम :</strong> <span id="name"></span></p>
+
+<p><strong>रोल नंबर :</strong> <span id="roll"></span></p>
+
+<div class="score" id="score">
+0%
+</div>
+
+<p><strong>कुल उत्तर :</strong> <span id="total"></span></p>
+
+<p><strong>भरे गए उत्तर :</strong> <span id="attempted"></span></p>
+
+</div>
+
+<a href="index.html" class="btn">
+🏠 होम पेज पर जाएँ
+</a>
+
+</div>
+
+<script>
+
+const answers =
+JSON.parse(localStorage.getItem("answers")) || {};
+
+const total = 20;
+
+const attempted =
+Object.keys(answers).length;
+
+const percentage =
+Math.round((attempted/total)*100);
+
+document.getElementById("name").innerText =
+localStorage.getItem("studentName");
+
+document.getElementById("roll").innerText =
+localStorage.getItem("rollNo");
+
+document.getElementById("total").innerText =
+total;
+
+document.getElementById("attempted").innerText =
+attempted;
+
+document.getElementById("score").innerText =
+percentage + "%";
+
+</script>
+
+</body>
+</html>
