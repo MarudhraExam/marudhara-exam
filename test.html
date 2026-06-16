@@ -226,7 +226,8 @@ wrong++;
 localStorage.setItem("correct",correct);
 localStorage.setItem("wrong",wrong);
 localStorage.setItem("skipped",skipped);
-
+localStorage.setItem("answers", JSON.stringify(answers));
+    
 window.location.href="result.html";
 }
 
