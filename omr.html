@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -26,7 +27,7 @@ h1{
     color:#002B5B;
 }
 
-input,select{
+input{
     width:100%;
     padding:12px;
     margin-top:10px;
@@ -45,6 +46,13 @@ button{
     border-radius:10px;
     cursor:pointer;
 }
+
+.info{
+    background:#eef4ff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
 </style>
 
 </head>
@@ -54,26 +62,16 @@ button{
 
 <h1>OMR चेक करें</h1>
 
+<div class="info">
+<p><strong>परीक्षा :</strong> <span id="examName"></span></p>
+<p><strong>प्रश्नपत्र कोड :</strong> <span id="paperCode"></span></p>
+</div>
+
 <label>नाम</label>
 <input type="text" id="name">
 
 <label>रोल नंबर</label>
 <input type="text" id="roll">
-
-<label>परीक्षा</label>
-<select id="exam">
-<option>RSSB 3rd Grade</option>
-<option>REET</option>
-<option>RPSC 2nd Grade</option>
-</select>
-
-<label>प्रश्नपत्र कोड</label>
-<select id="paper">
-<option>A</option>
-<option>B</option>
-<option>C</option>
-<option>D</option>
-</select>
 
 <button onclick="startExam()">
 OMR भरना शुरू करें
@@ -82,18 +80,57 @@ OMR भरना शुरू करें
 </div>
 
 <script>
+
+const examData =
+JSON.parse(localStorage.getItem("examData"));
+
+if(examData){
+
+document.getElementById("examName").innerText =
+examData.examName;
+
+document.getElementById("paperCode").innerText =
+examData.paperCode;
+
+}else{
+
+alert("पहले Admin Panel में Exam Save करें");
+window.location.href="admin.html";
+
+}
+
 function startExam(){
 
-localStorage.setItem("studentName",
-document.getElementById("name").value);
+const name =
+document.getElementById("name").value;
 
-localStorage.setItem("rollNo",
-document.getElementById("roll").value);
+const roll =
+document.getElementById("roll").value;
+
+if(name==="" || roll===""){
+alert("नाम और रोल नंबर भरें");
+return;
+}
+
+localStorage.setItem("studentName",name);
+localStorage.setItem("rollNo",roll);
+
+localStorage.setItem(
+"examName",
+examData.examName
+);
+
+localStorage.setItem(
+"paperCode",
+examData.paperCode
+);
 
 window.location.href="test.html";
 
 }
+
 </script>
 
 </body>
 </html>
+```
