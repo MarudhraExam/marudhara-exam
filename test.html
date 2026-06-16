@@ -204,13 +204,29 @@ loadQuestion();
 }
 else{
 
-localStorage.setItem(
-"answers",
-JSON.stringify(answers)
-);
+let correct = 0;
+let wrong = 0;
+let skipped = 0;
+
+for(let i=1;i<=totalQuestions;i++){
+
+if(!answers[i]){
+skipped++;
+}
+else if(answers[i]===answerKey[i]){
+correct++;
+}
+else{
+wrong++;
+}
+
+}
+
+localStorage.setItem("correct",correct);
+localStorage.setItem("wrong",wrong);
+localStorage.setItem("skipped",skipped);
 
 window.location.href="result.html";
-
 }
 
 }
