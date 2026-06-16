@@ -87,16 +87,19 @@ h1{
 
 <script>
 
-const answers =
-JSON.parse(localStorage.getItem("answers")) || {};
+const correct =
+Number(localStorage.getItem("correct")) || 0;
+
+const wrong =
+Number(localStorage.getItem("wrong")) || 0;
+
+const skipped =
+Number(localStorage.getItem("skipped")) || 0;
 
 const total = 20;
 
-const attempted =
-Object.keys(answers).length;
-
 const percentage =
-Math.round((attempted/total)*100);
+((correct/total)*100).toFixed(2);
 
 document.getElementById("name").innerText =
 localStorage.getItem("studentName");
@@ -108,12 +111,7 @@ document.getElementById("total").innerText =
 total;
 
 document.getElementById("attempted").innerText =
-attempted;
+correct + wrong;
 
 document.getElementById("score").innerText =
 percentage + "%";
-
-</script>
-
-</body>
-</html>
