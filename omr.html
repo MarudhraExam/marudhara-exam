@@ -1,1 +1,99 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMR Check - मरुधरा एग्जाम</title>
 
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f6fa;
+    padding:30px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#002B5B;
+}
+
+input,select{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    margin-bottom:20px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    border:none;
+    background:#FF8C00;
+    color:white;
+    font-size:18px;
+    border-radius:10px;
+    cursor:pointer;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h1>OMR चेक करें</h1>
+
+<label>नाम</label>
+<input type="text" id="name">
+
+<label>रोल नंबर</label>
+<input type="text" id="roll">
+
+<label>परीक्षा</label>
+<select id="exam">
+<option>RSSB 3rd Grade</option>
+<option>REET</option>
+<option>RPSC 2nd Grade</option>
+</select>
+
+<label>प्रश्नपत्र कोड</label>
+<select id="paper">
+<option>A</option>
+<option>B</option>
+<option>C</option>
+<option>D</option>
+</select>
+
+<button onclick="startExam()">
+OMR भरना शुरू करें
+</button>
+
+</div>
+
+<script>
+function startExam(){
+
+localStorage.setItem("studentName",
+document.getElementById("name").value);
+
+localStorage.setItem("rollNo",
+document.getElementById("roll").value);
+
+window.location.href="test.html";
+
+}
+</script>
+
+</body>
+</html>
