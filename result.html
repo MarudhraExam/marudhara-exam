@@ -6,7 +6,6 @@
 <title>Result - मरुधरा एग्जाम</title>
 
 <style>
-
 body{
     font-family:Arial,sans-serif;
     background:#f5f6fa;
@@ -27,23 +26,20 @@ h1{
     color:#002B5B;
 }
 
-.result-box{
-    margin-top:25px;
-    font-size:20px;
-    line-height:2;
-}
-
 .score{
     text-align:center;
     font-size:50px;
     color:#FF8C00;
-    margin:25px 0;
-    font-weight:bold;
+    margin:20px 0;
+}
+
+p{
+    font-size:20px;
+    margin:10px 0;
 }
 
 .btn{
     display:block;
-    width:100%;
     text-align:center;
     padding:15px;
     background:#002B5B;
@@ -52,86 +48,56 @@ h1{
     border-radius:10px;
     margin-top:25px;
 }
-
 </style>
 
 </head>
-
 <body>
 
 <div class="card">
 
-<h1>📊 मरुधरा एग्जाम</h1>
+<h1>📊 मरुधरा एग्जाम परिणाम</h1>
 
-<div class="result-box">
+<div class="score" id="score">0%</div>
 
-<p><strong>नाम :</strong> <span id="name"></span></p>
+<p><b>नाम :</b> <span id="name"></span></p>
+<p><b>रोल नंबर :</b> <span id="roll"></span></p>
 
-<p><strong>रोल नंबर :</strong> <span id="roll"></span></p>
+<p><b>✅ सही :</b> <span id="correct"></span></p>
+<p><b>❌ गलत :</b> <span id="wrong"></span></p>
+<p><b>⚪ छोड़े गए :</b> <span id="skipped"></span></p>
 
-<div class="score" id="score">
-0%
-</div>
-
-<p><strong>कुल उत्तर :</strong> <span id="total"></span></p>
-
-<p><strong>भरे गए उत्तर :</strong> <span id="attempted"></span></p>
-<p><strong>✅ सही :</strong> <span id="correctShow"></span></p>
-
-<p><strong>❌ गलत :</strong> <span id="wrongShow"></span></p>
-
-<p><strong>⚪ छोड़े गए :</strong> <span id="skipShow"></span></p>
-</div>
-
-<a href="index.html" class="btn">
-🏠 होम पेज पर जाएँ
-</a>
+<a href="index.html" class="btn">🏠 Home Page</a>
 
 </div>
 
 <script>
 
-console.log("correct =", localStorage.getItem("correct"));
-console.log("wrong =", localStorage.getItem("wrong"));
-console.log("skipped =", localStorage.getItem("skipped"));
-console.log("studentName =", localStorage.getItem("studentName"));
+let correct = parseInt(localStorage.getItem("correct")) || 0;
+let wrong = parseInt(localStorage.getItem("wrong")) || 0;
+let skipped = parseInt(localStorage.getItem("skipped")) || 0;
 
-const correct =
-Number(localStorage.getItem("correct")) || 0;
+let total = correct + wrong + skipped;
 
-const correct =
-Number(localStorage.getItem("correct")) || 0;
+let percentage = 0;
 
-const wrong =
-Number(localStorage.getItem("wrong")) || 0;
-
-const skipped =
-Number(localStorage.getItem("skipped")) || 0;
-
-const total = 20;
-
-const percentage =
-((correct/total)*100).toFixed(2);
-
-document.getElementById("name").innerText =
-localStorage.getItem("studentName");
-
-document.getElementById("roll").innerText =
-localStorage.getItem("rollNo");
-
-document.getElementById("total").innerText =
-total;
-
-document.getElementById("attempted").innerText =
-correct + wrong;
+if(total > 0){
+    percentage = ((correct / total) * 100).toFixed(2);
+}
 
 document.getElementById("score").innerText =
 percentage + "%";
-document.getElementById("correctShow").innerText =
-correct;
 
-document.getElementById("wrongShow").innerText =
-wrong;
+document.getElementById("name").innerText =
+localStorage.getItem("studentName") || "N/A";
 
-document.getElementById("skipShow").innerText =
-skipped;
+document.getElementById("roll").innerText =
+localStorage.getItem("rollNo") || "N/A";
+
+document.getElementById("correct").innerText = correct;
+document.getElementById("wrong").innerText = wrong;
+document.getElementById("skipped").innerText = skipped;
+
+</script>
+
+</body>
+</html>
