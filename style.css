@@ -22,9 +22,10 @@ header{
     align-items:center;
 }
 
-.logo{
-    font-size:34px;
-    font-weight:bold;
+.logo img{
+    height:90px;
+    width:auto;
+    display:block;
 }
 
 nav a{
@@ -43,11 +44,18 @@ nav a:hover{
 
 .hero{
     min-height:100vh;
-    background:linear-gradient(
-    rgba(0,43,91,0.9),
-    rgba(0,43,91,0.9)
-    );
-    
+
+    background:
+    linear-gradient(
+    rgba(0,0,0,.55),
+    rgba(0,0,0,.55)
+    ),
+    url("images/banner.png");
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
     display:flex;
     align-items:center;
     justify-content:space-between;
