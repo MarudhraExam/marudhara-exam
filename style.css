@@ -31,12 +31,12 @@ nav a{
 }
 
 .hero{
-    min-height:90vh;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:60px 8%;
-    background:
+    min-height:100vh;
+    background:url('images/hero-banner.png');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+}
     linear-gradient(rgba(0,43,91,.85),rgba(0,43,91,.85)),
     url("https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1400&q=80");
     background-size:cover;
