@@ -1,12 +1,13 @@
-```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Admin Panel - मरुधरा एग्जाम</title>
 
 <style>
+
 body{
     font-family:Arial,sans-serif;
     background:#f5f6fa;
@@ -14,7 +15,7 @@ body{
 }
 
 .container{
-    max-width:800px;
+    max-width:900px;
     margin:auto;
     background:white;
     padding:30px;
@@ -25,16 +26,18 @@ body{
 h1{
     text-align:center;
     color:#002B5B;
-    margin-bottom:20px;
+    margin-bottom:25px;
 }
 
-input, textarea{
+input,
+textarea{
     width:100%;
     padding:12px;
     margin-top:8px;
     margin-bottom:20px;
     border:1px solid #ccc;
     border-radius:8px;
+    box-sizing:border-box;
 }
 
 button{
@@ -51,14 +54,52 @@ button{
 button:hover{
     opacity:.9;
 }
+
+.info{
+    background:#eef4ff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>⚙️ Admin Panel</h1>
+<h1>⚙️ मरुधरा एग्जाम Admin Panel</h1>
+
+<div class="info">
+
+<b>Format Example</b>
+
+<br><br>
+
+Exam Name :
+RSSB 3rd Grade
+
+<br>
+
+Paper Code :
+A
+
+<br>
+
+Deleted Questions :
+5,12,27
+
+<br>
+
+Answer Key :
+
+<br>
+
+A,B,C,D,E,A,B,C,D,E
+
+</div>
 
 <label>Exam Name</label>
 <input type="text" id="examName">
@@ -66,73 +107,169 @@ button:hover{
 <label>Paper Code</label>
 <input type="text" id="paperCode">
 
+<label>Exam Date</label>
+<input type="date" id="examDate">
+
 <label>Total Questions</label>
 <input type="number" id="totalQuestions">
 
 <label>Correct Marks</label>
-<input type="number" id="correctMarks" value="2">
+<input type="number"
+id="correctMarks"
+value="2">
 
 <label>Negative Marks</label>
-<input type="number" id="negativeMarks" value="0.33" step="0.01">
+<input type="number"
+id="negativeMarks"
+value="0.33"
+step="0.01">
+
+<label>Pass Percentage</label>
+<input type="number"
+id="passPercentage"
+value="40">
+
+<label>Deleted Questions</label>
+
+<input
+type="text"
+id="deletedQuestions"
+placeholder="5,12,27">
 
 <label>Answer Key</label>
 
-<textarea id="answerKey" rows="8"
-placeholder="उदाहरण:
-B,D,A,C,B,A,D,C,A,B">
+<textarea
+id="answerKey"
+rows="8"
+placeholder="A,B,C,D,E,A,B,C,D,E">
 </textarea>
 
 <button onclick="saveExam()">
+
 Save Exam
+
 </button>
 
 </div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
 getFirestore,
 collection,
 addDoc
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
-authDomain: "marudhara-exam.firebaseapp.com",
-projectId: "marudhara-exam",
-storageBucket: "marudhara-exam.firebasestorage.app",
-messagingSenderId: "680152404373",
-appId: "1:680152404373:web:23515d1d06c44dbd33669c"
+
+apiKey:
+"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+
+authDomain:
+"marudhara-exam.firebaseapp.com",
+
+projectId:
+"marudhara-exam",
+
+storageBucket:
+"marudhara-exam.firebasestorage.app",
+
+messagingSenderId:
+"680152404373",
+
+appId:
+"1:680152404373:web:23515d1d06c44dbd33669c"
+
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
 
 window.saveExam = async function(){
 
 try{
 
+const examName =
+document.getElementById("examName").value;
+
+const paperCode =
+document.getElementById("paperCode").value;
+
+const examDate =
+document.getElementById("examDate").value;
+
+const totalQuestions =
+Number(
+document.getElementById("totalQuestions").value
+);
+
+const correctMarks =
+Number(
+document.getElementById("correctMarks").value
+);
+
+const negativeMarks =
+Number(
+document.getElementById("negativeMarks").value
+);
+
+const passPercentage =
+Number(
+document.getElementById("passPercentage").value
+);
+
+const deletedQuestions =
+document.getElementById("deletedQuestions").value;
+
+const answerKey =
+document.getElementById("answerKey").value;
+
+if(
+examName === "" ||
+paperCode === "" ||
+totalQuestions <= 0 ||
+answerKey === ""
+){
+
+alert(
+"सभी आवश्यक जानकारी भरें"
+);
+
+return;
+
+}
+
 const examData = {
 
-examName:
-document.getElementById("examName").value,
+examName,
+paperCode,
+examDate,
 
-paperCode:
-document.getElementById("paperCode").value,
+totalQuestions,
 
-totalQuestions:
-Number(document.getElementById("totalQuestions").value),
+correctMarks,
 
-correctMarks:
-Number(document.getElementById("correctMarks").value),
+negativeMarks,
 
-negativeMarks:
-Number(document.getElementById("negativeMarks").value),
+passPercentage,
 
-answerKey:
-document.getElementById("answerKey").value
+deletedQuestions,
+
+answerKey,
+
+createdAt:
+new Date().toISOString()
 
 };
 
@@ -141,23 +278,51 @@ collection(db,"exams"),
 examData
 );
 
-alert("Exam Saved To Firebase ✅");
+alert(
+"Exam Saved To Firebase ✅"
+);
 
-document.getElementById("examName").value = "";
-document.getElementById("paperCode").value = "";
-document.getElementById("totalQuestions").value = "";
-document.getElementById("answerKey").value = "";
+document.getElementById(
+"examName"
+).value = "";
 
-}catch(error){
+document.getElementById(
+"paperCode"
+).value = "";
 
-alert("Error: " + error.message);
+document.getElementById(
+"examDate"
+).value = "";
+
+document.getElementById(
+"totalQuestions"
+).value = "";
+
+document.getElementById(
+"deletedQuestions"
+).value = "";
+
+document.getElementById(
+"answerKey"
+).value = "";
+
+}
+catch(error){
+
+alert(
+"Error : " + error.message
+);
 
 }
 
-}
+};
+
 
 </script>
 
 </body>
+
 </html>
-```
+
+
+
