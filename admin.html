@@ -170,22 +170,32 @@ Save Exam
 <label>Vacancy Name</label>
 <input type="text" id="vacancyName">
 
+<label>Vacancy Date</label>
+<input type="date" id="vacancyDate">
+
 <label>Vacancy Details</label>
-<textarea
-id="vacancyDetails"
-rows="8"
-placeholder="यहाँ भर्ती की पूरी जानकारी लिखें">
-</textarea>
+<textarea id="vacancyDetails" rows="8"></textarea>
 
 <label>PDF Link</label>
-<input
-type="text"
-id="pdfLink"
-placeholder="PDF URL यहाँ डालें">
+<input type="text" id="pdfLink">
+
+<label>Apply Link</label>
+<input type="text" id="applyLink">
+
+<label>Official Website</label>
+<input type="text" id="officialLink">
 
 <button onclick="saveVacancy()">
 Publish Vacancy
 </button>
+
+<hr>
+
+<h2>📋 Vacancy List</h2>
+
+<div id="vacancyListAdmin">
+Loading...
+</div>
 
 <hr>
 
