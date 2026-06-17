@@ -91,7 +91,7 @@ vacancyList.innerHTML = "";
 
 const snapshot =
 await getDocs(collection(db,"vacancies"));
-
+console.log("Vacancies Loaded");
 snapshot.forEach((vacancy)=>{
 
 const data = vacancy.data();
