@@ -107,18 +107,18 @@ const db = getFirestore(app);
 let exams = [];
 let selectedExamList = [];
 
-
-
 async function loadExams(){
 
-const select =
+const examSelect =
 document.getElementById("examSelect");
 
-select.innerHTML =
+examSelect.innerHTML =
 '<option value="">परीक्षा चुनें</option>';
 
 const querySnapshot =
 await getDocs(collection(db,"exams"));
+
+const uniqueExams = [];
 
 querySnapshot.forEach((doc)=>{
 
@@ -129,14 +129,57 @@ id:doc.id,
 ...data
 });
 
-select.innerHTML +=
-`<option value="${doc.id}">
-${data.examName} - ${data.paperCode}
-</option>`;
+if(
+!uniqueExams.includes(data.examName)
+){
+uniqueExams.push(data.examName);
+}
+
+});
+
+uniqueExams.forEach((examName)=>{
+
+examSelect.innerHTML +=
+`
+<option value="${examName}">
+${examName}
+</option>
+`;
 
 });
 
 }
+document
+.getElementById("examSelect")
+.addEventListener("change",function(){
+
+const examName = this.value;
+
+const paperSelect =
+document.getElementById("paperCodeSelect");
+
+paperSelect.innerHTML =
+'<option value="">पेपर कोड चुनें</option>';
+
+selectedExamList =
+exams.filter(
+x => x.examName === examName
+);
+
+selectedExamList.forEach((exam)=>{
+
+paperSelect.innerHTML +=
+`
+<option value="${exam.id}">
+${exam.paperCode}
+</option>
+`;
+
+});
+
+});
+
+
 
 loadExams();
 
