@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -24,6 +25,7 @@ body{
 h1{
     text-align:center;
     color:#002B5B;
+    margin-bottom:20px;
 }
 
 input, textarea{
@@ -45,9 +47,13 @@ button{
     cursor:pointer;
     font-size:18px;
 }
-</style>
 
+button:hover{
+    opacity:.9;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
@@ -82,9 +88,31 @@ Save Exam
 
 </div>
 
-<script>
+<script type="module">
 
-function saveExam(){
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain: "marudhara-exam.firebaseapp.com",
+projectId: "marudhara-exam",
+storageBucket: "marudhara-exam.firebasestorage.app",
+messagingSenderId: "680152404373",
+appId: "1:680152404373:web:23515d1d06c44dbd33669c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveExam = async function(){
+
+try{
 
 const examData = {
 
@@ -95,25 +123,36 @@ paperCode:
 document.getElementById("paperCode").value,
 
 totalQuestions:
-document.getElementById("totalQuestions").value,
+Number(document.getElementById("totalQuestions").value),
 
 correctMarks:
-document.getElementById("correctMarks").value,
+Number(document.getElementById("correctMarks").value),
 
 negativeMarks:
-document.getElementById("negativeMarks").value,
+Number(document.getElementById("negativeMarks").value),
 
 answerKey:
 document.getElementById("answerKey").value
 
 };
 
-localStorage.setItem(
-"examData",
-JSON.stringify(examData)
+await addDoc(
+collection(db,"exams"),
+examData
 );
 
-alert("Exam Saved Successfully ✅");
+alert("Exam Saved To Firebase ✅");
+
+document.getElementById("examName").value = "";
+document.getElementById("paperCode").value = "";
+document.getElementById("totalQuestions").value = "";
+document.getElementById("answerKey").value = "";
+
+}catch(error){
+
+alert("Error: " + error.message);
+
+}
 
 }
 
@@ -121,3 +160,4 @@ alert("Exam Saved Successfully ✅");
 
 </body>
 </html>
+```
