@@ -7,7 +7,7 @@
 
 <style>
 body{
-    font-family: Arial, sans-serif;
+    font-family:Arial,sans-serif;
     background:#f5f6fa;
     margin:0;
     padding:20px;
@@ -102,26 +102,23 @@ button{
 
 <script>
 
-// Admin Panel से डेटा पढ़ो
 const examData =
-JSON.parse(localStorage.getItem("examData"));
+JSON.parse(localStorage.getItem("selectedExam"));
 
 if(!examData){
-    alert("पहले Admin Panel में Exam Save करें");
-    window.location.href = "admin.html";
+alert("परीक्षा चुनें");
+window.location.href="omr.html";
 }
 
-// Answer Key तैयार करो
 const answerArray =
 examData.answerKey.split(",");
 
 let answerKey = {};
 
 answerArray.forEach((ans,index)=>{
-    answerKey[index+1] = ans.trim();
+answerKey[index+1] = ans.trim();
 });
 
-// Total Questions
 const totalQuestions =
 parseInt(examData.totalQuestions);
 
@@ -129,8 +126,12 @@ let current = 1;
 let answers = {};
 
 document.getElementById("studentInfo").innerHTML =
+examData.examName +
+" | Paper : " +
+examData.paperCode +
+"<br><br>" +
 (localStorage.getItem("studentName") || "") +
-" | Roll No: " +
+" | Roll No : " +
 (localStorage.getItem("rollNo") || "");
 
 function loadQuestion(){
@@ -143,7 +144,7 @@ document.getElementById("bar").style.width =
 
 let html = "";
 
-["A","B","C","D"].forEach(option=>{
+["A","B","C","D","E"].forEach(option=>{
 
 html += `
 <label class="option">
@@ -199,12 +200,33 @@ wrong++;
 
 }
 
-localStorage.setItem("correct", correct);
-localStorage.setItem("wrong", wrong);
-localStorage.setItem("skipped", skipped);
-localStorage.setItem("answers", JSON.stringify(answers));
+localStorage.setItem("correct",correct);
+localStorage.setItem("wrong",wrong);
+localStorage.setItem("skipped",skipped);
+localStorage.setItem("answers",JSON.stringify(answers));
 
-window.location.href = "result.html";
+localStorage.setItem(
+"examName",
+examData.examName
+);
+
+localStorage.setItem(
+"paperCode",
+examData.paperCode
+);
+
+localStorage.setItem(
+"correctMarks",
+examData.correctMarks
+);
+
+localStorage.setItem(
+"negativeMarks",
+examData.negativeMarks
+);
+
+window.location.href="result.html";
+
 }
 }
 
@@ -212,10 +234,11 @@ function prevQuestion(){
 
 saveAnswer();
 
-if(current > 1){
+if(current>1){
 current--;
 loadQuestion();
 }
+
 }
 
 loadQuestion();
