@@ -91,55 +91,36 @@ vacancyList.innerHTML = "";
 
 const snapshot =
 await getDocs(collection(db,"vacancies"));
-console.log("Vacancies Loaded");
+
 snapshot.forEach((vacancy)=>{
 
 const data = vacancy.data();
 
-vacancyList.innerHTML += `
+const div =
+document.createElement("div");
 
-<div class="vacancy"
-onclick="showVacancy(
-'${data.vacancyName}',
-`${data.vacancyDetails}`,
-'${data.pdfLink || ""}'
-)">
+div.className = "vacancy";
 
+div.innerHTML = `
 <h3>${data.vacancyName}</h3>
-
 <p>Click to View Details</p>
-
-</div>
-
 `;
 
+div.onclick = function(){
+
+localStorage.setItem(
+"selectedVacancy",
+JSON.stringify(data)
+);
+
+window.location.href =
+"vacancy-details.html";
+
+};
+
+vacancyList.appendChild(div);
 
 });
-
-}
-window.showVacancy = function(
-name,
-details,
-pdf
-){
-
-let html =
-
-"📢 " + name +
-
-"\n\n\n" +
-
-details;
-
-if(pdf){
-
-html +=
-
-"\n\n\nPDF:\n" + pdf;
-
-}
-
-alert(html);
 
 }
 
