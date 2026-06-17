@@ -163,6 +163,13 @@ placeholder="A,B,C,D,E,A,B,C,D,E">
 Save Exam
 
 </button>
+<hr>
+
+<h2>📚 Saved Exams</h2>
+
+<div id="examList">
+Loading Exams...
+</div>
 
 </div>
 
@@ -177,7 +184,10 @@ from
 import {
 getFirestore,
 collection,
-addDoc
+addDoc,
+getDocs,
+deleteDoc,
+doc
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -209,8 +219,75 @@ initializeApp(firebaseConfig);
 
 const db =
 getFirestore(app);
+async function loadExams(){
+
+const examList =
+document.getElementById("examList");
+
+if(!examList) return;
+
+examList.innerHTML = "";
+
+const snapshot =
+await getDocs(collection(db,"exams"));
+
+snapshot.forEach((exam)=>{
+
+const data = exam.data();
+
+examList.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${data.examName}</b>
+(${data.paperCode})
+
+<br><br>
+
+<button
+onclick="deleteExam('${exam.id}')"
+style="
+background:red;
+width:auto;
+padding:10px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteExam = async function(id){
+
+const confirmDelete =
+confirm("क्या आप यह Exam Delete करना चाहते हैं?");
+
+if(!confirmDelete) return;
+
+await deleteDoc(
+doc(db,"exams",id)
+);
+
+alert("Exam Deleted ✅");
+
+loadExams();
+
+};
+
 
 window.saveExam = async function(){
+
+
 
 try{
 
@@ -295,7 +372,7 @@ examData
 alert(
 "Exam Saved To Firebase ✅"
 );
-
+loadExams();
 document.getElementById(
 "examName"
 ).value = "";
@@ -331,7 +408,7 @@ alert(
 
 };
 
-
+loadExams();
 </script>
 
 </body>
