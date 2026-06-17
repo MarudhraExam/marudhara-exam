@@ -1,1 +1,135 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Vacancy Details - मरुधरा एग्जाम</title>
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f6fa;
+padding:20px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+h1{
+color:#002B5B;
+margin-bottom:20px;
+}
+
+.details{
+line-height:1.8;
+white-space:pre-wrap;
+font-size:16px;
+}
+
+.btn{
+display:inline-block;
+margin-top:20px;
+padding:12px 20px;
+background:#FF8C00;
+color:white;
+text-decoration:none;
+border-radius:8px;
+font-weight:bold;
+}
+
+.homeBtn{
+background:#002B5B;
+margin-left:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 id="vacancyName">
+Loading...
+</h1>
+
+<div
+class="details"
+id="vacancyDetails">
+</div>
+
+<br>
+
+<a
+id="pdfBtn"
+class="btn"
+target="_blank"
+style="display:none;">
+📄 Download PDF
+</a>
+
+<a
+href="vacancy.html"
+class="btn homeBtn">
+⬅ Back
+</a>
+
+</div>
+
+<script>
+
+const vacancy =
+JSON.parse(
+localStorage.getItem(
+"selectedVacancy"
+)
+);
+
+if(!vacancy){
+
+document.body.innerHTML =
+"<h2>No Vacancy Data Found</h2>";
+
+}
+else{
+
+document.getElementById(
+"vacancyName"
+).innerText =
+vacancy.vacancyName || "";
+
+document.getElementById(
+"vacancyDetails"
+).innerText =
+vacancy.vacancyDetails || "";
+
+if(vacancy.pdfLink){
+
+const btn =
+document.getElementById(
+"pdfBtn"
+);
+
+btn.href =
+vacancy.pdfLink;
+
+btn.style.display =
+"inline-block";
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
