@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -26,7 +27,7 @@ h1{
     color:#002B5B;
 }
 
-input{
+input,select{
     width:100%;
     padding:12px;
     margin-top:10px;
@@ -45,26 +46,19 @@ button{
     border-radius:10px;
     cursor:pointer;
 }
-
-.info{
-    background:#eef4ff;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
 </style>
-
 </head>
+
 <body>
 
 <div class="container">
 
 <h1>OMR चेक करें</h1>
 
-<div class="info">
-<p><strong>परीक्षा :</strong> <span id="examName"></span></p>
-<p><strong>प्रश्नपत्र कोड :</strong> <span id="paperCode"></span></p>
-</div>
+<label>परीक्षा चुनें</label>
+<select id="examSelect">
+<option value="">Loading...</option>
+</select>
 
 <label>नाम</label>
 <input type="text" id="name">
@@ -78,27 +72,65 @@ OMR भरना शुरू करें
 
 </div>
 
-<script>
+<script type="module">
 
-const examData =
-JSON.parse(localStorage.getItem("examData"));
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-if(examData){
+import {
+getFirestore,
+collection,
+getDocs
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-document.getElementById("examName").innerText =
-examData.examName;
+const firebaseConfig = {
+apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain: "marudhara-exam.firebaseapp.com",
+projectId: "marudhara-exam",
+storageBucket: "marudhara-exam.firebasestorage.app",
+messagingSenderId: "680152404373",
+appId: "1:680152404373:web:23515d1d06c44dbd33669c"
+};
 
-document.getElementById("paperCode").innerText =
-examData.paperCode;
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-}else{
+let exams = [];
 
-alert("पहले Admin Panel में Exam Save करें");
-window.location.href="admin.html";
+async function loadExams(){
+
+const select =
+document.getElementById("examSelect");
+
+select.innerHTML =
+'<option value="">परीक्षा चुनें</option>';
+
+const querySnapshot =
+await getDocs(collection(db,"exams"));
+
+querySnapshot.forEach((doc)=>{
+
+const data = doc.data();
+
+exams.push({
+id:doc.id,
+...data
+});
+
+select.innerHTML +=
+`<option value="${doc.id}">
+${data.examName} - ${data.paperCode}
+</option>`;
+
+});
 
 }
 
-function startExam(){
+loadExams();
+
+window.startExam = function(){
+
+const examId =
+document.getElementById("examSelect").value;
 
 const name =
 document.getElementById("name").value;
@@ -106,25 +138,36 @@ document.getElementById("name").value;
 const roll =
 document.getElementById("roll").value;
 
+if(!examId){
+alert("परीक्षा चुनें");
+return;
+}
+
 if(name==="" || roll===""){
 alert("नाम और रोल नंबर भरें");
 return;
 }
 
-localStorage.setItem("studentName",name);
-localStorage.setItem("rollNo",roll);
+const selectedExam =
+exams.find(x=>x.id===examId);
 
 localStorage.setItem(
-"examName",
-examData.examName
+"studentName",
+name
 );
 
 localStorage.setItem(
-"paperCode",
-examData.paperCode
+"rollNo",
+roll
 );
 
-window.location.href="test.html";
+localStorage.setItem(
+"selectedExam",
+JSON.stringify(selectedExam)
+);
+
+window.location.href =
+"test.html";
 
 }
 
