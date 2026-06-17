@@ -127,7 +127,40 @@ document.getElementById(
 "vacancyDetails"
 ).innerText =
 vacancy.vacancyDetails || "";
+document.getElementById(
+"vacancyDate"
+).innerText =
+vacancy.vacancyDate || "-";
 
+if(vacancy.applyLink){
+
+const applyBtn =
+document.getElementById(
+"applyBtn"
+);
+
+applyBtn.href =
+vacancy.applyLink;
+
+applyBtn.style.display =
+"inline-block";
+
+}
+
+if(vacancy.officialLink){
+
+const officialBtn =
+document.getElementById(
+"officialBtn"
+);
+
+officialBtn.href =
+vacancy.officialLink;
+
+officialBtn.style.display =
+"inline-block";
+
+}
 if(vacancy.pdfLink){
 
 const btn =
