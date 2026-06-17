@@ -303,6 +303,63 @@ doc(db,"exams",id)
 );
 
 alert("Exam Deleted ✅");
+window.saveVacancy = async function(){
+
+try{
+
+const vacancyName =
+document.getElementById("vacancyName").value;
+
+const vacancyDetails =
+document.getElementById("vacancyDetails").value;
+
+const pdfLink =
+document.getElementById("pdfLink").value;
+
+if(
+vacancyName === "" ||
+vacancyDetails === ""
+){
+
+alert("Vacancy Name और Details भरें");
+return;
+
+}
+
+await addDoc(
+collection(db,"vacancies"),
+{
+vacancyName,
+vacancyDetails,
+pdfLink,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Vacancy Published ✅");
+
+document.getElementById(
+"vacancyName"
+).value = "";
+
+document.getElementById(
+"vacancyDetails"
+).value = "";
+
+document.getElementById(
+"pdfLink"
+).value = "";
+
+}
+catch(error){
+
+alert(
+"Error : " + error.message
+);
+
+}
+
+};
 
 loadExams();
 
