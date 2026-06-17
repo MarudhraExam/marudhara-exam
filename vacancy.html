@@ -98,19 +98,48 @@ const data = vacancy.data();
 
 vacancyList.innerHTML += `
 
-<div class="vacancy">
+<div class="vacancy"
+onclick="showVacancy(
+'${data.vacancyName}',
+`${data.vacancyDetails}`,
+'${data.pdfLink || ""}'
+)">
 
 <h3>${data.vacancyName}</h3>
 
-<p>
-Click to View Details
-</p>
+<p>Click to View Details</p>
 
 </div>
 
 `;
 
+
 });
+
+}
+window.showVacancy = function(
+name,
+details,
+pdf
+){
+
+let html =
+
+"📢 " + name +
+
+"\n\n\n" +
+
+details;
+
+if(pdf){
+
+html +=
+
+"\n\n\nPDF:\n" + pdf;
+
+}
+
+alert(html);
 
 }
 
