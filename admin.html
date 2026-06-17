@@ -317,12 +317,99 @@ alert("Exam Deleted ✅");
 loadExams();
 
 };
-window.saveVacancy = async function(){
-alert("Vacancy Function Started");
+async function loadVacanciesAdmin(){
+
+const list =
+document.getElementById("vacancyListAdmin");
+
+if(!list) return;
+
+list.innerHTML = "";
+
+const snapshot =
+await getDocs(collection(db,"vacancies"));
+
+const vacancies = [];
+
+snapshot.forEach((v)=>{
+
+vacancies.push({
+id:v.id,
+...v.data()
+});
+
+});
+
+vacancies.sort((a,b)=>
+new Date(b.createdAt) -
+new Date(a.createdAt)
+);
+
+vacancies.forEach((v)=>{
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${v.vacancyName}</b>
+
+<br>
+
+📅 ${v.vacancyDate || "-"}
+
+<br><br>
+
+<button
+onclick="deleteVacancy('${v.id}')"
+style="
+background:red;
+width:auto;
+padding:10px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteVacancy =
+async function(id){
+
+if(!confirm(
+"क्या Vacancy Delete करनी है?"
+))
+return;
+
+await deleteDoc(
+doc(db,"vacancies",id)
+);
+
+alert("Vacancy Deleted ✅");
+
+loadVacanciesAdmin();
+
+};
+
+window.saveVacancy =
+async function(){
+
 try{
 
 const vacancyName =
 document.getElementById("vacancyName").value;
+
+const vacancyDate =
+document.getElementById("vacancyDate").value;
 
 const vacancyDetails =
 document.getElementById("vacancyDetails").value;
@@ -330,12 +417,21 @@ document.getElementById("vacancyDetails").value;
 const pdfLink =
 document.getElementById("pdfLink").value;
 
+const applyLink =
+document.getElementById("applyLink").value;
+
+const officialLink =
+document.getElementById("officialLink").value;
+
 if(
 vacancyName === "" ||
 vacancyDetails === ""
 ){
 
-alert("Vacancy Name और Details भरें");
+alert(
+"Vacancy Name और Details भरें"
+);
+
 return;
 
 }
@@ -344,16 +440,26 @@ await addDoc(
 collection(db,"vacancies"),
 {
 vacancyName,
+vacancyDate,
 vacancyDetails,
 pdfLink,
-createdAt:new Date().toISOString()
+applyLink,
+officialLink,
+createdAt:
+new Date().toISOString()
 }
 );
 
 alert("Vacancy Published ✅");
 
+loadVacanciesAdmin();
+
 document.getElementById(
 "vacancyName"
+).value = "";
+
+document.getElementById(
+"vacancyDate"
 ).value = "";
 
 document.getElementById(
@@ -362,6 +468,14 @@ document.getElementById(
 
 document.getElementById(
 "pdfLink"
+).value = "";
+
+document.getElementById(
+"applyLink"
+).value = "";
+
+document.getElementById(
+"officialLink"
 ).value = "";
 
 }
@@ -374,6 +488,8 @@ alert(
 }
 
 };
+
+loadVacanciesAdmin();
 
 
 window.saveExam = async function(){
