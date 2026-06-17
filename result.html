@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Result - मरुधरा एग्जाम</title>
 
 <style>
+
 body{
     font-family:Arial,sans-serif;
     background:#f5f6fa;
@@ -13,7 +15,7 @@ body{
 }
 
 .card{
-    max-width:800px;
+    max-width:900px;
     margin:auto;
     background:white;
     padding:30px;
@@ -28,15 +30,10 @@ h1{
 
 .score{
     text-align:center;
-    font-size:50px;
+    font-size:55px;
     color:#FF8C00;
     margin:20px 0;
     font-weight:bold;
-}
-
-p{
-    font-size:20px;
-    margin:10px 0;
 }
 
 .status{
@@ -54,6 +51,22 @@ p{
     color:red;
 }
 
+.info{
+    background:#eef4ff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+p{
+    font-size:20px;
+    margin:12px 0;
+}
+
+hr{
+    margin:20px 0;
+}
+
 .btn{
     display:block;
     text-align:center;
@@ -64,7 +77,17 @@ p{
     border-radius:10px;
     margin-top:25px;
 }
+
+.reason{
+    background:#fff3cd;
+    padding:12px;
+    border-radius:10px;
+    margin-top:15px;
+    font-weight:bold;
+}
+
 </style>
+
 </head>
 
 <body>
@@ -73,117 +96,277 @@ p{
 
 <h1>📊 मरुधरा एग्जाम परिणाम</h1>
 
-<div class="score" id="score">0%</div>
+<div
+class="score"
+id="score">
+0%
+</div>
 
-<div class="status" id="status"></div>
+<div
+class="status"
+id="status">
+</div>
 
-<p><b>परीक्षा :</b> <span id="examName"></span></p>
-<p><b>पेपर कोड :</b> <span id="paperCode"></span></p>
+<div
+class="reason"
+id="reason"
+style="display:none">
+</div>
 
-<p><b>नाम :</b> <span id="name"></span></p>
-<p><b>रोल नंबर :</b> <span id="roll"></span></p>
+<div class="info">
+
+<p>
+<b>परीक्षा :</b>
+<span id="examName"></span>
+</p>
+
+<p>
+<b>पेपर कोड :</b>
+<span id="paperCode"></span>
+</p>
+
+<p>
+<b>नाम :</b>
+<span id="name"></span>
+</p>
+
+<p>
+<b>रोल नंबर :</b>
+<span id="roll"></span>
+</p>
+
+</div>
 
 <hr>
 
-<p><b>कुल प्रश्न :</b> <span id="totalQuestions"></span></p>
+<p>
+<b>कुल प्रश्न :</b>
+<span id="totalQuestions"></span>
+</p>
 
-<p><b>✅ सही :</b> <span id="correct"></span></p>
-<p><b>❌ गलत :</b> <span id="wrong"></span></p>
-<p><b>⚪ छोड़े गए :</b> <span id="skipped"></span></p>
+<p>
+<b>✅ सही :</b>
+<span id="correct"></span>
+</p>
+
+<p>
+<b>❌ गलत :</b>
+<span id="wrong"></span>
+</p>
+
+<p>
+<b>🟡 E Option :</b>
+<span id="eCount"></span>
+</p>
+
+<p>
+<b>⚪ Blank :</b>
+<span id="blank"></span>
+</p>
 
 <hr>
 
-<p><b>कुल अंक :</b> <span id="totalMarks"></span></p>
-<p><b>प्राप्त अंक :</b> <span id="obtainedMarks"></span></p>
+<p>
+<b>कुल अंक :</b>
+<span id="totalMarks"></span>
+</p>
 
-<a href="index.html" class="btn">🏠 Home Page</a>
+<p>
+<b>प्राप्त अंक :</b>
+<span id="obtainedMarks"></span>
+</p>
+
+<a href="index.html" class="btn">
+🏠 Home Page
+</a>
 
 </div>
 
 <script>
 
-let correct =
+const correct =
 parseInt(localStorage.getItem("correct")) || 0;
 
-let wrong =
+const wrong =
 parseInt(localStorage.getItem("wrong")) || 0;
 
-let skipped =
-parseInt(localStorage.getItem("skipped")) || 0;
+const eCount =
+parseInt(localStorage.getItem("eCount")) || 0;
 
-let correctMarks =
+const blank =
+parseInt(localStorage.getItem("blank")) || 0;
+
+const totalQuestions =
+parseInt(localStorage.getItem("totalQuestions")) || 0;
+
+const correctMarks =
 parseFloat(localStorage.getItem("correctMarks")) || 2;
 
-let negativeMarks =
+const negativeMarks =
 parseFloat(localStorage.getItem("negativeMarks")) || 0;
 
-let totalQuestions =
-correct + wrong + skipped;
+const passPercentage =
+parseFloat(localStorage.getItem("passPercentage")) || 40;
 
-let totalMarks =
-totalQuestions * correctMarks;
+const deletedQuestionsText =
+localStorage.getItem("deletedQuestions") || "";
+
+const deletedArray =
+deletedQuestionsText
+.split(",")
+.filter(x => x.trim() !== "");
+
+const deletedCount =
+deletedArray.length;
+
+const deletedMarks =
+deletedCount * correctMarks;
+
+const validQuestions =
+totalQuestions - deletedCount;
+
+let extraPerQuestion = 0;
+
+if(validQuestions > 0){
+
+extraPerQuestion =
+deletedMarks / validQuestions;
+
+}
+
+const finalQuestionValue =
+correctMarks + extraPerQuestion;
 
 let obtainedMarks =
-(correct * correctMarks) -
+
+(correct * finalQuestionValue)
+
+-
+
 (wrong * negativeMarks);
 
 if(obtainedMarks < 0){
+
 obtainedMarks = 0;
+
 }
 
-let percentage =
-((obtainedMarks / totalMarks) * 100);
+const totalMarks =
+validQuestions *
+finalQuestionValue;
 
-if(isNaN(percentage)){
-percentage = 0;
+let percentage = 0;
+
+if(totalMarks > 0){
+
+percentage =
+(
+(obtainedMarks / totalMarks)
+* 100
+).toFixed(2);
+
 }
 
-document.getElementById("score").innerText =
-percentage.toFixed(2) + "%";
+document.getElementById(
+"score"
+).innerText =
+percentage + "%";
 
-document.getElementById("examName").innerText =
-localStorage.getItem("examName") || "-";
+document.getElementById(
+"examName"
+).innerText =
+localStorage.getItem(
+"examName"
+) || "-";
 
-document.getElementById("paperCode").innerText =
-localStorage.getItem("paperCode") || "-";
+document.getElementById(
+"paperCode"
+).innerText =
+localStorage.getItem(
+"paperCode"
+) || "-";
 
-document.getElementById("name").innerText =
-localStorage.getItem("studentName") || "-";
+document.getElementById(
+"name"
+).innerText =
+localStorage.getItem(
+"studentName"
+) || "-";
 
-document.getElementById("roll").innerText =
-localStorage.getItem("rollNo") || "-";
+document.getElementById(
+"roll"
+).innerText =
+localStorage.getItem(
+"rollNo"
+) || "-";
 
-document.getElementById("correct").innerText =
+document.getElementById(
+"correct"
+).innerText =
 correct;
 
-document.getElementById("wrong").innerText =
+document.getElementById(
+"wrong"
+).innerText =
 wrong;
 
-document.getElementById("skipped").innerText =
-skipped;
+document.getElementById(
+"eCount"
+).innerText =
+eCount;
 
-document.getElementById("totalQuestions").innerText =
+document.getElementById(
+"blank"
+).innerText =
+blank;
+
+document.getElementById(
+"totalQuestions"
+).innerText =
 totalQuestions;
 
-document.getElementById("totalMarks").innerText =
+document.getElementById(
+"totalMarks"
+).innerText =
 totalMarks.toFixed(2);
 
-document.getElementById("obtainedMarks").innerText =
+document.getElementById(
+"obtainedMarks"
+).innerText =
 obtainedMarks.toFixed(2);
 
 const status =
-document.getElementById("status");
+document.getElementById(
+"status"
+);
 
-if(percentage >= 40){
+const reason =
+document.getElementById(
+"reason"
+);
+
+if(
+percentage >= passPercentage
+){
+
 status.innerHTML =
 '<span class="pass">✅ PASS</span>';
-}else{
+
+}
+else{
+
 status.innerHTML =
 '<span class="fail">❌ FAIL</span>';
+
+reason.style.display =
+"block";
+
+reason.innerText =
+"न्यूनतम उत्तीर्ण प्रतिशत प्राप्त नहीं हुआ";
+
 }
 
 </script>
 
 </body>
 </html>
-```
