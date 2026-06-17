@@ -1,1 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Firebase Test</title>
+</head>
+<body>
 
+<h2>Firebase Connection Test</h2>
+
+<button id="saveBtn">Save Test Data</button>
+
+<p id="result"></p>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain: "marudhara-exam.firebaseapp.com",
+projectId: "marudhara-exam",
+storageBucket: "marudhara-exam.firebasestorage.app",
+messagingSenderId: "680152404373",
+appId: "1:680152404373:web:23515d1d06c44dbd33669c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+document.getElementById("saveBtn").onclick = async () => {
+
+try{
+
+await addDoc(
+collection(db,"test"),
+{
+message:"Firebase Connected",
+time:new Date().toISOString()
+}
+);
+
+document.getElementById("result").innerHTML =
+"✅ Firebase Connected Successfully";
+
+}catch(error){
+
+document.getElementById("result").innerHTML =
+"❌ " + error.message;
+
+}
+
+};
+
+</script>
+
+</body>
+</html>
