@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>मरुधरा एग्जाम - टेस्ट</title>
 
 <style>
+
 body{
     font-family:Arial,sans-serif;
     background:#f5f6fa;
@@ -14,7 +16,7 @@ body{
 }
 
 .container{
-    max-width:800px;
+    max-width:900px;
     margin:auto;
     background:white;
     padding:25px;
@@ -24,6 +26,7 @@ body{
 
 h2{
     color:#002B5B;
+    margin-bottom:20px;
 }
 
 .progress{
@@ -39,34 +42,48 @@ h2{
     height:100%;
     width:0%;
     background:#FF8C00;
+    transition:.3s;
 }
 
 .question{
     font-size:24px;
     margin:25px 0;
+    font-weight:bold;
 }
 
 .option{
     display:block;
-    padding:12px;
+    padding:14px;
     border:1px solid #ccc;
     border-radius:10px;
-    margin-bottom:10px;
+    margin-bottom:12px;
     cursor:pointer;
+    transition:.2s;
+}
+
+.option:hover{
+    background:#f7f7f7;
+}
+
+.option input{
+    margin-right:10px;
 }
 
 .btns{
     display:flex;
     justify-content:space-between;
+    gap:10px;
     margin-top:25px;
 }
 
 button{
-    padding:12px 25px;
+    flex:1;
+    padding:14px;
     border:none;
     border-radius:10px;
     color:white;
     cursor:pointer;
+    font-size:16px;
 }
 
 .prev{
@@ -76,26 +93,89 @@ button{
 .next{
     background:#FF8C00;
 }
+
+.submit{
+    background:green;
+}
+
+.info{
+    background:#eef4ff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+@media(max-width:600px){
+
+.btns{
+    flex-direction:column;
+}
+
+}
+
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
+<div class="info">
+
 <h2 id="studentInfo"></h2>
 
-<div class="progress">
-<div class="progress-bar" id="bar"></div>
+<p>
+<b>परीक्षा :</b>
+<span id="examName"></span>
+</p>
+
+<p>
+<b>पेपर कोड :</b>
+<span id="paperCode"></span>
+</p>
+
 </div>
 
-<div class="question" id="questionText"></div>
+<div class="progress">
+
+<div
+class="progress-bar"
+id="bar">
+</div>
+
+</div>
+
+<div
+class="question"
+id="questionText">
+</div>
 
 <div id="options"></div>
 
 <div class="btns">
-<button class="prev" onclick="prevQuestion()">Previous</button>
-<button class="next" onclick="nextQuestion()">Next</button>
+
+<button
+class="prev"
+onclick="prevQuestion()">
+Previous
+</button>
+
+<button
+class="next"
+id="nextBtn"
+onclick="nextQuestion()">
+Next
+</button>
+
+<button
+class="submit"
+id="submitBtn"
+style="display:none"
+onclick="submitTest()">
+Submit Test
+</button>
+
 </div>
 
 </div>
@@ -103,107 +183,321 @@ button{
 <script>
 
 const examData =
-JSON.parse(localStorage.getItem("selectedExam"));
+JSON.parse(
+localStorage.getItem(
+"selectedExam"
+)
+);
 
 if(!examData){
-alert("परीक्षा चुनें");
-window.location.href="omr.html";
+
+alert(
+"पहले परीक्षा चुनें"
+);
+
+window.location.href =
+"omr.html";
+
 }
 
+const totalQuestions =
+parseInt(
+examData.totalQuestions
+);
+
 const answerArray =
-examData.answerKey.split(",");
+examData.answerKey
+.split(",");
 
 let answerKey = {};
 
-answerArray.forEach((ans,index)=>{
-answerKey[index+1] = ans.trim();
+answerArray.forEach(
+(ans,index)=>{
+
+answerKey[index+1] =
+ans.trim();
+
 });
 
-const totalQuestions =
-parseInt(examData.totalQuestions);
-
 let current = 1;
+
 let answers = {};
 
-document.getElementById("studentInfo").innerHTML =
-examData.examName +
-" | Paper : " +
-examData.paperCode +
-"<br><br>" +
-(localStorage.getItem("studentName") || "") +
-" | Roll No : " +
-(localStorage.getItem("rollNo") || "");
+document.getElementById(
+"studentInfo"
+).innerHTML =
+
+(localStorage.getItem(
+"studentName"
+) || "")
+
++
+
+" | Roll No : "
+
++
+
+(localStorage.getItem(
+"rollNo"
+) || "");
+
+document.getElementById(
+"examName"
+).innerText =
+examData.examName;
+
+document.getElementById(
+"paperCode"
+).innerText =
+examData.paperCode;
 
 function loadQuestion(){
 
-document.getElementById("questionText").innerHTML =
-"प्रश्न " + current + " / " + totalQuestions;
+document.getElementById(
+"questionText"
+).innerHTML =
 
-document.getElementById("bar").style.width =
-(current/totalQuestions*100)+"%";
+"प्रश्न " +
+current +
+" / " +
+totalQuestions;
+
+document.getElementById(
+"bar"
+).style.width =
+
+(current /
+totalQuestions *
+100)
+
++ "%";
 
 let html = "";
 
-["A","B","C","D","E"].forEach(option=>{
+["A","B","C","D","E"]
+.forEach(option=>{
 
 html += `
+
 <label class="option">
-<input type="radio"
+
+<input
+type="radio"
 name="answer"
 value="${option}"
-${answers[current]===option?"checked":""}>
+
+${answers[current]
+=== option
+?
+"checked"
+:
+""}
+
+>
+
 ${option}
+
+${option==="E"
+?
+"(Not Attempted)"
+:
+""}
+
 </label>
+
 `;
 
 });
 
-document.getElementById("options").innerHTML = html;
+document.getElementById(
+"options"
+).innerHTML = html;
+
+if(
+current === totalQuestions
+){
+
+document.getElementById(
+"nextBtn"
+).style.display =
+"none";
+
+document.getElementById(
+"submitBtn"
+).style.display =
+"block";
+
+}
+else{
+
+document.getElementById(
+"nextBtn"
+).style.display =
+"block";
+
+document.getElementById(
+"submitBtn"
+).style.display =
+"none";
+
+}
+
 }
 
 function saveAnswer(){
 
 const selected =
-document.querySelector('input[name="answer"]:checked');
+
+document.querySelector(
+'input[name="answer"]:checked'
+);
 
 if(selected){
-answers[current] = selected.value;
+
+answers[current] =
+selected.value;
+
 }
+
 }
 
 function nextQuestion(){
 
+const selected =
+
+document.querySelector(
+'input[name="answer"]:checked'
+);
+
+if(!selected){
+
+alert(
+"कृपया A/B/C/D/E में से एक विकल्प चुनें"
+);
+
+return;
+
+}
+
 saveAnswer();
 
-if(current < totalQuestions){
+if(
+current < totalQuestions
+){
 
 current++;
+
 loadQuestion();
 
-}else{
+}
+
+}
+
+function prevQuestion(){
+
+saveAnswer();
+
+if(
+current > 1
+){
+
+current--;
+
+loadQuestion();
+
+}
+
+}
+
+function submitTest(){
+
+const selected =
+
+document.querySelector(
+'input[name="answer"]:checked'
+);
+
+if(!selected){
+
+alert(
+"कृपया A/B/C/D/E में से एक विकल्प चुनें"
+);
+
+return;
+
+}
+
+saveAnswer();
 
 let correct = 0;
 let wrong = 0;
-let skipped = 0;
+let eCount = 0;
+let blank = 0;
 
-for(let i=1;i<=totalQuestions;i++){
+for(
+let i=1;
+i<=totalQuestions;
+i++
+){
 
-if(!answers[i]){
-skipped++;
+const studentAnswer =
+answers[i];
+
+if(
+studentAnswer === undefined
+){
+
+blank++;
+
 }
-else if(answers[i] === answerKey[i]){
+else if(
+studentAnswer === "E"
+){
+
+eCount++;
+
+}
+else if(
+studentAnswer === answerKey[i]
+){
+
 correct++;
+
 }
 else{
+
 wrong++;
-}
 
 }
 
-localStorage.setItem("correct",correct);
-localStorage.setItem("wrong",wrong);
-localStorage.setItem("skipped",skipped);
-localStorage.setItem("answers",JSON.stringify(answers));
+}
+
+localStorage.setItem(
+"correct",
+correct
+);
+
+localStorage.setItem(
+"wrong",
+wrong
+);
+
+localStorage.setItem(
+"eCount",
+eCount
+);
+
+localStorage.setItem(
+"blank",
+blank
+);
+
+localStorage.setItem(
+"answers",
+JSON.stringify(
+answers
+)
+);
 
 localStorage.setItem(
 "examName",
@@ -216,6 +510,11 @@ examData.paperCode
 );
 
 localStorage.setItem(
+"examDate",
+examData.examDate || ""
+);
+
+localStorage.setItem(
 "correctMarks",
 examData.correctMarks
 );
@@ -225,19 +524,23 @@ localStorage.setItem(
 examData.negativeMarks
 );
 
-window.location.href="result.html";
+localStorage.setItem(
+"passPercentage",
+examData.passPercentage || 40
+);
 
-}
-}
+localStorage.setItem(
+"deletedQuestions",
+examData.deletedQuestions || ""
+);
 
-function prevQuestion(){
+localStorage.setItem(
+"totalQuestions",
+totalQuestions
+);
 
-saveAnswer();
-
-if(current>1){
-current--;
-loadQuestion();
-}
+window.location.href =
+"result.html";
 
 }
 
@@ -247,4 +550,5 @@ loadQuestion();
 
 </body>
 </html>
-```
+
+
