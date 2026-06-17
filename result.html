@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -13,7 +14,7 @@ body{
 }
 
 .card{
-    max-width:700px;
+    max-width:800px;
     margin:auto;
     background:white;
     padding:30px;
@@ -31,11 +32,27 @@ h1{
     font-size:50px;
     color:#FF8C00;
     margin:20px 0;
+    font-weight:bold;
 }
 
 p{
     font-size:20px;
     margin:10px 0;
+}
+
+.status{
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+    margin:20px 0;
+}
+
+.pass{
+    color:green;
+}
+
+.fail{
+    color:red;
 }
 
 .btn{
@@ -49,8 +66,8 @@ p{
     margin-top:25px;
 }
 </style>
-
 </head>
+
 <body>
 
 <div class="card">
@@ -59,12 +76,26 @@ p{
 
 <div class="score" id="score">0%</div>
 
+<div class="status" id="status"></div>
+
+<p><b>परीक्षा :</b> <span id="examName"></span></p>
+<p><b>पेपर कोड :</b> <span id="paperCode"></span></p>
+
 <p><b>नाम :</b> <span id="name"></span></p>
 <p><b>रोल नंबर :</b> <span id="roll"></span></p>
+
+<hr>
+
+<p><b>कुल प्रश्न :</b> <span id="totalQuestions"></span></p>
 
 <p><b>✅ सही :</b> <span id="correct"></span></p>
 <p><b>❌ गलत :</b> <span id="wrong"></span></p>
 <p><b>⚪ छोड़े गए :</b> <span id="skipped"></span></p>
+
+<hr>
+
+<p><b>कुल अंक :</b> <span id="totalMarks"></span></p>
+<p><b>प्राप्त अंक :</b> <span id="obtainedMarks"></span></p>
 
 <a href="index.html" class="btn">🏠 Home Page</a>
 
@@ -72,32 +103,88 @@ p{
 
 <script>
 
-let correct = parseInt(localStorage.getItem("correct")) || 0;
-let wrong = parseInt(localStorage.getItem("wrong")) || 0;
-let skipped = parseInt(localStorage.getItem("skipped")) || 0;
+let correct =
+parseInt(localStorage.getItem("correct")) || 0;
 
-let total = correct + wrong + skipped;
+let wrong =
+parseInt(localStorage.getItem("wrong")) || 0;
 
-let percentage = 0;
+let skipped =
+parseInt(localStorage.getItem("skipped")) || 0;
 
-if(total > 0){
-    percentage = ((correct / total) * 100).toFixed(2);
+let correctMarks =
+parseFloat(localStorage.getItem("correctMarks")) || 2;
+
+let negativeMarks =
+parseFloat(localStorage.getItem("negativeMarks")) || 0;
+
+let totalQuestions =
+correct + wrong + skipped;
+
+let totalMarks =
+totalQuestions * correctMarks;
+
+let obtainedMarks =
+(correct * correctMarks) -
+(wrong * negativeMarks);
+
+if(obtainedMarks < 0){
+obtainedMarks = 0;
+}
+
+let percentage =
+((obtainedMarks / totalMarks) * 100);
+
+if(isNaN(percentage)){
+percentage = 0;
 }
 
 document.getElementById("score").innerText =
-percentage + "%";
+percentage.toFixed(2) + "%";
+
+document.getElementById("examName").innerText =
+localStorage.getItem("examName") || "-";
+
+document.getElementById("paperCode").innerText =
+localStorage.getItem("paperCode") || "-";
 
 document.getElementById("name").innerText =
-localStorage.getItem("studentName") || "N/A";
+localStorage.getItem("studentName") || "-";
 
 document.getElementById("roll").innerText =
-localStorage.getItem("rollNo") || "N/A";
+localStorage.getItem("rollNo") || "-";
 
-document.getElementById("correct").innerText = correct;
-document.getElementById("wrong").innerText = wrong;
-document.getElementById("skipped").innerText = skipped;
+document.getElementById("correct").innerText =
+correct;
+
+document.getElementById("wrong").innerText =
+wrong;
+
+document.getElementById("skipped").innerText =
+skipped;
+
+document.getElementById("totalQuestions").innerText =
+totalQuestions;
+
+document.getElementById("totalMarks").innerText =
+totalMarks.toFixed(2);
+
+document.getElementById("obtainedMarks").innerText =
+obtainedMarks.toFixed(2);
+
+const status =
+document.getElementById("status");
+
+if(percentage >= 40){
+status.innerHTML =
+'<span class="pass">✅ PASS</span>';
+}else{
+status.innerHTML =
+'<span class="fail">❌ FAIL</span>';
+}
 
 </script>
 
 </body>
 </html>
+```
