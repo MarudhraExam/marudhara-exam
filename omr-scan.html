@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<title>OMR Scanner</title>
 
+<style>
+body{
+font-family:Arial,sans-serif;
+padding:20px;
+background:#f5f6fa;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+}
+
+img{
+max-width:100%;
+border:1px solid #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📷 Uploaded OMR</h2>
+
+<img id="omrPreview">
+
+</div>
+
+<script>
+
+const image =
+localStorage.getItem("omrImage");
+
+document.getElementById(
+"omrPreview"
+).src = image;
+
+</script>
+
+</body>
+</html>
