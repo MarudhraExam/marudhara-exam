@@ -269,7 +269,35 @@ document.getElementById(
 "status"
 ).innerHTML =
 status;
+const tbody =
+document.getElementById(
+"analysisBody"
+);
 
+tbody.innerHTML = "";
+
+(found.questionAnalysis || [])
+.forEach(item=>{
+
+let icon = "🟡";
+
+if(item.status === "Correct"){
+icon = "✅";
+}
+else if(item.status === "Wrong"){
+icon = "❌";
+}
+
+tbody.innerHTML += `
+<tr>
+<td>${item.question}</td>
+<td>${item.studentAnswer}</td>
+<td>${item.correctAnswer}</td>
+<td>${icon}</td>
+</tr>
+`;
+
+});
 }
 
 </script>
