@@ -62,27 +62,19 @@ document.getElementById(
 "omrPreview"
 ).src = image;
 
-function scanOMR(){
+window.scanOMR = function(){
 
 alert("Scan Button Working");
 
 const resultBox =
 document.getElementById("resultBox");
 
-resultBox.style.display =
-"block";
+resultBox.style.display = "block";
 
 resultBox.innerHTML =
-"⏳ OMR Scan शुरू हो रहा है...";
+"Test Success";
 
-if(typeof cv === "undefined"){
-
-resultBox.innerHTML =
-"❌ OpenCV अभी Load नहीं हुआ। 2 सेकंड बाद पुनः प्रयास करें।";
-
-return;
-
-}
+};
 
 resultBox.innerHTML =
 "✅ OpenCV Loaded Successfully<br><br>" +
