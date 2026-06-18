@@ -373,7 +373,9 @@ blank: blank,
 
 obtainedMarks: Number(obtainedMarks.toFixed(2)),
 percentage: Number(percentage),
-
+questionAnalysis: JSON.parse(
+localStorage.getItem("questionAnalysis")
+) || [],
 createdAt: Date.now()
 };
 document.getElementById(
