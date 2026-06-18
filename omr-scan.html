@@ -2,9 +2,11 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<title>OMR Scanner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMR Scanner - मरुधरा एग्जाम</title>
 
 <style>
+
 body{
 font-family:Arial,sans-serif;
 padding:20px;
@@ -17,13 +19,38 @@ margin:auto;
 background:white;
 padding:20px;
 border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
 }
 
 img{
 max-width:100%;
 border:1px solid #ddd;
+border-radius:8px;
 }
+
+button{
+width:100%;
+padding:15px;
+background:#FF8C00;
+color:white;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
+margin-top:20px;
+}
+
+#resultBox{
+margin-top:20px;
+padding:15px;
+border:1px solid #ddd;
+border-radius:8px;
+display:none;
+background:#f8f9fa;
+}
+
 </style>
+
 <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 
 </head>
@@ -36,20 +63,11 @@ border:1px solid #ddd;
 
 <img id="omrPreview">
 
-<br><br>
-
 <button onclick="scanOMR()">
 🔍 OMR Scan करें
 </button>
 
-<div id="resultBox"
-style="
-margin-top:20px;
-padding:15px;
-border:1px solid #ddd;
-display:none;
-">
-</div>
+<div id="resultBox"></div>
 
 </div>
 
@@ -64,25 +82,34 @@ document.getElementById(
 
 window.scanOMR = function(){
 
-alert("Scan Button Working");
+alert("Scan Button Working ✅");
 
 const resultBox =
 document.getElementById("resultBox");
 
-resultBox.style.display = "block";
+resultBox.style.display =
+"block";
+
+if(typeof cv === "undefined"){
 
 resultBox.innerHTML =
-"Test Success";
+"❌ OpenCV अभी Load नहीं हुआ।<br><br>5 सेकंड बाद पुनः प्रयास करें।";
 
-};
-
-resultBox.innerHTML =
-"✅ OpenCV Loaded Successfully<br><br>" +
-
-"अब अगला चरण Bubble Detection होगा।";
+return;
 
 }
 
+resultBox.innerHTML =
+
+"✅ OpenCV Successfully Loaded<br><br>" +
+
+"🚀 OMR Scanner Engine का पहला चरण सफल रहा।<br><br>" +
+
+"अगला चरण: Bubble Detection";
+
+};
+
 </script>
+
 </body>
 </html>
