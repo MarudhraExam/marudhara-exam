@@ -82,30 +82,46 @@ document.getElementById(
 
 window.scanOMR = function(){
 
-alert("Scan Button Working ✅");
-
 const resultBox =
 document.getElementById("resultBox");
 
 resultBox.style.display =
 "block";
 
-if(typeof cv === "undefined"){
-
 resultBox.innerHTML =
-"❌ OpenCV अभी Load नहीं हुआ।<br><br>5 सेकंड बाद पुनः प्रयास करें।";
+"⏳ OpenCV Load होने का इंतजार...";
 
-return;
+let count = 0;
 
-}
+const timer = setInterval(()=>{
+
+count++;
+
+if(typeof cv !== "undefined"){
+
+clearInterval(timer);
 
 resultBox.innerHTML =
 
 "✅ OpenCV Successfully Loaded<br><br>" +
 
-"🚀 OMR Scanner Engine का पहला चरण सफल रहा।<br><br>" +
+"🚀 Scanner Engine Ready";
 
-"अगला चरण: Bubble Detection";
+return;
+
+}
+
+if(count >= 10){
+
+clearInterval(timer);
+
+resultBox.innerHTML =
+
+"❌ OpenCV Load नहीं हुआ";
+
+}
+
+},1000);
 
 };
 
