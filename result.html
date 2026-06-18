@@ -443,6 +443,33 @@ document.getElementById(
 "obtainedMarks"
 ).innerText =
 obtainedMarks.toFixed(2);
+try{
+
+const alreadySaved =
+sessionStorage.getItem("resultSaved");
+
+if(!alreadySaved){
+
+await addDoc(
+collection(db,"results"),
+resultData
+);
+
+sessionStorage.setItem(
+"resultSaved",
+"yes"
+);
+
+}
+
+}catch(error){
+
+console.error(
+"Result Save Error",
+error
+);
+
+}
 const attempted =
 correct + wrong;
 
