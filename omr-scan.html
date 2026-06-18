@@ -62,7 +62,33 @@ document.getElementById(
 "omrPreview"
 ).src = image;
 
-</script>
+function scanOMR(){
 
+const resultBox =
+document.getElementById("resultBox");
+
+resultBox.style.display =
+"block";
+
+resultBox.innerHTML =
+"⏳ OMR Scan शुरू हो रहा है...";
+
+if(typeof cv === "undefined"){
+
+resultBox.innerHTML =
+"❌ OpenCV अभी Load नहीं हुआ। 2 सेकंड बाद पुनः प्रयास करें।";
+
+return;
+
+}
+
+resultBox.innerHTML =
+"✅ OpenCV Loaded Successfully<br><br>" +
+
+"अब अगला चरण Bubble Detection होगा।";
+
+}
+
+</script>
 </body>
 </html>
