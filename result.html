@@ -356,7 +356,26 @@ percentage =
 ).toFixed(2);
 
 }
+const resultData = {
+name: localStorage.getItem("studentName") || "",
+rollNo: localStorage.getItem("rollNo") || "",
+gender: localStorage.getItem("gender") || "",
+category: localStorage.getItem("category") || "",
+tspType: localStorage.getItem("tspType") || "",
 
+examName: localStorage.getItem("examName") || "",
+paperCode: localStorage.getItem("paperCode") || "",
+
+correct: correct,
+wrong: wrong,
+eCount: eCount,
+blank: blank,
+
+obtainedMarks: Number(obtainedMarks.toFixed(2)),
+percentage: Number(percentage),
+
+createdAt: Date.now()
+};
 document.getElementById(
 "score"
 ).innerText =
