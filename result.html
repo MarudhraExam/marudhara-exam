@@ -416,6 +416,42 @@ function downloadPDF(){
 
 window.print();
 }
+const analysisData =
+JSON.parse(
+localStorage.getItem("questionAnalysis")
+) || [];
+
+const tbody =
+document.getElementById("analysisBody");
+
+analysisData.forEach(item=>{
+
+let icon = "";
+let rowClass = "";
+
+if(item.status==="Correct"){
+    icon = "✅";
+    rowClass = "correctRow";
+}
+else if(item.status==="Wrong"){
+    icon = "❌";
+    rowClass = "wrongRow";
+}
+else{
+    icon = "🟡";
+    rowClass = "skipRow";
+}
+
+tbody.innerHTML += `
+<tr class="${rowClass}">
+<td>${item.question}</td>
+<td>${item.studentAnswer}</td>
+<td>${item.correctAnswer}</td>
+<td>${icon}</td>
+</tr>
+`;
+
+});
 </script>
 
 </body>
