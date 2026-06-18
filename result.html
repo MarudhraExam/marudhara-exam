@@ -470,7 +470,47 @@ sessionStorage.setItem(
 console.log(
 "Result Saved Successfully"
 );
+const snapshot =
+await getDocs(
+collection(db,"results")
+);
 
+let allResults = [];
+
+snapshot.forEach((doc)=>{
+
+allResults.push(doc.data());
+
+});
+
+allResults.sort(
+(a,b)=>
+b.obtainedMarks - a.obtainedMarks
+);
+
+const currentRoll =
+localStorage.getItem("rollNo");
+
+let overallRank = "-";
+
+for(let i=0;i<allResults.length;i++){
+
+if(
+allResults[i].rollNo ==
+currentRoll
+){
+
+overallRank = i + 1;
+break;
+
+}
+
+}
+
+document.getElementById(
+"overallRank"
+).innerText =
+overallRank;
 }
 
 }catch(error){
