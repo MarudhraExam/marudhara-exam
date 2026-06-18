@@ -399,7 +399,43 @@ document.getElementById(
 "obtainedMarks"
 ).innerText =
 obtainedMarks.toFixed(2);
+const attempted =
+correct + wrong;
 
+let accuracy = 0;
+
+if(attempted > 0){
+    accuracy =
+    ((correct / attempted) * 100)
+    .toFixed(2);
+}
+
+const attemptedPercent =
+(
+(attempted / totalQuestions)
+* 100
+).toFixed(2);
+
+const notAttemptedPercent =
+(
+((eCount + blank) / totalQuestions)
+* 100
+).toFixed(2);
+
+document.getElementById(
+"accuracy"
+).innerText =
+accuracy + "%";
+
+document.getElementById(
+"attemptedPercent"
+).innerText =
+attemptedPercent + "%";
+
+document.getElementById(
+"notAttemptedPercent"
+).innerText =
+notAttemptedPercent + "%";
 const status =
 document.getElementById(
 "status"
