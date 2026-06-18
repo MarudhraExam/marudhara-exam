@@ -152,6 +152,15 @@ thresh,
 255,
 cv.THRESH_BINARY
 );
+const rect = new cv.Rect(
+80,     // X
+520,    // Y
+980,    // Width
+760      // Height
+);
+
+const cropped =
+thresh.roi(rect);
 
 cv.imshow(
 "canvasOutput",
