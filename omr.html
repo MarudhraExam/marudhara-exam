@@ -72,25 +72,6 @@ button{
 
 <label>रोल नंबर</label>
 <input type="text" id="roll">
-<label>OMR फोटो अपलोड करें</label>
-
-<input
-type="file"
-id="omrImage"
-accept="image/*">
-
-<img
-id="preview"
-style="
-max-width:100%;
-display:none;
-margin-bottom:20px;
-border:1px solid #ddd;
-border-radius:8px;">
-
-<button id="scanBtn" onclick="startScan()">
-📷 OMR Scan शुरू करें
-</button>
 
 <button onclick="startExam()">
 OMR भरना शुरू करें
@@ -100,38 +81,7 @@ OMR भरना शुरू करें
 </button>
 
 </div>
-<script>
 
-document.addEventListener(
-"DOMContentLoaded",
-function(){
-
-const fileInput =
-document.getElementById("omrImage");
-
-const preview =
-document.getElementById("preview");
-
-fileInput.addEventListener(
-"change",
-function(){
-
-const file =
-this.files[0];
-
-if(!file) return;
-
-preview.src =
-URL.createObjectURL(file);
-
-preview.style.display =
-"block";
-
-});
-
-});
-
-</script>
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -179,7 +129,9 @@ id:doc.id,
 ...data
 });
 
-if(!uniqueExams.includes(data.examName)){
+if(
+!uniqueExams.includes(data.examName)
+){
 uniqueExams.push(data.examName);
 }
 
@@ -187,7 +139,8 @@ uniqueExams.push(data.examName);
 
 uniqueExams.forEach((examName)=>{
 
-examSelect.innerHTML += `
+examSelect.innerHTML +=
+`
 <option value="${examName}">
 ${examName}
 </option>
@@ -196,7 +149,6 @@ ${examName}
 });
 
 }
-
 document
 .getElementById("examSelect")
 .addEventListener("change",function(){
@@ -216,7 +168,8 @@ x => x.examName === examName
 
 selectedExamList.forEach((exam)=>{
 
-paperSelect.innerHTML += `
+paperSelect.innerHTML +=
+`
 <option value="${exam.id}">
 ${exam.paperCode}
 </option>
@@ -226,43 +179,14 @@ ${exam.paperCode}
 
 });
 
+
+
 loadExams();
-
-window.startScan = function(){
-
-const file =
-document.getElementById("omrImage").files[0];
-
-if(!file){
-
-alert("पहले OMR फोटो अपलोड करें");
-return;
-
-}
-
-const reader = new FileReader();
-
-reader.onload = function(e){
-
-localStorage.setItem(
-"omrImage",
-e.target.result
-);
-
-window.location.href =
-"omr-scan.html";
-
-};
-
-reader.readAsDataURL(file);
-
-};
 
 window.startExam = function(){
 
 const examId =
 document.getElementById("paperCodeSelect").value;
-
 const name =
 document.getElementById("name").value;
 
@@ -274,7 +198,7 @@ alert("परीक्षा चुनें");
 return;
 }
 
-if(name === "" || roll === ""){
+if(name==="" || roll===""){
 alert("नाम और रोल नंबर भरें");
 return;
 }
@@ -300,11 +224,9 @@ JSON.stringify(selectedExam)
 window.location.href =
 "test.html";
 
-};
+}
 
 </script>
 
-
 </body>
 </html>
-```
