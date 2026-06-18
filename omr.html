@@ -234,6 +234,35 @@ ${exam.paperCode}
 loadExams();
 
 window.startExam = function(){
+window.startScan = function(){
+
+const file =
+document.getElementById("omrImage").files[0];
+
+if(!file){
+
+alert("पहले OMR फोटो अपलोड करें");
+return;
+
+}
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+
+localStorage.setItem(
+"omrImage",
+e.target.result
+);
+
+window.location.href =
+"omr-scan.html";
+
+};
+
+reader.readAsDataURL(file);
+
+};
 
 const examId =
 document.getElementById("paperCodeSelect").value;
