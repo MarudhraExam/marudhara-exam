@@ -541,7 +541,10 @@ localStorage.setItem(
 "totalQuestions",
 totalQuestions
 );
-
+localStorage.setItem(
+    "questionAnalysis",
+    JSON.stringify(questionAnalysis)
+);
 window.location.href =
 "result.html";
 
