@@ -179,9 +179,7 @@ id:doc.id,
 ...data
 });
 
-if(
-!uniqueExams.includes(data.examName)
-){
+if(!uniqueExams.includes(data.examName)){
 uniqueExams.push(data.examName);
 }
 
@@ -189,8 +187,7 @@ uniqueExams.push(data.examName);
 
 uniqueExams.forEach((examName)=>{
 
-examSelect.innerHTML +=
-`
+examSelect.innerHTML += `
 <option value="${examName}">
 ${examName}
 </option>
@@ -199,6 +196,7 @@ ${examName}
 });
 
 }
+
 document
 .getElementById("examSelect")
 .addEventListener("change",function(){
@@ -218,8 +216,7 @@ x => x.examName === examName
 
 selectedExamList.forEach((exam)=>{
 
-paperSelect.innerHTML +=
-`
+paperSelect.innerHTML += `
 <option value="${exam.id}">
 ${exam.paperCode}
 </option>
@@ -229,11 +226,8 @@ ${exam.paperCode}
 
 });
 
-
-
 loadExams();
 
-window.startExam = function(){
 window.startScan = function(){
 
 const file =
@@ -264,8 +258,11 @@ reader.readAsDataURL(file);
 
 };
 
+window.startExam = function(){
+
 const examId =
 document.getElementById("paperCodeSelect").value;
+
 const name =
 document.getElementById("name").value;
 
@@ -277,7 +274,7 @@ alert("परीक्षा चुनें");
 return;
 }
 
-if(name==="" || roll===""){
+if(name === "" || roll === ""){
 alert("नाम और रोल नंबर भरें");
 return;
 }
@@ -303,9 +300,10 @@ JSON.stringify(selectedExam)
 window.location.href =
 "test.html";
 
-}
+};
 
 </script>
+
 
 </body>
 </html>
