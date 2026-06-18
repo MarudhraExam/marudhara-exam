@@ -232,7 +232,20 @@ if(name==="" || roll===""){
 alert("नाम और रोल नंबर भरें");
 return;
 }
+if(gender === ""){
+alert("लिंग चुनें");
+return;
+}
 
+if(category === ""){
+alert("श्रेणी चुनें");
+return;
+}
+
+if(tspType === ""){
+alert("TSP / Non TSP चुनें");
+return;
+}
 const selectedExam =
 exams.find(x=>x.id===examId);
 
