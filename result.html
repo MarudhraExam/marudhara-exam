@@ -269,6 +269,11 @@ storageBucket: "marudhara-exam.firebasestorage.app",
 messagingSenderId: "680152404373",
 appId: "1:680152404373:web:23515d1d06c44dbd33669c"
 };
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
 const correct =
 parseInt(localStorage.getItem("correct")) || 0;
 
