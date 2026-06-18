@@ -447,26 +447,14 @@ document.getElementById(
 obtainedMarks.toFixed(2);
 try {
 
-const alreadySaved =
-sessionStorage.getItem("resultSaved");
-
-if(!alreadySaved){
-
 await addDoc(
 collection(db,"results"),
 resultData
 );
 
-sessionStorage.setItem(
-"resultSaved",
-"yes"
-);
-
 console.log(
 "Result Saved Successfully"
 );
-
-}
 
 }catch(error){
 
