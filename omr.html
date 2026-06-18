@@ -72,6 +72,21 @@ button{
 
 <label>रोल नंबर</label>
 <input type="text" id="roll">
+<label>OMR फोटो अपलोड करें</label>
+
+<input
+type="file"
+id="omrImage"
+accept="image/*">
+
+<img
+id="preview"
+style="
+max-width:100%;
+display:none;
+margin-bottom:20px;
+border:1px solid #ddd;
+border-radius:8px;">
 
 <button onclick="startExam()">
 OMR भरना शुरू करें
