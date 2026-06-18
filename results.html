@@ -1,1 +1,262 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>परिणाम खोजें - मरुधरा एग्जाम</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f6fa;
+    padding:20px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#002B5B;
+}
+
+input,select{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    margin-bottom:20px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    border:none;
+    background:#FF8C00;
+    color:white;
+    font-size:18px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.resultCard{
+    display:none;
+    margin-top:25px;
+    background:#eef4ff;
+    padding:20px;
+    border-radius:12px;
+}
+
+.pass{
+    color:green;
+    font-weight:bold;
+}
+
+.fail{
+    color:red;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📊 परिणाम खोजें</h1>
+
+<label>परीक्षा चुनें</label>
+<select id="examSelect">
+<option value="">परीक्षा चुनें</option>
+</select>
+
+<label>रोल नंबर</label>
+<input type="text" id="rollNo" placeholder="रोल नंबर दर्ज करें">
+
+<button onclick="searchResult()">
+🔍 परिणाम खोजें
+</button>
+
+<div class="resultCard" id="resultCard">
+
+<h2>परिणाम</h2>
+
+<p><b>नाम :</b> <span id="name"></span></p>
+
+<p><b>रोल नंबर :</b> <span id="roll"></span></p>
+
+<p><b>परीक्षा :</b> <span id="exam"></span></p>
+
+<p><b>प्राप्त अंक :</b> <span id="marks"></span></p>
+
+<p><b>प्रतिशत :</b> <span id="percentage"></span></p>
+
+<p><b>स्थिति :</b> <span id="status"></span></p>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain: "marudhara-exam.firebaseapp.com",
+projectId: "marudhara-exam",
+storageBucket: "marudhara-exam.firebasestorage.app",
+messagingSenderId: "680152404373",
+appId: "1:680152404373:web:23515d1d06c44dbd33669c"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadExams(){
+
+const examSelect =
+document.getElementById("examSelect");
+
+const snapshot =
+await getDocs(collection(db,"exams"));
+
+const examNames = [];
+
+snapshot.forEach((doc)=>{
+
+const data = doc.data();
+
+if(
+!examNames.includes(data.examName)
+){
+examNames.push(data.examName);
+}
+
+});
+
+examNames.forEach((exam)=>{
+
+examSelect.innerHTML +=
+`
+<option value="${exam}">
+${exam}
+</option>
+`;
+
+});
+
+}
+
+loadExams();
+
+window.searchResult = async function(){
+
+const examName =
+document.getElementById("examSelect").value;
+
+const rollNo =
+document.getElementById("rollNo").value.trim();
+
+if(examName === ""){
+alert("परीक्षा चुनें");
+return;
+}
+
+if(rollNo === ""){
+alert("रोल नंबर भरें");
+return;
+}
+
+const snapshot =
+await getDocs(collection(db,"results"));
+
+let found = null;
+
+snapshot.forEach((doc)=>{
+
+const data = doc.data();
+
+if(
+data.examName === examName &&
+data.rollNo === rollNo
+){
+found = data;
+}
+
+});
+
+if(!found){
+
+alert("परिणाम नहीं मिला");
+return;
+
+}
+
+document.getElementById(
+"resultCard"
+).style.display = "block";
+
+document.getElementById(
+"name"
+).innerText =
+found.name || "-";
+
+document.getElementById(
+"roll"
+).innerText =
+found.rollNo || "-";
+
+document.getElementById(
+"exam"
+).innerText =
+found.examName || "-";
+
+document.getElementById(
+"marks"
+).innerText =
+found.obtainedMarks || 0;
+
+document.getElementById(
+"percentage"
+).innerText =
+(found.percentage || 0) + "%";
+
+const status =
+(found.percentage || 0) >= 40
+?
+'<span class="pass">PASS</span>'
+:
+'<span class="fail">FAIL</span>';
+
+document.getElementById(
+"status"
+).innerHTML =
+status;
+
+}
+
+</script>
+
+</body>
+</html>
 
