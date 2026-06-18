@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -14,7 +15,7 @@ background:#f5f6fa;
 }
 
 .container{
-max-width:900px;
+max-width:1000px;
 margin:auto;
 background:white;
 padding:20px;
@@ -22,10 +23,11 @@ border-radius:10px;
 box-shadow:0 5px 15px rgba(0,0,0,.1);
 }
 
-img{
+img,canvas{
 max-width:100%;
 border:1px solid #ddd;
 border-radius:8px;
+margin-top:10px;
 }
 
 button{
@@ -59,7 +61,7 @@ background:#f8f9fa;
 
 <div class="container">
 
-<h2>📷 Uploaded OMR</h2>
+<h2>📷 Original OMR</h2>
 
 <img id="omrPreview">
 
@@ -69,6 +71,10 @@ background:#f8f9fa;
 
 <div id="resultBox"></div>
 
+<h2>🖤 Processed OMR</h2>
+
+<canvas id="canvasOutput"></canvas>
+
 </div>
 
 <script>
@@ -76,20 +82,20 @@ background:#f8f9fa;
 const image =
 localStorage.getItem("omrImage");
 
-document.getElementById(
-"omrPreview"
-).src = image;
+const omrPreview =
+document.getElementById("omrPreview");
+
+omrPreview.src = image;
 
 window.scanOMR = function(){
 
 const resultBox =
 document.getElementById("resultBox");
 
-resultBox.style.display =
-"block";
+resultBox.style.display = "block";
 
 resultBox.innerHTML =
-"⏳ OpenCV Load होने का इंतजार...";
+"⏳ Processing Image...";
 
 let count = 0;
 
@@ -101,11 +107,7 @@ if(typeof cv !== "undefined"){
 
 clearInterval(timer);
 
-resultBox.innerHTML =
-
-"✅ OpenCV Successfully Loaded<br><br>" +
-
-"🚀 Scanner Engine Ready";
+processOMR();
 
 return;
 
@@ -116,7 +118,6 @@ if(count >= 10){
 clearInterval(timer);
 
 resultBox.innerHTML =
-
 "❌ OpenCV Load नहीं हुआ";
 
 }
@@ -125,7 +126,53 @@ resultBox.innerHTML =
 
 };
 
+function processOMR(){
+
+const resultBox =
+document.getElementById("resultBox");
+
+const src =
+cv.imread("omrPreview");
+
+const gray =
+new cv.Mat();
+
+cv.cvtColor(
+src,
+gray,
+cv.COLOR_RGBA2GRAY
+);
+
+const thresh =
+new cv.Mat();
+
+cv.threshold(
+gray,
+thresh,
+150,
+255,
+cv.THRESH_BINARY
+);
+
+cv.imshow(
+"canvasOutput",
+thresh
+);
+
+resultBox.innerHTML =
+
+"✅ Image Processing Complete<br><br>" +
+
+"Grayscale + Threshold Applied";
+
+src.delete();
+gray.delete();
+thresh.delete();
+
+}
+
 </script>
 
 </body>
 </html>
+```
