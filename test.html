@@ -434,41 +434,44 @@ let wrong = 0;
 let eCount = 0;
 let blank = 0;
 let questionAnalysis = [];
-for(
-let i=1;
-i<=totalQuestions;
-i++
-){
+for(let i=1;i<=totalQuestions;i++){
 
-const studentAnswer =
-answers[i];
+const studentAnswer = answers[i];
 
-if(
-studentAnswer === undefined
-){
+let status = "";
+let correctAnswer = answerKey[i];
 
-blank++;
+if(studentAnswer === undefined){
+
+    blank++;
+    status = "Blank";
 
 }
-else if(
-studentAnswer === "E"
-){
+else if(studentAnswer === "E"){
 
-eCount++;
+    eCount++;
+    status = "Skipped";
 
 }
-else if(
-studentAnswer === answerKey[i]
-){
+else if(studentAnswer === correctAnswer){
 
-correct++;
+    correct++;
+    status = "Correct";
 
 }
 else{
 
-wrong++;
+    wrong++;
+    status = "Wrong";
 
 }
+
+questionAnalysis.push({
+    question:i,
+    studentAnswer:studentAnswer || "-",
+    correctAnswer:correctAnswer,
+    status:status
+});
 
 }
 
