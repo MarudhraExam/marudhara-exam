@@ -182,7 +182,420 @@ Loading Exams...
 </div>
 
 </div>
+<script type="module">
 
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey:
+"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+
+authDomain:
+"marudhara-exam.firebaseapp.com",
+
+projectId:
+"marudhara-exam",
+
+storageBucket:
+"marudhara-exam.firebasestorage.app",
+
+messagingSenderId:
+"680152404373",
+
+appId:
+"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+async function loadExams(){
+
+const examList =
+document.getElementById("examList");
+
+if(!examList) return;
+
+examList.innerHTML = "";
+
+const snapshot =
+await getDocs(collection(db,"exams"));
+
+snapshot.forEach((exam)=>{
+
+const data = exam.data();
+
+examList.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${data.examName}</b>
+(${data.paperCode})
+
+<br><br>
+
+<button
+onclick="deleteExam('${exam.id}')"
+style="
+background:red;
+width:auto;
+padding:10px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteExam = async function(id){
+
+const confirmDelete =
+confirm("क्या आप यह Exam Delete करना चाहते हैं?");
+
+if(!confirmDelete) return;
+
+await deleteDoc(
+doc(db,"exams",id)
+);
+
+alert("Exam Deleted ✅");
+loadExams();
+
+};
+async function loadVacanciesAdmin(){
+const list =
+document.getElementById("vacancyListAdmin");
+
+if(!list) return;
+
+list.innerHTML = "";
+
+const snapshot =
+await getDocs(collection(db,"vacancies"));
+
+const vacancies = [];
+
+snapshot.forEach((v)=>{
+
+vacancies.push({
+id:v.id,
+...v.data()
+});
+
+});
+
+vacancies.sort((a,b)=>
+new Date(b.createdAt) -
+new Date(a.createdAt)
+);
+
+vacancies.forEach((v)=>{
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${v.vacancyName}</b>
+
+<br>
+
+📅 ${v.vacancyDate || "-"}
+
+<br><br>
+
+<button
+onclick="deleteVacancy('${v.id}')"
+style="
+background:red;
+width:auto;
+padding:10px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteVacancy =
+async function(id){
+
+if(!confirm(
+"क्या Vacancy Delete करनी है?"
+))
+return;
+
+await deleteDoc(
+doc(db,"vacancies",id)
+);
+
+alert("Vacancy Deleted ✅");
+console.log("Before Vacancy Load");
+loadVacanciesAdmin();
+
+};
+
+window.saveVacancy =
+async function(){
+
+try{
+
+const vacancyName =
+document.getElementById("vacancyName").value;
+
+const vacancyDate =
+document.getElementById("vacancyDate").value;
+
+const vacancyDetails =
+document.getElementById("vacancyDetails").value;
+
+const pdfLink =
+document.getElementById("pdfLink").value;
+
+const applyLink =
+document.getElementById("applyLink").value;
+
+const officialLink =
+document.getElementById("officialLink").value;
+
+if(
+vacancyName === "" ||
+vacancyDetails === ""
+){
+
+alert(
+"Vacancy Name और Details भरें"
+);
+
+return;
+
+}
+
+await addDoc(
+collection(db,"vacancies"),
+{
+vacancyName,
+vacancyDate,
+vacancyDetails,
+pdfLink,
+applyLink,
+officialLink,
+createdAt:
+new Date().toISOString()
+}
+);
+
+alert("Vacancy Published ✅");
+
+loadVacanciesAdmin();
+
+document.getElementById(
+"vacancyName"
+).value = "";
+
+document.getElementById(
+"vacancyDate"
+).value = "";
+
+document.getElementById(
+"vacancyDetails"
+).value = "";
+
+document.getElementById(
+"pdfLink"
+).value = "";
+
+document.getElementById(
+"applyLink"
+).value = "";
+
+document.getElementById(
+"officialLink"
+).value = "";
+
+}
+catch(error){
+
+alert(
+"Error : " + error.message
+);
+
+}
+
+};
+console.log("Before Vacancy Load");
+loadVacanciesAdmin();
+
+window.saveExam = async function(){
+loadVacanciesAdmin();
+
+
+window.saveExam = async function(){
+
+
+
+try{
+
+const examName =
+document.getElementById("examName").value;
+
+const paperCode =
+document.getElementById("paperCode").value;
+
+const examDate =
+document.getElementById("examDate").value;
+
+const totalQuestions =
+Number(
+document.getElementById("totalQuestions").value
+);
+
+const correctMarks =
+Number(
+document.getElementById("correctMarks").value
+);
+
+const negativeMarks =
+Number(
+document.getElementById("negativeMarks").value
+);
+
+const passPercentage =
+Number(
+document.getElementById("passPercentage").value
+);
+
+const deletedQuestions =
+document.getElementById("deletedQuestions").value;
+
+const answerKey =
+document.getElementById("answerKey").value;
+
+if(
+examName === "" ||
+paperCode === "" ||
+totalQuestions <= 0 ||
+answerKey === ""
+){
+
+alert(
+"सभी आवश्यक जानकारी भरें"
+);
+
+return;
+
+}
+
+const examData = {
+
+examName,
+paperCode,
+examDate,
+
+totalQuestions,
+
+correctMarks,
+
+negativeMarks,
+
+passPercentage,
+
+deletedQuestions,
+
+answerKey,
+
+createdAt:
+new Date().toISOString()
+
+};
+
+await addDoc(
+collection(db,"exams"),
+examData
+);
+
+alert(
+"Exam Saved To Firebase ✅"
+);
+loadExams();
+document.getElementById(
+"examName"
+).value = "";
+
+document.getElementById(
+"paperCode"
+).value = "";
+
+document.getElementById(
+"examDate"
+).value = "";
+
+document.getElementById(
+"totalQuestions"
+).value = "";
+
+document.getElementById(
+"deletedQuestions"
+).value = "";
+
+document.getElementById(
+"answerKey"
+).value = "";
+
+}
+catch(error){
+
+alert(
+"Error : " + error.message
+);
+
+}
+
+};
+
+};
+
+console.log("Before Exam Load");
+loadExams();
+</script>
 <script>
 
 function showSection(id){
