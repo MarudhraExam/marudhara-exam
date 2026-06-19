@@ -558,9 +558,10 @@ reason.innerText =
 "न्यूनतम उत्तीर्ण प्रतिशत प्राप्त नहीं हुआ";
 
 }
-function downloadPDF(){
+window.downloadPDF = function(){
 
 window.print();
+
 }
 const analysisData =
 JSON.parse(
