@@ -166,7 +166,39 @@ Loading Exams...
 
 </div>
 <div id="vacancySection" class="section">
+
 <h2>📢 Vacancy Manager</h2>
+
+<label>Vacancy Name</label>
+<input type="text" id="vacancyName">
+
+<label>Vacancy Date</label>
+<input type="date" id="vacancyDate">
+
+<label>Vacancy Details</label>
+<textarea id="vacancyDetails" rows="8"></textarea>
+
+<label>PDF Link</label>
+<input type="text" id="pdfLink">
+
+<label>Apply Link</label>
+<input type="text" id="applyLink">
+
+<label>Official Website</label>
+<input type="text" id="officialLink">
+
+<button onclick="saveVacancy()">
+Publish Vacancy
+</button>
+
+<hr>
+
+<h3>📋 Vacancy List</h3>
+
+<div id="vacancyListAdmin">
+Loading...
+</div>
+
 </div>
 
 <div id="dailySection" class="section">
