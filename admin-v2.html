@@ -224,9 +224,35 @@ Loading...
 </div>
 
 <div id="downloadSection" class="section">
+
 <h2>📥 Downloads Manager</h2>
+
+<label>Category</label>
+
+<select id="downloadCategory">
+<option value="RPSC">RPSC</option>
+<option value="RSSB">RSSB</option>
+</select>
+
+<label>Paper Name</label>
+<input type="text" id="paperName">
+
+<label>PDF Link</label>
+<input type="text" id="paperLink">
+
+<button onclick="saveDownloadPaper()">
+Publish Paper
+</button>
+
+<hr>
+
+<h3>📚 Saved Papers</h3>
+
+<div id="downloadList">
+Loading...
 </div>
 
+</div>
 
 
 </div>
