@@ -102,38 +102,108 @@ header p{
 </header>
 
 <div class="container">
+<div id="dailyPdfContainer">
+Loading PDFs...
+</div>
+   
 
-    <div class="card">
+</div>
+<script type="module">
 
-        <div class="date">19 June 2026</div>
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-        <span class="badge">🔥 Latest PDF</span>
+import {
+getFirestore,
+collection,
+getDocs
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-        <h3>📖 Daily Suja Sar</h3>
+const firebaseConfig = {
 
-        <p><strong>सुजस सार - दैनिक करंट अफेयर्स PDF</strong></p>
+apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
 
-        <p>
-            राजस्थान, भारत एवं समसामयिक घटनाओं का दैनिक सार।
-        </p>
+authDomain:"marudhara-exam.firebaseapp.com",
 
-        <div class="buttons">
-          <a href="sujas%2010%20june%202026.pdf"
-   target="_blank"
-   class="view-btn">
-   👁️ देखें
+projectId:"marudhara-exam",
+
+storageBucket:"marudhara-exam.firebasestorage.app",
+
+messagingSenderId:"680152404373",
+
+appId:"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+async function loadDailyPdfs(){
+
+const container =
+document.getElementById(
+"dailyPdfContainer"
+);
+
+container.innerHTML = "";
+
+const snapshot =
+await getDocs(
+collection(db,"dailySujas")
+);
+
+snapshot.forEach((pdf)=>{
+
+const data = pdf.data();
+
+container.innerHTML += `
+
+<div class="card">
+
+<span class="badge">
+🔥 Latest PDF
+</span>
+
+<h3>${data.title}</h3>
+
+<div class="buttons">
+
+<a href="${data.pdfLink}"
+target="_blank"
+class="view-btn">
+
+👁️ देखें
+
 </a>
 
-<a href="sujas%2010%20june%202026.pdf"
-   download
-   class="download-btn">
-   📥 डाउनलोड
-</a>
-        </div>
+<a href="${data.pdfLink}"
+target="_blank"
+class="download-btn">
 
-    </div>
+📥 डाउनलोड
+
+</a>
 
 </div>
 
+</div>
+
+`;
+
+});
+
+}
+
+loadDailyPdfs();
+
+</script>
 </body>
 </html>
