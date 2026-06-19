@@ -557,6 +557,99 @@ loadDailyPdfs();
 
 };
 loadDailyPdfs();
+window.saveDownloadPaper = async function(){
+
+try{
+
+const category =
+document.getElementById("downloadCategory").value;
+
+const paperName =
+document.getElementById("paperName").value;
+
+const paperLink =
+document.getElementById("paperLink").value;
+
+if(paperName === "" || paperLink === ""){
+
+alert("Paper Name और PDF Link भरें");
+return;
+
+}
+
+await addDoc(
+collection(db,"downloads"),
+{
+category,
+paperName,
+paperLink,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Paper Published ✅");
+
+document.getElementById("paperName").value="";
+document.getElementById("paperLink").value="";
+
+loadDownloadPapers();
+
+}
+catch(error){
+
+alert("Error : " + error.message);
+
+}
+
+};
+
+async function loadDownloadPapers(){
+
+const list =
+document.getElementById("downloadList");
+
+if(!list) return;
+
+list.innerHTML="";
+
+const snapshot =
+await getDocs(collection(db,"downloads"));
+
+snapshot.forEach((paper)=>{
+
+const data = paper.data();
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${data.category}</b>
+-
+${data.paperName}
+
+<br><br>
+
+<a href="${data.paperLink}"
+target="_blank">
+
+👁️ View PDF
+
+</a>
+
+</div>
+
+`;
+
+});
+
+}
+
+loadDownloadPapers();
 window.saveVacancy =
 async function(){
 
