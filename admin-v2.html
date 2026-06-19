@@ -656,7 +656,20 @@ padding:8px 15px;
 });
 
 }
+window.deleteDownloadPaper = async function(id){
 
+if(!confirm("Paper Delete करना है?"))
+return;
+
+await deleteDoc(
+doc(db,"downloads",id)
+);
+
+alert("Paper Deleted ✅");
+
+loadDownloadPapers();
+
+};
 loadDownloadPapers();
 window.saveVacancy =
 async function(){
