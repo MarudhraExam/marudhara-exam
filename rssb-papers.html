@@ -1,1 +1,145 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSSB Papers</title>
 
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+}
+
+header{
+background:#002B5B;
+color:white;
+padding:20px;
+text-align:center;
+}
+
+.container{
+max-width:1000px;
+margin:20px auto;
+padding:20px;
+}
+
+.paper{
+background:white;
+padding:15px;
+margin-bottom:15px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>📖 RSSB Papers</h1>
+</header>
+
+<div class="container">
+
+<div id="paperList">
+Loading...
+</div>
+
+</div>
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+
+authDomain:"marudhara-exam.firebaseapp.com",
+
+projectId:"marudhara-exam",
+
+storageBucket:"marudhara-exam.firebasestorage.app",
+
+messagingSenderId:"680152404373",
+
+appId:"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadPapers(){
+
+const list =
+document.getElementById("paperList");
+
+list.innerHTML="";
+
+const snapshot =
+await getDocs(
+collection(db,"downloads")
+);
+
+snapshot.forEach((paper)=>{
+
+const data = paper.data();
+
+if(data.category !== "RPSC")
+return;
+
+list.innerHTML += `
+
+<div class="paper">
+
+<h3>${data.paperName}</h3>
+
+<div style="margin-top:10px;">
+
+<a href="${data.paperLink}"
+target="_blank">
+
+👁️ Open PDF
+
+</a>
+
+&nbsp;&nbsp;&nbsp;
+
+<a href="${data.paperLink}"
+target="_blank"
+download>
+
+📥 Download PDF
+
+</a>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+loadPapers();
+
+</script>
+
+</body>
+</html>
