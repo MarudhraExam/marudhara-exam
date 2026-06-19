@@ -424,7 +424,86 @@ console.log("Before Vacancy Load");
 loadVacanciesAdmin();
 
 };
+window.saveDailyPdf = async function(){
 
+try{
+
+const title =
+document.getElementById("dailyTitle").value;
+
+const pdfLink =
+document.getElementById("dailyPdfLink").value;
+
+if(title === "" || pdfLink === ""){
+
+alert("Title और PDF Link भरें");
+return;
+
+}
+
+await addDoc(
+collection(db,"dailySujas"),
+{
+title,
+pdfLink,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("PDF Published ✅");
+
+document.getElementById("dailyTitle").value="";
+document.getElementById("dailyPdfLink").value="";
+
+loadDailyPdfs();
+
+}
+catch(error){
+
+alert("Error : " + error.message);
+
+}
+
+};
+
+async function loadDailyPdfs(){
+
+const list =
+document.getElementById("dailyPdfList");
+
+if(!list) return;
+
+list.innerHTML="";
+
+const snapshot =
+await getDocs(
+collection(db,"dailySujas")
+);
+
+snapshot.forEach((pdf)=>{
+
+const data = pdf.data();
+
+list.innerHTML += `
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+<b>${data.title}</b>
+<br><br>
+<a href="${data.pdfLink}" target="_blank">
+👁️ View PDF
+</a>
+</div>
+`;
+
+});
+
+}
+
+loadDailyPdfs();
 window.saveVacancy =
 async function(){
 
