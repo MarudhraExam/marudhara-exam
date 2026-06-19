@@ -512,7 +512,20 @@ padding:8px 15px;
 });
 
 }
+window.deleteDailyPdf = async function(id){
 
+if(!confirm("PDF Delete करनी है?"))
+return;
+
+await deleteDoc(
+doc(db,"dailySujas",id)
+);
+
+alert("PDF Deleted ✅");
+
+loadDailyPdfs();
+
+};
 loadDailyPdfs();
 window.saveVacancy =
 async function(){
