@@ -123,5 +123,104 @@ Today Visitors :
 </p>
 
 </div>
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+doc,
+getDoc,
+setDoc,
+updateDoc,
+increment
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain:"marudhara-exam.firebaseapp.com",
+projectId:"marudhara-exam",
+storageBucket:"marudhara-exam.firebasestorage.app",
+messagingSenderId:"680152404373",
+appId:"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const today =
+new Date().toISOString().split("T")[0];
+
+const totalRef =
+doc(db,"visitors","total");
+
+const todayRef =
+doc(db,"visitors",today);
+
+const visitedToday =
+localStorage.getItem("visitedToday");
+
+if(visitedToday !== today){
+
+const totalSnap = await getDoc(totalRef);
+
+if(totalSnap.exists()){
+
+await updateDoc(totalRef,{
+count:increment(1)
+});
+
+}else{
+
+await setDoc(totalRef,{
+count:1
+});
+
+}
+
+const todaySnap = await getDoc(todayRef);
+
+if(todaySnap.exists()){
+
+await updateDoc(todayRef,{
+count:increment(1)
+});
+
+}else{
+
+await setDoc(todayRef,{
+count:1
+});
+
+}
+
+localStorage.setItem(
+"visitedToday",
+today
+);
+
+}
+
+const totalData =
+await getDoc(totalRef);
+
+const todayData =
+await getDoc(todayRef);
+
+document.getElementById(
+"totalVisitors"
+).innerText =
+totalData.data()?.count || 0;
+
+document.getElementById(
+"todayVisitors"
+).innerText =
+todayData.data()?.count || 0;
+
+</script>
 </body>
 </html>
