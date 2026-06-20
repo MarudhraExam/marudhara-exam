@@ -190,7 +190,7 @@ document.createElement("div");
 box.className = "question-box";
 
 box.innerHTML =
-`<h3>Q${qIndex+1}. ${q.question.replace(/\n/g,"<br>")}</h3>`;
+`<h3 style="white-space:pre-wrap;">Q${qIndex+1}. ${q.question}</h3>`;
 q.options.forEach((option,optIndex)=>{
 
 const btn =
