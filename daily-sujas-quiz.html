@@ -169,7 +169,8 @@ const quiz = window.quizData[index];
 
 score = 0;
 totalQuestions = quiz.questions.length;
-
+document.getElementById("scoreCard").style.display = "none";
+document.getElementById("scoreCard").innerHTML = "";
 const container =
 document.getElementById("quizContainer");
 
