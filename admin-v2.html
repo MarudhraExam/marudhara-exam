@@ -921,6 +921,70 @@ alert(
 
 console.log("Before Exam Load");
 loadExams();
+window.saveQuiz = async function(){
+
+try{
+
+const quizTitle =
+document.getElementById("quizTitle").value;
+
+const quizDate =
+document.getElementById("quizDate").value;
+
+const questions = [];
+
+document
+.querySelectorAll("#questionsContainer > div")
+.forEach((box)=>{
+
+questions.push({
+
+question:
+box.querySelector(".question").value,
+
+options:[
+box.querySelector(".optionA").value,
+box.querySelector(".optionB").value,
+box.querySelector(".optionC").value,
+box.querySelector(".optionD").value,
+box.querySelector(".optionE").value
+],
+
+correctAnswer:
+box.querySelector(".correctAnswer").value
+
+});
+
+});
+
+if(
+quizTitle === "" ||
+questions.length === 0
+){
+alert("Quiz Title और Questions भरें");
+return;
+}
+
+await addDoc(
+collection(db,"quizzes"),
+{
+quizTitle,
+quizDate,
+questions,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Quiz Published ✅");
+
+}
+catch(error){
+
+alert("Error : " + error.message);
+
+}
+
+};
 </script>
 <script>
 
