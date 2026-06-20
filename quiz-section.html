@@ -1,1 +1,98 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Section - मरुधरा एग्जाम</title>
 
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:0;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+padding:20px;
+}
+
+h1{
+text-align:center;
+color:#002B5B;
+margin-bottom:30px;
+}
+
+.quiz-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+gap:20px;
+}
+
+.quiz-card{
+background:white;
+padding:25px;
+border-radius:15px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+.quiz-card h2{
+color:#002B5B;
+margin-bottom:10px;
+}
+
+.quiz-card p{
+color:#555;
+line-height:1.6;
+}
+
+.quiz-card button{
+background:#002B5B;
+color:white;
+border:none;
+padding:12px 25px;
+border-radius:8px;
+cursor:pointer;
+font-size:16px;
+margin-top:15px;
+}
+
+.quiz-card button:hover{
+opacity:0.9;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎯 Quiz Section</h1>
+
+<div class="quiz-grid">
+
+<div class="quiz-card">
+
+<h2>📝 Daily Sujas Quiz</h2>
+
+<p>
+प्रतिदिन 10 महत्वपूर्ण प्रश्नों का अभ्यास करें और अपनी तैयारी को मजबूत बनाएं।
+</p>
+
+<button onclick="window.location.href='daily-sujas-quiz.html'">
+Start Quiz
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
