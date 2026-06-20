@@ -934,7 +934,7 @@ document.getElementById("quizDate").value;
 const questions = [];
 
 document
-.querySelectorAll("#questionsContainer > div")
+.querySelectorAll(".questionBox")
 .forEach((box)=>{
 
 questions.push({
@@ -957,11 +957,13 @@ box.querySelector(".correctAnswer").value
 
 });
 
-if(
-quizTitle === "" ||
-questions.length === 0
-){
-alert("Quiz Title और Questions भरें");
+if(quizTitle === ""){
+alert("Quiz Title भरें");
+return;
+}
+
+if(questions.length === 0){
+alert("कम से कम 1 Question जोड़ें");
 return;
 }
 
@@ -975,7 +977,7 @@ createdAt:new Date().toISOString()
 }
 );
 
-alert("Quiz Published ✅");
+alert("Quiz Published Successfully ✅");
 
 }
 catch(error){
