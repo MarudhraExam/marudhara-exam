@@ -1,1 +1,84 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Sujas Quiz</title>
 
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+color:#002B5B;
+}
+
+.question-box{
+background:white;
+padding:15px;
+margin-bottom:20px;
+border-radius:12px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+.option{
+display:block;
+width:100%;
+text-align:left;
+padding:12px;
+margin-top:8px;
+border:1px solid #ddd;
+border-radius:8px;
+cursor:pointer;
+background:white;
+}
+
+.correct{
+background:#d4edda;
+border-color:#28a745;
+}
+
+.wrong{
+background:#f8d7da;
+border-color:#dc3545;
+}
+
+#scoreCard{
+display:none;
+background:white;
+padding:20px;
+border-radius:12px;
+margin-top:20px;
+text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📝 Daily Sujas Quiz</h1>
+
+<div id="quizContainer">
+Loading Quiz...
+</div>
+
+<div id="scoreCard"></div>
+
+</div>
+
+</body>
+</html>
