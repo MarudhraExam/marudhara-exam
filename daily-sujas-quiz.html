@@ -133,84 +133,33 @@ return;
 
 }
 
-const latestQuiz =
-quizzes[quizzes.length-1];
+container.innerHTML = "<h2>📚 Available Quizzes</h2>";
 
-totalQuestions =
-latestQuiz.questions.length;
+quizzes.reverse().forEach((quiz,index)=>{
 
-container.innerHTML = `
+container.innerHTML += `
 
-<h2>${latestQuiz.quizTitle}</h2>
+<div class="question-box">
 
-<p>📅 ${latestQuiz.quizDate}</p>
+<h3>${quiz.quizTitle}</h3>
+
+<p>📅 ${quiz.quizDate}</p>
+
+<button
+class="option"
+onclick="openQuiz(${index})">
+
+🚀 Start Quiz
+
+</button>
+
+</div>
 
 `;
 
-latestQuiz.questions.forEach((q,index)=>{
-
-const box =
-document.createElement("div");
-
-box.className = "question-box";
-
-box.innerHTML =
-`<h3>Q${index+1}. ${q.question}</h3>`;
-
-q.options.forEach((option,optIndex)=>{
-
-const btn =
-document.createElement("button");
-
-btn.className = "option";
-
-btn.innerText =
-String.fromCharCode(65+optIndex)
-+ ". " + option;
-
-btn.onclick = ()=>{
-
-if(box.dataset.answered)
-return;
-
-box.dataset.answered = "true";
-
-const selected =
-String.fromCharCode(65+optIndex);
-
-if(selected === q.correctAnswer){
-
-btn.classList.add("correct");
-
-score++;
-
-}else{
-
-btn.classList.add("wrong");
-
-const correctIndex =
-q.correctAnswer.charCodeAt(0)-65;
-
-box.querySelectorAll(".option")
-[correctIndex]
-.classList.add("correct");
-
-}
-
-checkResult();
-
-};
-
-box.appendChild(btn);
-
 });
 
-container.appendChild(box);
-
-});
-
-}
-
+window.quizData = quizzes;
 function checkResult(){
 
 const answered =
