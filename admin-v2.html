@@ -937,7 +937,64 @@ document
 .style.display="block";
 
 }
+let questionCount = 0;
 
+function addQuestion(){
+
+questionCount++;
+
+const box = document.createElement("div");
+
+box.style.border = "1px solid #ddd";
+box.style.padding = "15px";
+box.style.marginTop = "15px";
+box.style.borderRadius = "10px";
+
+box.innerHTML = `
+
+<h3>Question ${questionCount}</h3>
+
+<label>Question</label>
+<textarea class="question"></textarea>
+
+<label>Option A</label>
+<input type="text" class="optionA">
+
+<label>Option B</label>
+<input type="text" class="optionB">
+
+<label>Option C</label>
+<input type="text" class="optionC">
+
+<label>Option D</label>
+<input type="text" class="optionD">
+
+<label>Option E</label>
+<input type="text" class="optionE">
+
+<label>Correct Answer</label>
+
+<select class="correctAnswer">
+
+<option value="A">A</option>
+
+<option value="B">B</option>
+
+<option value="C">C</option>
+
+<option value="D">D</option>
+
+<option value="E">E</option>
+
+</select>
+
+`;
+
+document
+.getElementById("questionsContainer")
+.appendChild(box);
+
+}
 </script>
 
 </body>
