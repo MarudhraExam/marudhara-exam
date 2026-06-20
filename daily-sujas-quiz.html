@@ -160,6 +160,87 @@ onclick="openQuiz(${index})">
 });
 
 window.quizData = quizzes;
+window.openQuiz = function(index){
+
+const quiz = window.quizData[index];
+
+score = 0;
+totalQuestions = quiz.questions.length;
+
+const container =
+document.getElementById("quizContainer");
+
+container.innerHTML = `
+
+<h2>${quiz.quizTitle}</h2>
+
+<p>📅 ${quiz.quizDate}</p>
+
+`;
+
+quiz.questions.forEach((q,qIndex)=>{
+
+const box =
+document.createElement("div");
+
+box.className = "question-box";
+
+box.innerHTML =
+`<h3>Q${qIndex+1}. ${q.question}</h3>`;
+
+q.options.forEach((option,optIndex)=>{
+
+const btn =
+document.createElement("button");
+
+btn.className = "option";
+
+btn.innerText =
+String.fromCharCode(65+optIndex)
++ ". " + option;
+
+btn.onclick = ()=>{
+
+if(box.dataset.answered)
+return;
+
+box.dataset.answered = "true";
+
+const selected =
+String.fromCharCode(65+optIndex);
+
+if(selected === q.correctAnswer){
+
+btn.classList.add("correct");
+
+score++;
+
+}else{
+
+btn.classList.add("wrong");
+
+const correctIndex =
+q.correctAnswer.charCodeAt(0)-65;
+
+box.querySelectorAll(".option")
+[correctIndex]
+.classList.add("correct");
+
+}
+
+checkResult();
+
+};
+
+box.appendChild(btn);
+
+});
+
+container.appendChild(box);
+
+});
+
+};
 function checkResult(){
 
 const answered =
