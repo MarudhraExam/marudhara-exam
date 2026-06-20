@@ -105,6 +105,9 @@ appId:"1:680152404373:web:23515d1d06c44dbd33669c"
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let score = 0;
+let totalQuestions = 0;
+
 async function loadQuiz(){
 
 const container =
@@ -133,15 +136,113 @@ return;
 const latestQuiz =
 quizzes[quizzes.length-1];
 
+totalQuestions =
+latestQuiz.questions.length;
+
 container.innerHTML = `
 
 <h2>${latestQuiz.quizTitle}</h2>
 
+<p>📅 ${latestQuiz.quizDate}</p>
+
+`;
+
+latestQuiz.questions.forEach((q,index)=>{
+
+const box =
+document.createElement("div");
+
+box.className = "question-box";
+
+box.innerHTML =
+`<h3>Q${index+1}. ${q.question}</h3>`;
+
+q.options.forEach((option,optIndex)=>{
+
+const btn =
+document.createElement("button");
+
+btn.className = "option";
+
+btn.innerText =
+String.fromCharCode(65+optIndex)
++ ". " + option;
+
+btn.onclick = ()=>{
+
+if(box.dataset.answered)
+return;
+
+box.dataset.answered = "true";
+
+const selected =
+String.fromCharCode(65+optIndex);
+
+if(selected === q.correctAnswer){
+
+btn.classList.add("correct");
+
+score++;
+
+}else{
+
+btn.classList.add("wrong");
+
+const correctIndex =
+q.correctAnswer.charCodeAt(0)-65;
+
+box.querySelectorAll(".option")
+[correctIndex]
+.classList.add("correct");
+
+}
+
+checkResult();
+
+};
+
+box.appendChild(btn);
+
+});
+
+container.appendChild(box);
+
+});
+
+}
+
+function checkResult(){
+
+const answered =
+document.querySelectorAll(
+"[data-answered='true']"
+).length;
+
+if(answered === totalQuestions){
+
+const scoreCard =
+document.getElementById("scoreCard");
+
+scoreCard.style.display =
+"block";
+
+scoreCard.innerHTML = `
+
+<h2>🎉 Quiz Complete</h2>
+
 <p>
-📅 ${latestQuiz.quizDate}
+Score:
+${score}/${totalQuestions}
+</p>
+
+<p>
+Percentage:
+${((score/totalQuestions)*100).toFixed(2)}%
 </p>
 
 `;
+
+}
 
 }
 
