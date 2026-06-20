@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Corner</title>
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+color:#002B5B;
+margin-bottom:30px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+text-align:center;
+cursor:pointer;
+transition:.3s;
+}
+
+.card:hover{
+transform:translateY(-5px);
+}
+
+.card h2{
+color:#002B5B;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h1>🎓 Student Corner</h1>
+
+<div class="grid">
+
+<div class="card"
+onclick="location.href='daily-sujas.html'">
+
+<h2>📘 Daily Suja Sar</h2>
+<p>Daily Current Affairs PDF</p>
+
+</div>
+
+<div class="card"
+onclick="location.href='downloads.html'">
+
+<h2>📥 Downloads</h2>
+<p>All Study Material</p>
+
+</div>
+
+<div class="card"
+onclick="location.href='quiz-section.html'">
+
+<h2>📝 Daily Quiz</h2>
+<p>Daily Sujas Quiz Practice</p>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
