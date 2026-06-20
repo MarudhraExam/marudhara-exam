@@ -699,6 +699,72 @@ loadDownloadPapers();
 
 };
 loadDownloadPapers();
+async function loadQuizzes(){
+
+const list =
+document.getElementById("quizList");
+
+if(!list) return;
+
+list.innerHTML = "";
+
+const snapshot =
+await getDocs(collection(db,"quizzes"));
+
+snapshot.forEach((quiz)=>{
+
+const data = quiz.data();
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${data.quizTitle}</b>
+
+<br>
+
+📅 ${data.quizDate || "-"}
+
+<br><br>
+
+<button
+onclick="deleteQuiz('${quiz.id}')"
+style="
+background:red;
+padding:8px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteQuiz = async function(id){
+
+if(!confirm("Quiz Delete करना है?"))
+return;
+
+await deleteDoc(
+doc(db,"quizzes",id)
+);
+
+alert("Quiz Deleted ✅");
+
+loadQuizzes();
+
+};
+
+loadQuizzes();
 window.saveVacancy =
 async function(){
 
