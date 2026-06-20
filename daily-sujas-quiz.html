@@ -79,6 +79,74 @@ Loading Quiz...
 <div id="scoreCard"></div>
 
 </div>
+<script type="module">
 
+import {
+initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain:"marudhara-exam.firebaseapp.com",
+projectId:"marudhara-exam",
+storageBucket:"marudhara-exam.firebasestorage.app",
+messagingSenderId:"680152404373",
+appId:"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadQuiz(){
+
+const container =
+document.getElementById("quizContainer");
+
+const snapshot =
+await getDocs(collection(db,"quizzes"));
+
+let quizzes = [];
+
+snapshot.forEach(doc=>{
+
+quizzes.push(doc.data());
+
+});
+
+if(quizzes.length === 0){
+
+container.innerHTML =
+"Quiz Not Available";
+
+return;
+
+}
+
+const latestQuiz =
+quizzes[quizzes.length-1];
+
+container.innerHTML = `
+
+<h2>${latestQuiz.quizTitle}</h2>
+
+<p>
+📅 ${latestQuiz.quizDate}
+</p>
+
+`;
+
+}
+
+loadQuiz();
+
+</script>
 </body>
 </html>
