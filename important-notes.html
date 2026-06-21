@@ -78,30 +78,57 @@ snapshot.forEach(doc=>{
 
 const note = doc.data();
 
-if(!grouped[note.topicName]){
-grouped[note.topicName] = [];
+if(!grouped[note.categoryName]){
+grouped[note.categoryName] = {};
 }
 
-grouped[note.topicName].push(note);
+if(!grouped[note.categoryName][note.subjectName]){
+grouped[note.categoryName][note.subjectName] = {};
+}
+
+if(!grouped[note.categoryName][note.subjectName][note.topicName]){
+grouped[note.categoryName][note.subjectName][note.topicName] = [];
+}
+
+grouped[note.categoryName][note.subjectName][note.topicName].push(note);
 
 });
 
 let html = "";
 
-for(const topicName in grouped){
+for(const category in grouped){
 
 html += `
 <div class="note-card">
-
-<h2>📌 ${topicName}</h2>
+<h2>📚 ${category}</h2>
 `;
 
-grouped[topicName].forEach(note=>{
+for(const subject in grouped[category]){
 
 html += `
-<div style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:8px;">
+<div style="margin-left:20px;">
+<h3>📖 ${subject}</h3>
+`;
 
-<h3>📄 ${note.noteTitle}</h3>
+for(const topic in grouped[category][subject]){
+
+html += `
+<div style="margin-left:20px;">
+<h4>📌 ${topic}</h4>
+`;
+
+grouped[category][subject][topic].forEach(note=>{
+
+html += `
+<div style="
+margin:10px 0;
+padding:10px;
+border:1px solid #ddd;
+border-radius:8px;
+">
+
+<b>📄 ${note.noteTitle}</b>
+<br><br>
 
 <a
 href="${note.pdfLink}"
@@ -119,9 +146,15 @@ html += `</div>`;
 
 }
 
-document.getElementById(
-"notesContainer"
-).innerHTML = html;
+html += `</div>`;
+
+}
+
+html += `</div>`;
+
+}
+
+document.getElementById("notesContainer").innerHTML = html;
 
 }
 loadNotes();
