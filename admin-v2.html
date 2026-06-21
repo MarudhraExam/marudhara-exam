@@ -1143,8 +1143,7 @@ subjectName,
 createdAt:new Date().toISOString()
 }
 );
-async function loadSubjects(categoryId){
-
+window.loadSubjects = async function(categoryId){
 const subjectSelect =
 document.getElementById("topicSubjectSelect");
 
