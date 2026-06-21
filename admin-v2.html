@@ -1318,7 +1318,11 @@ try{
 
 const topicId =
 document.getElementById("noteTopicSelect").value;
-
+const topicName =
+document.getElementById("noteTopicSelect")
+.options[
+document.getElementById("noteTopicSelect").selectedIndex
+].text;
 const noteTitle =
 document.getElementById("noteTitle").value;
 
