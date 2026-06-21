@@ -156,10 +156,12 @@ document.getElementById(
 
 container.innerHTML = "";
 
-const snapshot =
-await getDocs(
-collection(db,"dailySujas")
+const q = query(
+collection(db,"dailySujas"),
+orderBy("createdAt","desc")
 );
+
+const snapshot = await getDocs(q);
 
 snapshot.forEach((pdf)=>{
 
