@@ -1040,6 +1040,44 @@ alert(
 
 console.log("Before Exam Load");
 loadExams();
+async function loadCategories(){
+
+const select1 =
+document.getElementById("categorySelect");
+
+const select2 =
+document.getElementById("topicCategorySelect");
+
+if(!select1 || !select2) return;
+
+select1.innerHTML =
+'<option value="">Select Category</option>';
+
+select2.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((cat)=>{
+
+const data = cat.data();
+
+select1.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+select2.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+});
+
+}
 window.saveCategory = async function(){
 
 try{
