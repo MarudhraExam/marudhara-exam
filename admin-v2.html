@@ -1140,7 +1140,38 @@ subjectName,
 createdAt:new Date().toISOString()
 }
 );
+async function loadSubjects(categoryId){
 
+const subjectSelect =
+document.getElementById("topicSubjectSelect");
+
+if(!subjectSelect) return;
+
+subjectSelect.innerHTML =
+'<option value="">Select Subject</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.categoryId === categoryId){
+
+subjectSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+}
+
+});
+
+}
 alert("Subject Created ✅");
 
 document.getElementById("subjectName").value="";
