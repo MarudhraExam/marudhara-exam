@@ -1102,31 +1102,6 @@ createdAt:new Date().toISOString()
 
 alert("Quiz Published Successfully ✅");
 loadQuizzes();
-window.saveCategory = async function(){
-
-try{
-
-const categoryName =
-document.getElementById("categoryName").value;
-
-if(categoryName===""){
-alert("Category Name भरें");
-return;
-}
-
-await addDoc(
-collection(db,"notesCategories"),
-{
-name:categoryName,
-createdAt:new Date().toISOString()
-}
-);
-
-alert("Category Created ✅");
-
-document.getElementById("categoryName").value="";
-
-loadCategories();
 
 }
 catch(error){
