@@ -1152,37 +1152,7 @@ alert(error.message);
 }
 
 };
-window.saveCategory = async function(){
 
-try{
-const categoryName =
-document.getElementById("categoryName").value;
-
-if(categoryName === ""){
-alert("Category Name भरें");
-return;
-}
-
-await addDoc(
-collection(db,"notesCategories"),
-{
-name: categoryName,
-createdAt: new Date().toISOString()
-}
-);
-
-alert("Category Created ✅");
-loadCategories();
-document.getElementById("categoryName").value = "";
-
-}
-catch(error){
-
-alert(error.message);
-
-}
-
-};
 window.saveQuiz = async function(){
 
 try{
