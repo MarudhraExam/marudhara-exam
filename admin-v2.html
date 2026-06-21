@@ -1353,8 +1353,10 @@ return;
 await addDoc(
 collection(db,"notesPdfs"),
 {
-topicId,
+categoryName,
+subjectName,
 topicName,
+topicId,
 noteTitle,
 pdfLink,
 createdAt:new Date().toISOString()
