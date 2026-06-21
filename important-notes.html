@@ -66,9 +66,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-
-async function loadNotes(){
-
 async function loadNotes(){
 
 const snapshot = await getDocs(
@@ -127,7 +124,7 @@ document.getElementById(
 ).innerHTML = html;
 
 }
-
+loadNotes();
 </script>
 </body>
 </html>
