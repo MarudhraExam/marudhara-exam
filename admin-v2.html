@@ -1204,7 +1204,38 @@ alert(error.message);
 
 };
 window.loadSubjects = async function(categoryId){
+window.loadTopics = async function(subjectId){
 
+const topicSelect =
+document.getElementById("noteTopicSelect");
+
+if(!topicSelect) return;
+
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+topicSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
+
+});
+
+};
 const subjectSelect =
 document.getElementById("topicSubjectSelect");
 
