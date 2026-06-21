@@ -295,9 +295,57 @@ Coming Soon...
 
 <h2>📚 Important Notes Manager</h2>
 
-<p>
-Yahan se Category, Subject, Topic aur PDF Notes manage honge.
-</p>
+<label>Category Name</label>
+<input type="text" id="categoryName">
+
+<button onclick="saveCategory()">
+➕ Create Category
+</button>
+
+<hr>
+
+<label>Select Category</label>
+<select id="categorySelect">
+<option value="">Select Category</option>
+</select>
+
+<label>Subject Name</label>
+<input type="text" id="subjectName">
+
+<button onclick="saveSubject()">
+➕ Create Subject
+</button>
+
+<hr>
+
+<label>Select Category</label>
+<select id="topicCategorySelect">
+<option value="">Select Category</option>
+</select>
+
+<label>Select Subject</label>
+<select id="topicSubjectSelect">
+<option value="">Select Subject</option>
+</select>
+
+<label>Topic Name</label>
+<input type="text" id="topicName">
+
+<button onclick="saveTopic()">
+➕ Create Topic
+</button>
+
+<hr>
+
+<label>PDF Title</label>
+<input type="text" id="noteTitle">
+
+<label>PDF Link</label>
+<input type="text" id="notePdfLink">
+
+<button>
+🚀 Upload Notes
+</button>
 
 </div>
 <script type="module">
