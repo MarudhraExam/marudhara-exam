@@ -1116,7 +1116,36 @@ alert("Error : " + error.message);
 }
 
 };
+window.saveCategory = async function(){
 
+try{
+
+const categoryName =
+document.getElementById("categoryName").value;
+
+if(categoryName===""){
+alert("Category Name भरें");
+return;
+}
+
+await addDoc(
+collection(db,"notesCategories"),
+{
+name:categoryName,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Category Created ✅");
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
 async function loadCategories(){
 
 const select1 =
