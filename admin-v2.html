@@ -1188,38 +1188,6 @@ document
 
 loadSubjects(this.value);
 
-});
-window.loadSubjects = async function(categoryId){
-
-const subjectSelect =
-document.getElementById("topicSubjectSelect");
-
-if(!subjectSelect) return;
-
-subjectSelect.innerHTML =
-'<option value="">Select Subject</option>';
-
-const snapshot =
-await getDocs(
-collection(db,"notesSubjects")
-);
-
-snapshot.forEach((docItem)=>{
-
-const data = docItem.data();
-
-if(data.categoryId === categoryId){
-
-subjectSelect.innerHTML += `
-<option value="${docItem.id}">
-${data.subjectName}
-</option>
-`;
-
-}
-
-});
-
 };
 document
 .getElementById("topicCategorySelect")
