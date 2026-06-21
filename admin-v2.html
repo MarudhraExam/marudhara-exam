@@ -1144,6 +1144,7 @@ createdAt:new Date().toISOString()
 }
 );
 window.loadSubjects = async function(categoryId){
+
 const subjectSelect =
 document.getElementById("topicSubjectSelect");
 
@@ -1173,20 +1174,7 @@ ${data.subjectName}
 
 });
 
-}
-alert("Subject Created ✅");
-
-document.getElementById("subjectName").value="";
-
-}
-catch(error){
-
-alert(error.message);
-
-}
-
 };
-
 window.saveQuiz = async function(){
 
 try{
