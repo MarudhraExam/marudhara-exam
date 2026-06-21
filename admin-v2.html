@@ -1140,6 +1140,13 @@ subjectName,
 createdAt:new Date().toISOString()
 }
 );
+alert("Subject Created ✅");
+document.getElementById("subjectName").value="";
+}
+catch(error){
+alert(error.message);
+}
+};
 window.loadSubjects = async function(categoryId){
 
 const subjectSelect =
