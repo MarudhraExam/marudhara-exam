@@ -69,18 +69,40 @@ const db = getFirestore(app);
 
 async function loadNotes(){
 
+async function loadNotes(){
+
 const snapshot = await getDocs(
 collection(db,"notesPdfs")
 );
 
-let html = "";
+let grouped = {};
 
 snapshot.forEach(doc=>{
 
 const note = doc.data();
 
+if(!grouped[note.topicName]){
+grouped[note.topicName] = [];
+}
+
+grouped[note.topicName].push(note);
+
+});
+
+let html = "";
+
+for(const topicName in grouped){
+
 html += `
 <div class="note-card">
+
+<h2>📌 ${topicName}</h2>
+`;
+
+grouped[topicName].forEach(note=>{
+
+html += `
+<div style="margin:10px 0;padding:10px;border:1px solid #ddd;border-radius:8px;">
 
 <h3>📄 ${note.noteTitle}</h3>
 
@@ -96,13 +118,15 @@ Open PDF
 
 });
 
+html += `</div>`;
+
+}
+
 document.getElementById(
 "notesContainer"
 ).innerHTML = html;
 
 }
-
-loadNotes();
 
 </script>
 </body>
