@@ -1205,6 +1205,38 @@ alert(error.message);
 }
 
 };
+window.deleteTopic = async function(){
+
+try{
+
+const topicId =
+document.getElementById("noteTopicSelect").value;
+
+if(topicId === ""){
+alert("Topic Select करें");
+return;
+}
+
+if(!confirm("क्या आप Topic Delete करना चाहते हैं?")){
+return;
+}
+
+await deleteDoc(
+doc(db,"notesTopics",topicId)
+);
+
+alert("Topic Deleted ✅");
+
+location.reload();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
 window.loadSubjects = async function(categoryId){
 window.loadTopics = async function(subjectId){
 
