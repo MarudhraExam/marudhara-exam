@@ -1346,13 +1346,15 @@ return;
 }
 
 if(noteTitle === ""){
-alert("PDF Title भरें");
-return;
+{
+categoryName,
+subjectName,
+topicName,
+topicId,
+noteTitle,
+pdfLink,
+createdAt:new Date().toISOString()
 }
-
-if(pdfLink === ""){
-alert("PDF Link भरें");
-return;
 }
 
 await addDoc(
