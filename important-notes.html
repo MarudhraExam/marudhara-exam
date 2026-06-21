@@ -110,8 +110,12 @@ for(const category in grouped){
 
 html += `
 <div class="note-card">
-<h2>📚 ${category}</h2>
-`;
+<h2 class="folder"
+onclick="toggleFolder('cat-${category}')">
+📚 ${category}
+</h2>
+
+<div id="cat-${category}" class="hidden">
 
 for(const subject in grouped[category]){
 
