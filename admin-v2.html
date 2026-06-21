@@ -1103,10 +1103,15 @@ createdAt:new Date().toISOString()
 alert("Quiz Published Successfully ✅");
 loadQuizzes();
 
+document.getElementById("quizTitle").value = "";
+document.getElementById("quizDate").value = "";
+document.getElementById("questionsContainer").innerHTML = "";
+questionCount = 0;
+
 }
 catch(error){
 
-alert(error.message);
+alert("Error : " + error.message);
 
 }
 
