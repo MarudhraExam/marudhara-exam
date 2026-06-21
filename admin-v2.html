@@ -1174,6 +1174,13 @@ ${data.subjectName}
 });
 
 };
+document
+.getElementById("topicCategorySelect")
+.addEventListener("change", function(){
+
+loadSubjects(this.value);
+
+});
 window.saveQuiz = async function(){
 
 try{
