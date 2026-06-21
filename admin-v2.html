@@ -1041,7 +1041,47 @@ alert(
 console.log("Before Exam Load");
 loadExams();
 window.saveCategory = async function(){
+window.saveSubject = async function(){
 
+try{
+
+const categoryId =
+document.getElementById("categorySelect").value;
+
+const subjectName =
+document.getElementById("subjectName").value;
+
+if(categoryId === ""){
+alert("Category Select करें");
+return;
+}
+
+if(subjectName === ""){
+alert("Subject Name भरें");
+return;
+}
+
+await addDoc(
+collection(db,"notesSubjects"),
+{
+categoryId,
+subjectName,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Subject Created ✅");
+
+document.getElementById("subjectName").value="";
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
 try{
 
 const categoryName =
