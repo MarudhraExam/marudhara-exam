@@ -1102,7 +1102,81 @@ createdAt:new Date().toISOString()
 
 alert("Quiz Published Successfully ✅");
 loadQuizzes();
+window.saveCategory = async function(){
 
+try{
+
+const categoryName =
+document.getElementById("categoryName").value;
+
+if(categoryName===""){
+alert("Category Name भरें");
+return;
+}
+
+await addDoc(
+collection(db,"notesCategories"),
+{
+name:categoryName,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Category Created ✅");
+
+document.getElementById("categoryName").value="";
+
+loadCategories();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+async function loadCategories(){
+
+const select1 =
+document.getElementById("categorySelect");
+
+const select2 =
+document.getElementById("topicCategorySelect");
+
+if(!select1 || !select2) return;
+
+select1.innerHTML =
+'<option value="">Select Category</option>';
+
+select2.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((cat)=>{
+
+const data = cat.data();
+
+select1.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+select2.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+});
+
+}
+
+loadCategories();
 document.getElementById("quizTitle").value = "";
 document.getElementById("quizDate").value = "";
 document.getElementById("questionsContainer").innerHTML = "";
