@@ -1273,8 +1273,46 @@ document
 
 loadSubjects(this.value);
 });
+window.loadTopics = async function(subjectId){
 
+const topicSelect =
+document.getElementById("noteTopicSelect");
 
+if(!topicSelect) return;
+
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+topicSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
+
+});
+
+};
+
+document
+.getElementById("topicSubjectSelect")
+.addEventListener("change", function(){
+
+loadTopics(this.value);
+
+});
 window.saveQuiz = async function(){
 
 try{
