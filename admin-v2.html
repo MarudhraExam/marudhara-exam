@@ -1312,6 +1312,57 @@ document
 loadTopics(this.value);
 
 });
+window.saveNote = async function(){
+
+try{
+
+const topicId =
+document.getElementById("noteTopicSelect").value;
+
+const noteTitle =
+document.getElementById("noteTitle").value;
+
+const pdfLink =
+document.getElementById("notePdfLink").value;
+
+if(topicId === ""){
+alert("Topic Select करें");
+return;
+}
+
+if(noteTitle === ""){
+alert("PDF Title भरें");
+return;
+}
+
+if(pdfLink === ""){
+alert("PDF Link भरें");
+return;
+}
+
+await addDoc(
+collection(db,"notesPdfs"),
+{
+topicId,
+noteTitle,
+pdfLink,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Notes Uploaded ✅");
+
+document.getElementById("noteTitle").value="";
+document.getElementById("notePdfLink").value="";
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
 window.saveQuiz = async function(){
 
 try{
