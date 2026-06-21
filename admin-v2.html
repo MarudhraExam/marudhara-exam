@@ -1149,6 +1149,56 @@ catch(error){
 alert(error.message);
 }
 };
+window.saveTopic = async function(){
+
+try{
+
+const categoryId =
+document.getElementById("topicCategorySelect").value;
+
+const subjectId =
+document.getElementById("topicSubjectSelect").value;
+
+const topicName =
+document.getElementById("topicName").value;
+
+if(categoryId === ""){
+alert("Category Select करें");
+return;
+}
+
+if(subjectId === ""){
+alert("Subject Select करें");
+return;
+}
+
+if(topicName === ""){
+alert("Topic Name भरें");
+return;
+}
+
+await addDoc(
+collection(db,"notesTopics"),
+{
+categoryId,
+subjectId,
+topicName,
+createdAt:new Date().toISOString()
+}
+);
+
+alert("Topic Created ✅");
+
+document.getElementById("topicName").value="";
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
 window.loadSubjects = async function(categoryId){
 
 const subjectSelect =
