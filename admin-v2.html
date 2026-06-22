@@ -274,7 +274,21 @@ Loading...
 
 <label>Quiz Date</label>
 <input type="date" id="quizDate">
+<label>📊 Excel File Upload</label>
 
+<input
+type="file"
+id="excelFile"
+accept=".xlsx,.xls">
+
+<p>
+Excel Columns:
+Question | A | B | C | D | E | Answer
+</p>
+
+<button onclick="importExcelQuiz()">
+📥 Import Excel Quiz
+</button>
 <div id="questionsContainer"></div>
 
 <hr>
