@@ -113,8 +113,12 @@ async function loadQuiz(){
 const container =
 document.getElementById("quizContainer");
 
-const snapshot =
-await getDocs(collection(db,"quizzes"));
+const q = query(
+collection(db,"quizzes"),
+orderBy("createdAt","desc")
+);
+
+const snapshot = await getDocs(q);
 
 let quizzes = [];
 
