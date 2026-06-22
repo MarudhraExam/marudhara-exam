@@ -1629,8 +1629,7 @@ box.querySelector(".optionD").value =
 row["Option D"] || row.D || "";
 
 box.querySelector(".correctAnswer").value =
-row.Answer || "A";
-
+String(row.Answer || "A").trim();
 });
 
 alert(
