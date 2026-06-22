@@ -1569,7 +1569,79 @@ readonly>
 document
 .getElementById("questionsContainer")
 .appendChild(box);
+window.importExcelQuiz = async function(){
 
+const file =
+document.getElementById("excelFile").files[0];
+
+if(!file){
+alert("Excel File Select करें");
+return;
+}
+
+const reader = new FileReader();
+
+reader.onload = function(e){
+
+const data = new Uint8Array(e.target.result);
+
+const workbook =
+XLSX.read(data,{type:"array"});
+
+const sheet =
+workbook.Sheets[
+workbook.SheetNames[0]
+];
+
+const rows =
+XLSX.utils.sheet_to_json(sheet);
+
+document.getElementById(
+"questionsContainer"
+).innerHTML = "";
+
+questionCount = 0;
+
+rows.forEach((row)=>{
+
+addQuestion();
+
+const boxes =
+document.querySelectorAll(".questionBox");
+
+const box =
+boxes[boxes.length - 1];
+
+box.querySelector(".question").value =
+row.Question || "";
+
+box.querySelector(".optionA").value =
+row.A || "";
+
+box.querySelector(".optionB").value =
+row.B || "";
+
+box.querySelector(".optionC").value =
+row.C || "";
+
+box.querySelector(".optionD").value =
+row.D || "";
+
+box.querySelector(".correctAnswer").value =
+row.Answer || "A";
+
+});
+
+alert(
+rows.length +
+" Questions Import Ho Gaye"
+);
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
