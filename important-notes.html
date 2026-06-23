@@ -175,6 +175,9 @@ window.toggleFolder = function(id){
 document.getElementById(id)
 .classList.toggle("hidden");
 }
+let categories = {};
+let subjects = {};
+let topics = {};
 async function loadNotes(){
 
 const categoriesSnap = await getDocs(collection(db,"notesCategories"));
