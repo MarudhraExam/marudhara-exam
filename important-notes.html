@@ -9,34 +9,72 @@
 <style>
 
 body{
-font-family: Arial, sans-serif;
+font-family:Arial,sans-serif;
 background:#f5f5f5;
-padding:20px;
+padding:15px;
+margin:0;
 }
 
-.note-card{
-background:white;
-padding:15px;
-margin-bottom:15px;
+h1{
+text-align:center;
+font-size:48px;
+margin:20px 0 30px;
+}
+
+.subject-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+}
+
+.subject-card{
+background:#fff;
+padding:12px;
+border-radius:15px;
+box-shadow:0 2px 10px rgba(0,0,0,.1);
+cursor:pointer;
+}
+
+.subject-inner{
+border:2px solid #222;
+border-radius:20px;
+height:220px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+}
+
+.subject-title{
+font-size:26px;
+font-weight:bold;
+}
+
+.subject-icon{
+font-size:70px;
+margin:15px 0;
+}
+
+.subject-hindi{
+font-size:18px;
+font-weight:bold;
+}
+
+.topic-box{
+background:#fff;
+padding:12px;
+margin:10px 0;
 border-radius:10px;
 box-shadow:0 2px 5px rgba(0,0,0,.1);
-}
-
-.note-card h3{
-margin:0 0 10px;
 }
 
 .open-btn{
 display:inline-block;
 padding:8px 15px;
 background:#003366;
-color:white;
+color:#fff;
 text-decoration:none;
 border-radius:6px;
-}
-.folder{
-cursor:pointer;
-padding:10px 0;
 }
 
 .hidden{
