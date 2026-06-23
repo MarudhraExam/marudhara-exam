@@ -106,53 +106,36 @@ grouped[note.categoryName][note.subjectName][note.topicName].push(note);
 
 let html = "";
 
+html += `<div class="subject-grid">`;
+
 for(const category in grouped){
 
 html += `
-<div class="note-card">
-<h2 class="folder"
-onclick="toggleFolder('cat-${category}')">
-📚 ${category}
-</h2>
+<div class="subject-card" onclick="toggleFolder('cat-${category}')">
+    <div class="subject-inner">
+        <div class="subject-title">${category}</div>
+        <div class="subject-icon">📚</div>
+        <div class="subject-hindi">${category}</div>
+    </div>
+</div>
 
 <div id="cat-${category}" class="hidden">
 `;
 
-
 for(const subject in grouped[category]){
 
-html += `
-<div style="margin-left:20px;">
-<h3 class="folder"
-onclick="toggleFolder('sub-${category}-${subject}')">
-📖 ${subject}
-</h3>
-
-<div id="sub-${category}-${subject}" class="hidden">
-`;
-
 for(const topic in grouped[category][subject]){
-
-html += `
-<div style="margin-left:20px;">
-<h4>📌 ${topic}</h4>
-`;
 
 grouped[category][subject][topic].forEach(note=>{
 
 html += `
-<div style="
-margin:10px 0;
-padding:10px;
-border:1px solid #ddd;
-border-radius:8px;
-">
+<div class="topic-box">
 
 <b>📄 ${note.noteTitle}</b>
+
 <br><br>
 
-<a
-href="${note.pdfLink}"
+<a href="${note.pdfLink}"
 target="_blank"
 class="open-btn">
 Open PDF
@@ -163,23 +146,15 @@ Open PDF
 
 });
 
+}
+
+}
+
 html += `</div>`;
 
 }
 
-html += `
-</div>
-</div>
-`;
-}
-
-html += `
-</div>
-</div>
-`;
-
-}
-
+html += `</div>`;
 document.getElementById("notesContainer").innerHTML = html;
 
 }
