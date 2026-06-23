@@ -185,9 +185,6 @@ const subjectsSnap = await getDocs(collection(db,"notesSubjects"));
 const topicsSnap = await getDocs(collection(db,"notesTopics"));
 const pdfsSnap = await getDocs(collection(db,"notesPdfs"));
 
-let categories = {};
-let subjects = {};
-let topics = {};
 
 categoriesSnap.forEach(doc=>{
     categories[doc.id] = doc.data();
