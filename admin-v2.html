@@ -1165,11 +1165,15 @@ alert("Subject Name भरें");
 return;
 }
 
+const subjectIcon =
+document.getElementById("subjectIcon").value;
+
 await addDoc(
 collection(db,"notesSubjects"),
 {
 categoryId,
 subjectName,
+icon:subjectIcon,
 createdAt:new Date().toISOString()
 }
 );
