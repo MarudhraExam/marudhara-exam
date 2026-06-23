@@ -1110,6 +1110,9 @@ try{
 const categoryName =
 document.getElementById("categoryName").value;
 
+const categoryIcon =
+document.getElementById("categoryIcon").value;
+
 if(categoryName === ""){
 alert("Category Name भरें");
 return;
@@ -1119,6 +1122,7 @@ await addDoc(
 collection(db,"notesCategories"),
 {
 name:categoryName,
+icon:categoryIcon,
 createdAt:new Date().toISOString()
 }
 );
@@ -1126,6 +1130,9 @@ createdAt:new Date().toISOString()
 alert("Category Created ✅");
 
 document.getElementById("categoryName").value="";
+document.getElementById("categoryIcon").value="";
+
+loadCategories();
 
 }
 catch(error){
