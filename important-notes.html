@@ -117,69 +117,87 @@ document.getElementById(id)
 }
 async function loadNotes(){
 
-const snapshot = await getDocs(
-collection(db,"notesPdfs")
-);
+const categoriesSnap = await getDocs(collection(db,"notesCategories"));
+const subjectsSnap = await getDocs(collection(db,"notesSubjects"));
+const topicsSnap = await getDocs(collection(db,"notesTopics"));
+const pdfsSnap = await getDocs(collection(db,"notesPdfs"));
 
-let grouped = {};
+let categories = {};
+let subjects = {};
+let topics = {};
 
-snapshot.forEach(doc=>{
+categoriesSnap.forEach(doc=>{
+    categories[doc.id] = doc.data();
+});
 
-const note = doc.data();
+subjectsSnap.forEach(doc=>{
+    subjects[doc.id] = doc.data();
+});
 
-if(!grouped[note.categoryName]){
-grouped[note.categoryName] = {};
-}
-
-if(!grouped[note.categoryName][note.subjectName]){
-grouped[note.categoryName][note.subjectName] = {};
-}
-
-if(!grouped[note.categoryName][note.subjectName][note.topicName]){
-grouped[note.categoryName][note.subjectName][note.topicName] = [];
-}
-
-grouped[note.categoryName][note.subjectName][note.topicName].push(note);
-
+topicsSnap.forEach(doc=>{
+    topics[doc.id] = doc.data();
 });
 
 let html = "";
 
-html += `<div class="subject-grid">`;
+for(const categoryId in categories){
 
-for(const category in grouped){
+const category = categories[categoryId];
 
 html += `
-<div class="subject-card" onclick="toggleFolder('cat-${category}')">
-    <div class="subject-inner">
-        <div class="subject-title">${category}</div>
-        <div class="subject-icon">📚</div>
-<div class="subject-hindi">Click to Open</div>    </div>
+<div class="folder category-folder">
+📁 ${category.name}
 </div>
 
-<div id="cat-${category}" class="hidden"
-style="
-margin-top:10px;
-padding:10px;
-background:#f9f9f9;
-border-radius:10px;
-">
+<div class="folder-content hidden" id="cat-${categoryId}">
 `;
 
-for(const subject in grouped[category]){
+for(const subjectId in subjects){
 
-for(const topic in grouped[category][subject]){
+const subject = subjects[subjectId];
 
-grouped[category][subject][topic].forEach(note=>{
+if(subject.categoryId !== categoryId) continue;
 
 html += `
-<div class="topic-box">
+<div class="folder subject-folder"
+onclick="toggleFolder('sub-${subjectId}')">
+📁 ${subject.subjectName}
+</div>
 
-<b>📄 ${note.noteTitle}</b>
+<div class="folder-content hidden"
+id="sub-${subjectId}">
+`;
+
+for(const topicId in topics){
+
+const topic = topics[topicId];
+
+if(topic.subjectId !== subjectId) continue;
+
+html += `
+<div class="folder topic-folder"
+onclick="toggleFolder('topic-${topicId}')">
+📁 ${topic.topicName}
+</div>
+
+<div class="folder-content hidden"
+id="topic-${topicId}">
+`;
+
+pdfsSnap.forEach(pdfDoc=>{
+
+const pdf = pdfDoc.data();
+
+if(pdf.topicId !== topicId) return;
+
+html += `
+<div class="pdf-box">
+
+📄 ${pdf.noteTitle}
 
 <br><br>
 
-<a href="${note.pdfLink}"
+<a href="${pdf.pdfLink}"
 target="_blank"
 class="open-btn">
 Open PDF
@@ -190,19 +208,18 @@ Open PDF
 
 });
 
-}
-
+html += `</div>`;
 }
 
 html += `</div>`;
-
 }
 
 html += `</div>`;
+}
+
 document.getElementById("notesContainer").innerHTML = html;
 
 }
-loadNotes();
 </script>
 </body>
 </html>
