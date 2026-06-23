@@ -194,7 +194,44 @@ document.getElementById("notesContainer").innerHTML = html;
 }
 
 loadNotes();
+window.showSubjects = function(categoryId){
 
+let html = `
+<button class="back-btn"
+onclick="loadNotes()">
+⬅ Back
+</button>
+
+<div class="card-grid">
+`;
+
+for(const subjectId in subjects){
+
+const subject = subjects[subjectId];
+
+if(subject.categoryId !== categoryId) continue;
+
+html += `
+<div class="card"
+onclick="showPdfs('${subjectId}')">
+
+<img src="${subject.icon || 'https://cdn-icons-png.flaticon.com/512/3145/3145765.png'}"
+class="card-icon">
+
+<h3>${subject.subjectName}</h3>
+
+<p>Click Here</p>
+
+</div>
+`;
+
+}
+
+html += `</div>`;
+
+document.getElementById("notesContainer").innerHTML = html;
+
+}
 </script>
 </body>
 </html>
