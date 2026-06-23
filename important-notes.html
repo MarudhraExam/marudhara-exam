@@ -245,8 +245,8 @@ const subject = subjects[subjectId];
 if(subject.categoryId !== categoryId) continue;
 
 html += `
-<div class="card">
-
+<div class="card"
+onclick="showPdfs('${subjectId}')">
 <img src="${subject.icon || 'https://cdn-icons-png.flaticon.com/512/3145/3145765.png'}"
 class="card-icon">
 
