@@ -174,76 +174,19 @@ for(const categoryId in categories){
 const category = categories[categoryId];
 
 html += `
-<div class="folder category-folder"
-onclick="toggleFolder('cat-${categoryId}')">
-📁 ${category.name}
-</div>
-<div class="folder-content hidden" id="cat-${categoryId}">
-`;
+<div class="card"
+onclick="showSubjects('${categoryId}')">
 
-for(const subjectId in subjects){
+<img src="${category.icon || 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png'}"
+class="card-icon">
 
-const subject = subjects[subjectId];
+<h3>${category.name}</h3>
 
-if(subject.categoryId !== categoryId) continue;
-
-html += `
-<div class="folder subject-folder"
-onclick="toggleFolder('sub-${subjectId}')">
-📁 ${subject.subjectName}
-</div>
-
-<div class="folder-content hidden"
-id="sub-${subjectId}">
-`;
-
-for(const topicId in topics){
-
-const topic = topics[topicId];
-
-if(topic.subjectId !== subjectId) continue;
-
-html += `
-<div class="folder topic-folder"
-onclick="toggleFolder('topic-${topicId}')">
-📁 ${topic.topicName}
-</div>
-
-<div class="folder-content hidden"
-id="topic-${topicId}">
-`;
-
-pdfsSnap.forEach(pdfDoc=>{
-
-const pdf = pdfDoc.data();
-
-if(pdf.topicId !== topicId) return;
-
-html += `
-<div class="pdf-box">
-
-📄 ${pdf.noteTitle}
-
-<br><br>
-
-<a href="${pdf.pdfLink}"
-target="_blank"
-class="open-btn">
-Open PDF
-</a>
+<p>Click Here</p>
 
 </div>
 `;
 
-});
-
-html += `</div>`;
-}
-
-html += `</div>`;
-}
-
-html += `</div>`;
 }
 
 document.getElementById("notesContainer").innerHTML = html;
