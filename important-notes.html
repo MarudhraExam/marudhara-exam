@@ -174,10 +174,10 @@ for(const categoryId in categories){
 const category = categories[categoryId];
 
 html += `
-<div class="folder category-folder">
+<div class="folder category-folder"
+onclick="toggleFolder('cat-${categoryId}')">
 📁 ${category.name}
 </div>
-
 <div class="folder-content hidden" id="cat-${categoryId}">
 `;
 
