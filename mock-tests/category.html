@@ -83,7 +83,8 @@
     }
 
     async function loadCategory() {
-      const categoryId = new URLSearchParams(window.location.search).get('id');
+      const categoryId = new URLSearchParams(location.search).get('id');
+      console.log('categoryId:', categoryId);
       if (!categoryId) {
         setStatus('Category ID is missing.', 'error');
         testsGrid.innerHTML = '<div class="empty-state">Invalid category selection. Return to categories and choose again.</div>';
@@ -110,13 +111,17 @@
           </div>`;
 
         setStatus('Loading mock tests…');
-        const testsQuery = query(collection(db, 'mockTests'), where('categoryId', '==', categoryId), orderBy('duration', 'asc'));
+        const testsQuery = query(collection(db, 'mockTests'), where('categoryId', '==', categoryId));
         const testsSnapshot = await getDocs(testsQuery);
-        const tests = testsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        console.log('mockTests snapshot size:', testsSnapshot.size);
+        const tests = testsSnapshot.docs.map(docSnap => {
+          console.log('Loaded mock doc:', docSnap.id, docSnap.data());
+          return { id: docSnap.id, ...docSnap.data() };
+        });
 
         if (!tests.length) {
-          testsGrid.innerHTML = '<div class="empty-state">No mock tests are published for this category yet.</div>';
-          setStatus('No tests found for this category.', 'error');
+          testsGrid.innerHTML = '<div class="empty-state">No mock tests found</div>';
+          setStatus('No mock tests found.', 'error');
           return;
         }
 
