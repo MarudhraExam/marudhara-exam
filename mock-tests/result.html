@@ -146,50 +146,39 @@
       }
     }
 
-    async function fetchQuestions(mockId) {
-      const questionsRef = collection(db, 'mockQuestions');
-      const questionsQuery = query(
-        questionsRef,
-        where('mockId', '==', mockId),
-        orderBy('questionNo', 'asc')
-      );
-      const querySnapshot = await getDocs(questionsQuery);
-      const items = [];
+    async function loadResult() {
+      const resultId = getQueryParam('resultId');
+      if (!resultId) {
+        setStatus('Result ID is missing from the URL.', 'error');
+        resultContent.innerHTML = '<div class="empty-state">No result could be loaded. Return to categories and try again.</div>';
+        return;
+      }
 
-      querySnapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
-        items.push({
-          id: docSnapshot.id,
-          questionNo: Number(data.questionNo) || 0,
-          question: data.question || data.questionText || '',
-          image: data.image || '',
-          optionA: data.optionA || '',
-          optionB: data.optionB || '',
-          optionC: data.optionC || '',
-          optionD: data.optionD || '',
-          optionE: data.optionE || '',
-          answer: normalizeAnswer(data.answer || data.correctAnswer || data.correctOption || '')
-        });
-      });
+      try {
+        const resultDoc = await getDoc(doc(db, 'mockResults', resultId));
+        if (!resultDoc.exists()) {
+          setStatus('Result not found.', 'error');
+          resultContent.innerHTML = '<div class="empty-state">The requested result does not exist.</div>';
+          return;
+        }
 
-      return items;
-    }
-
-    function renderSummary(result, categoryName) {
-      const studentName = result.name || result.studentName || 'Unknown';
-      const studentRoll = result.roll || result.studentRoll || 'Unknown';
-      const mockTitle = result.mockTitle || 'Mock exam';
-      const score = result.score ?? 0;
-      const correct = result.correct ?? 0;
-      const wrong = result.wrong ?? 0;
-      const attempted = result.attempted ?? 0;
-      const unattempted = result.unattempted ?? 0;
-      const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
-      const totalMarks = (result.positiveMarks || 1) * totalQuestions;
-      const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
-      const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
-      const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
-      const submittedAt = result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A';
+        const result = { id: resultDoc.id, ...resultDoc.data() };
+        const studentName = result.name || result.studentName || 'Unknown';
+        const studentRoll = result.roll || result.studentRoll || 'Unknown';
+        const mockTitle = result.mockTitle || 'Mock exam';
+        const categoryId = result.categoryId || result.category || null;
+        const categoryName = await fetchCategoryName(categoryId);
+        const score = result.score ?? 0;
+        const correct = result.correct ?? 0;
+        const wrong = result.wrong ?? 0;
+        const attempted = result.attempted ?? 0;
+        const unattempted = result.unattempted ?? 0;
+        const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
+        const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+        const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
+        const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
+        const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
+        const submittedAt = result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A';
 
       return `
         <div class="card">
