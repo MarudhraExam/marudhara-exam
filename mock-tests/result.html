@@ -140,7 +140,10 @@ result.questionCount
           <div class="details-list">
             <div class="details-item"><strong>Exam title</strong><span>${escapeHtml(result.mockTitle || '—')}</span></div>
             <div class="details-item"><strong>Category</strong><span>${escapeHtml(result.categoryName || '—')}</span></div>
-            <div class="details-item"><strong>Time taken</strong><span>${result.timeTakenSeconds != null ? `${result.timeTakenSeconds} sec` : '—'}</span></div>
+            <div class="details-item"><strong>Time taken</strong><span>${result.timeTaken != null
+? `${result.timeTaken} sec`
+: '—'}
+</span></div>
             <div class="details-item"><strong>Remaining time</strong><span>${result.timeRemainingSeconds != null ? `${result.timeRemainingSeconds} sec` : '—'}</span></div>
           </div>
           <p class="neutral-note">Your result is stored for review in the system. Use the categories page to continue practicing or to take another mock test.</p>
