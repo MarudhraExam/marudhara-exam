@@ -338,6 +338,7 @@
         }
 
         const result = { id: resultDoc.id, ...resultDoc.data() };
+        console.log("Result Mock ID:", result.mockId);
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
         if (!questions.length) {
