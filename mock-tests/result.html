@@ -234,7 +234,7 @@
 
       return questions
         .map((question, index) => {
-          const studentAnswer = normalizeAnswer(answers[question.id] ?? '');
+          const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
           const correctAnswer = normalizeAnswer(question.answer || '');
           const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
           const options = ['A', 'B', 'C', 'D', 'E']
