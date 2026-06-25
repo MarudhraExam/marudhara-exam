@@ -285,6 +285,10 @@ const items = [];
             })
             .join('');
 
+          const formattedQuestion = (question.question || "")
+            .replace(/\r\n/g, "\n")
+            .replace(/\\n/g, "\n");
+
           return `
             <article class="review-card" data-status="${status}">
               <div class="review-header">
