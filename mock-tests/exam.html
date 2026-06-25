@@ -231,8 +231,8 @@
         <section class="meta-list" id="mockMeta">
             <div class="meta-item"><strong>Mock Name:</strong> <span id="mockTitle">Loading...</span></div>
             <div class="meta-item"><strong>Category:</strong> <span id="mockCategory">Loading...</span></div>
-            <div class="meta-item"><strong>Candidate:</strong> <span id="candidateName">Unknown</span></div>
-            <div class="meta-item"><strong>Roll No:</strong> <span id="candidateRoll">Unknown</span></div>
+            <div class="meta-item"><strong>Candidate:</strong> <span id="candidateName">Loading...</span></div>
+            <div class="meta-item"><strong>Roll No:</strong> <span id="candidateRoll">Loading...</span></div>
         </section>
 
         <div class="exam-grid">
@@ -368,12 +368,13 @@
         }
 
         function saveAnswers() {
+            if (!examMeta?.id) return;
             const payload = {
-                mockId: examMeta?.id,
+                mockId: examMeta.id,
                 answers,
                 lastSaved: Date.now()
             };
-            sessionStorage.setItem(`${answersKey}_${examMeta?.id}`, JSON.stringify(payload));
+            sessionStorage.setItem(`${answersKey}_${examMeta.id}`, JSON.stringify(payload));
         }
 
         function loadSavedAnswers() {
@@ -411,12 +412,12 @@
 
         function startTimer(durationSeconds) {
             const storedStart = sessionData?.startedAt;
-            const expectedStart = storedStart ? new Date(storedStart).getTime() : Date.now();
+            const startTime = storedStart ? new Date(storedStart).getTime() : Date.now();
             if (!storedStart) {
                 sessionData.startedAt = new Date().toISOString();
                 saveSessionData();
             }
-            endTime = expectedStart + durationSeconds * 1000;
+            endTime = startTime + durationSeconds * 1000;
             if (timerInterval) {
                 clearInterval(timerInterval);
             }
@@ -508,55 +509,34 @@
         async function fetchQuestions(mockId) {
             const questionsRef = collection(db, "mockQuestions");
             const questionsQuery = query(questionsRef, where("mockId", "==", mockId), orderBy("questionNo", "asc"));
-            try {
-                const querySnapshot = await getDocs(questionsQuery);
-                const items = [];
-                querySnapshot.forEach((docSnapshot) => {
-                    const data = docSnapshot.data();
-                    items.push({
-                        id: docSnapshot.id,
-                        question: data.question || data.questionText || "",
-                        optionA: data.optionA || "",
-                        optionB: data.optionB || "",
-                        optionC: data.optionC || "",
-                        optionD: data.optionD || "",
-                        optionE: data.optionE || "",
-                        answer: data.answer || data.correctAnswer || data.correctOption || "",
-                        explanation: data.explanation || "",
-                        image: data.image || "",
-                        questionNo: data.questionNo ?? 0,
-                        mockId: data.mockId || mockId
-                    });
+            const querySnapshot = await getDocs(questionsQuery);
+            const items = [];
+            querySnapshot.forEach((docSnapshot) => {
+                const data = docSnapshot.data();
+                items.push({
+                    id: docSnapshot.id,
+                    question: data.question || "",
+                    optionA: data.optionA || "",
+                    optionB: data.optionB || "",
+                    optionC: data.optionC || "",
+                    optionD: data.optionD || "",
+                    optionE: data.optionE || "",
+                    answer: data.answer || data.correctAnswer || data.correctOption || "",
+                    explanation: data.explanation || "",
+                    image: data.image || "",
+                    questionNo: data.questionNo ?? 0,
+                    mockId: data.mockId || mockId
                 });
-                return items;
-            } catch (queryError) {
-                console.warn("Primary question query failed, falling back to all mockQuestions fetch:", queryError);
-                const querySnapshot = await getDocs(questionsRef);
-                const items = [];
-                querySnapshot.forEach((docSnapshot) => {
-                    const data = docSnapshot.data();
-                    if (data?.mockId !== mockId) return;
-                    items.push({
-                        id: docSnapshot.id,
-                        question: data.question || data.questionText || "",
-                        optionA: data.optionA || "",
-                        optionB: data.optionB || "",
-                        optionC: data.optionC || "",
-                        optionD: data.optionD || "",
-                        optionE: data.optionE || "",
-                        answer: data.answer || data.correctAnswer || data.correctOption || "",
-                        explanation: data.explanation || "",
-                        image: data.image || "",
-                        questionNo: data.questionNo ?? 0,
-                        mockId: data.mockId || mockId
-                    });
-                });
-                return items.sort((a, b) => Number(a.questionNo) - Number(b.questionNo));
-            }
+            });
+            return items;
         }
 
         function redirectTo(page) {
             window.location.href = page;
+        }
+
+        function normalizeAnswer(value) {
+            return String(value || "").trim().toUpperCase();
         }
 
         async function submitExam(reason) {
@@ -568,43 +548,36 @@
                 return;
             }
             clearInterval(timerInterval);
-            const correctCount = questions.reduce((count, question) => {
-                const selected = (answers[question.id] || "").toString().trim().toUpperCase();
-                if (!selected) return count;
-                const correctAnswer = question.answer || "";
-                if (selected === correctAnswer.toString().trim().toUpperCase()) {
-                    return count + 1;
-                }
-                return count;
-            }, 0);
             const totalQuestions = questions.length;
             const attempted = Object.values(answers).filter((value) => String(value).trim() !== "").length;
+            const correctCount = questions.reduce((count, question) => {
+                const selected = normalizeAnswer(answers[question.id]);
+                if (!selected) return count;
+                const correctAnswer = normalizeAnswer(question.answer);
+                return selected === correctAnswer ? count + 1 : count;
+            }, 0);
             const wrong = attempted - correctCount;
-            const maxScore = Number(examMeta.totalMarks ?? examMeta.questions ?? totalQuestions) || totalQuestions;
-            const timeTakenSeconds = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
-            const timeRemainingSeconds = endTime ? Math.max(0, Math.floor((endTime - Date.now()) / 1000)) : null;
-            const score = correctCount;
-            const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+            const unattempted = totalQuestions - attempted;
+            const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
             const finishedAt = new Date().toISOString();
+            const timeTaken = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
+            const remainingTime = endTime ? Math.max(0, Math.floor((endTime - Date.now()) / 1000)) : null;
             const resultPayload = {
                 mockId: examMeta.id,
                 mockTitle: examMeta.title || examMeta.name || "Mock Test",
                 categoryId: examMeta.categoryId || "",
                 name: sessionData.studentName,
                 roll: sessionData.studentRoll,
-                mobile: sessionData.studentMobile,
-                studentName: sessionData.studentName,
-                studentRoll: sessionData.studentRoll,
+                mobile: sessionData.studentMobile || "",
                 answers,
-                score,
+                score: correctCount,
                 correct: correctCount,
                 wrong,
-                percentage,
-                maxScore,
-                questionCount: totalQuestions,
                 attempted,
-                timeTaken: timeTakenSeconds,
-                remainingTime: timeRemainingSeconds,
+                unattempted,
+                percentage,
+                timeTaken,
+                remainingTime,
                 submittedAt: finishedAt,
                 durationMinutes: examMeta.durationMinutes || examMeta.duration || 0,
                 reason: reason || "Submitted by student",
