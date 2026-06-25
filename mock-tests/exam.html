@@ -549,16 +549,33 @@
             }
             clearInterval(timerInterval);
             const totalQuestions = questions.length;
-            const attempted = Object.values(answers).filter((value) => String(value).trim() !== "").length;
-            const correctCount = questions.reduce((count, question) => {
+            let correct = 0;
+            let wrong = 0;
+            let unattempted = 0;
+            const answersList = {};
+
+            questions.forEach((question) => {
                 const selected = normalizeAnswer(answers[question.id]);
-                if (!selected) return count;
-                const correctAnswer = normalizeAnswer(question.answer);
-                return selected === correctAnswer ? count + 1 : count;
-            }, 0);
-            const wrong = attempted - correctCount;
-            const unattempted = totalQuestions - attempted;
-            const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+                const correctAnswer = normalizeAnswer(question.answer || question.correctAnswer || question.correctOption);
+                answersList[question.id] = answers[question.id] || "";
+
+                if (!selected) {
+                    unattempted += 1;
+                    return;
+                }
+                if (selected === correctAnswer) {
+                    correct += 1;
+                    return;
+                }
+                wrong += 1;
+            });
+
+            const attempted = totalQuestions - unattempted;
+            const positiveMarks = Number(examMeta.totalMarks) > 0 ? Number(examMeta.totalMarks) / totalQuestions : 1;
+            const negativeMarks = Number(examMeta.negativeMarks ?? examMeta.negative ?? 0) || 0;
+            const score = correct * positiveMarks - wrong * negativeMarks;
+            const totalMarks = Number(examMeta.totalMarks) || totalQuestions * positiveMarks;
+            const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
             const finishedAt = new Date().toISOString();
             const timeTaken = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
             const remainingTime = endTime ? Math.max(0, Math.floor((endTime - Date.now()) / 1000)) : null;
@@ -569,9 +586,9 @@
                 name: sessionData.studentName,
                 roll: sessionData.studentRoll,
                 mobile: sessionData.studentMobile || "",
-                answers,
-                score: correctCount,
-                correct: correctCount,
+                answers: answersList,
+                score,
+                correct,
                 wrong,
                 attempted,
                 unattempted,
