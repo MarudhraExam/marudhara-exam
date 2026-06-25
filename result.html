@@ -273,20 +273,27 @@ initializeApp(firebaseConfig);
 
 const db =
 getFirestore(app);
-const correct =
-parseInt(localStorage.getItem("correct")) || 0;
+const parseNumber = value => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : undefined;
+};
 
-const wrong =
-parseInt(localStorage.getItem("wrong")) || 0;
-
-const eCount =
-parseInt(localStorage.getItem("eCount")) || 0;
-
-const blank =
-parseInt(localStorage.getItem("blank")) || 0;
+const result = {
+    questionCount: parseNumber(localStorage.getItem("questionCount")),
+    totalQuestions: parseNumber(localStorage.getItem("totalQuestions")),
+    questions: parseNumber(localStorage.getItem("questions"))
+};
 
 const totalQuestions =
-parseInt(localStorage.getItem("totalQuestions")) || 0;
+    result.questionCount ??
+    result.totalQuestions ??
+    result.questions ??
+    0;
+
+const correct = parseNumber(localStorage.getItem("correct")) ?? 0;
+const wrong = parseNumber(localStorage.getItem("wrong")) ?? 0;
+const eCount = parseNumber(localStorage.getItem("eCount")) ?? 0;
+const blank = parseNumber(localStorage.getItem("blank")) ?? 0;
 
 const correctMarks =
 parseFloat(localStorage.getItem("correctMarks")) || 2;
@@ -344,17 +351,10 @@ const totalMarks =
 validQuestions *
 finalQuestionValue;
 
-let percentage = 0;
-
-if(totalMarks > 0){
-
-percentage =
-(
-(obtainedMarks / totalMarks)
-* 100
-).toFixed(2);
-
-}
+const percentage =
+    totalQuestions > 0
+        ? ((correct / totalQuestions) * 100).toFixed(2)
+        : "0.00";
 const resultData = {
 name: localStorage.getItem("studentName") || "",
 rollNo: localStorage.getItem("rollNo") || "",
