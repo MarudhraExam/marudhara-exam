@@ -1,1 +1,398 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Confirm Exam</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f324f;
+    }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf2f8 100%);
+    }
+
+    body, input, button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 18px 32px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #0b4ea2;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.95rem;
+      line-height: 1.1;
+    }
+
+    .brand small {
+      display: block;
+      color: #5f6f8f;
+      margin-top: 2px;
+      font-size: 0.96rem;
+    }
+
+    .top-actions a {
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: #0b4ea2;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .top-actions a:hover {
+      background: #0f3c7f;
+    }
+
+    .status-bar {
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: #eef4ff;
+      color: #102a52;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .status-bar.error {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .grid {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(35, 49, 79, 0.1);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 40px rgba(23, 42, 77, 0.06);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.35rem;
+      color: #102a52;
+    }
+
+    .card p {
+      margin: 0 0 18px;
+      color: #54637d;
+      line-height: 1.75;
+    }
+
+    .form-group {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      font-weight: 700;
+      color: #243450;
+    }
+
+    .form-group input {
+      width: 100%;
+      border: 1px solid rgba(35, 49, 79, 0.15);
+      border-radius: 14px;
+      padding: 14px 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #0b4ea2;
+      box-shadow: 0 0 0 4px rgba(11, 78, 162, 0.1);
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #f6f8ff;
+      color: #102a52;
+    }
+
+    .summary-item strong {
+      font-weight: 700;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .button-primary,
+    .button-secondary {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .button-primary {
+      background: #0b4ea2;
+      color: white;
+    }
+
+    .button-secondary {
+      background: #eef4ff;
+      color: #0b4ea2;
+    }
+
+    .button-primary:hover,
+    .button-secondary:hover {
+      transform: translateY(-1px);
+    }
+
+    .empty-state {
+      padding: 32px 24px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px dashed rgba(35, 49, 79, 0.15);
+      color: #556180;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>Confirm Exam Details</h1>
+          <small>Review mock test information and enter your student details.</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a href="category.html">Back to tests</a>
+      </div>
+    </header>
+
+    <div id="statusBar" class="status-bar">Loading exam details…</div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Student information</h2>
+        <p>Enter your details below to start the exam. Roll number and name are required.</p>
+        <div class="form-group">
+          <label for="studentName">Full name</label>
+          <input id="studentName" type="text" placeholder="Enter your full name" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label for="studentRoll">Roll number</label>
+          <input id="studentRoll" type="text" placeholder="Enter your roll number" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="studentMobile">Mobile number (optional)</label>
+          <input id="studentMobile" type="tel" placeholder="Enter your mobile number" autocomplete="tel" />
+        </div>
+
+        <div class="button-group">
+          <button id="startExamBtn" class="button-primary" type="button">Start exam</button>
+          <button id="backBtn" class="button-secondary" type="button">Back</button>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>Exam summary</h2>
+        <p>Confirm the selected mock test and category before proceeding. If information is missing, refresh the page or select another exam.</p>
+        <div id="summaryList" class="summary-list"></div>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from '../firebase.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const statusBar = document.getElementById('statusBar');
+    const summaryList = document.getElementById('summaryList');
+    const studentName = document.getElementById('studentName');
+    const studentRoll = document.getElementById('studentRoll');
+    const studentMobile = document.getElementById('studentMobile');
+    const startExamBtn = document.getElementById('startExamBtn');
+    const backBtn = document.getElementById('backBtn');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function getMockId() {
+      return new URLSearchParams(location.search).get('mockId');
+    }
+
+    function setSummary(items) {
+      summaryList.innerHTML = items.map(item => `
+        <div class="summary-item">
+          <strong>${escapeHtml(item.label)}</strong>
+          <span>${escapeHtml(item.value)}</span>
+        </div>`).join('');
+    }
+
+    function saveSession(details) {
+      sessionStorage.setItem('marudhara_confirm_details', JSON.stringify(details));
+    }
+
+    function loadSession() {
+      try {
+        const raw = sessionStorage.getItem('marudhara_confirm_details');
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function validateInput(name, roll) {
+      if (!name.trim()) {
+        setStatus('Student name is required.', 'error');
+        return false;
+      }
+      if (!roll.trim()) {
+        setStatus('Roll number is required.', 'error');
+        return false;
+      }
+      return true;
+    }
+
+    function navigateToExam(mockId) {
+      window.location.href = `exam.html?mockId=${encodeURIComponent(mockId)}`;
+    }
+
+    async function loadMockDetails() {
+      const mockId = getMockId();
+      if (!mockId) {
+        setStatus('Mock ID is missing in the URL.', 'error');
+        summaryList.innerHTML = '<div class="empty-state">Cannot load exam details. Return to the test selection page.</div>';
+        return;
+      }
+
+      try {
+        setStatus('Loading exam details…');
+        const mockDoc = await getDoc(doc(db, 'mockTests', mockId));
+        if (!mockDoc.exists()) {
+          setStatus('Mock test not found.', 'error');
+          summaryList.innerHTML = '<div class="empty-state">Selected exam is unavailable.</div>';
+          return;
+        }
+
+        const mock = { id: mockDoc.id, ...mockDoc.data() };
+        const summaryItems = [
+          { label: 'Mock title', value: mock.title || mock.name || 'Untitled test' },
+          { label: 'Category ID', value: mock.categoryId || 'Unknown' },
+          { label: 'Questions', value: String(mock.totalQuestions ?? mock.questions ?? 0) },
+          { label: 'Duration', value: `${String(mock.duration ?? mock.durationMinutes ?? 0)} min` },
+          { label: 'Total marks', value: String(mock.totalMarks ?? mock.marks ?? 0) }
+        ];
+
+        setSummary(summaryItems);
+        setStatus('Enter your details and start the exam.');
+
+        const existing = loadSession();
+        if (existing) {
+          studentName.value = existing.studentName || '';
+          studentRoll.value = existing.studentRoll || '';
+          studentMobile.value = existing.studentMobile || '';
+        }
+
+        startExamBtn.addEventListener('click', () => {
+          const name = studentName.value;
+          const roll = studentRoll.value;
+          const mobile = studentMobile.value;
+          if (!validateInput(name, roll)) return;
+          saveSession({ mockId, studentName: name.trim(), studentRoll: roll.trim(), studentMobile: mobile.trim() });
+          navigateToExam(mockId);
+        });
+      } catch (error) {
+        console.error('Failed to load mock details:', error);
+        setStatus('Unable to load exam details.', 'error');
+        summaryList.innerHTML = '<div class="empty-state">Unable to fetch exam information.</div>';
+      }
+    }
+
+    backBtn.addEventListener('click', () => {
+      const mockId = getMockId();
+      if (mockId) {
+        window.location.href = `category.html?id=${encodeURIComponent(mockId)}`;
+      } else {
+        window.history.back();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadMockDetails);
+  </script>
+</body>
+</html>
