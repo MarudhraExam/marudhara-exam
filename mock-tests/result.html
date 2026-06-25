@@ -109,7 +109,10 @@
         return;
       }
 
-      const percentage = result.maxScore ? Math.round((result.score / result.maxScore) * 100) : 0;
+     const percentage =
+result.questionCount
+? Math.round((result.correct/result.questionCount)*100)
+:0;
       const grade = percentage >= 80 ? 'Excellent' : percentage >= 60 ? 'Good job' : percentage >= 40 ? 'Keep practicing' : 'Needs improvement';
       const submittedAt = new Date(result.submittedAt || '').toLocaleString();
 
