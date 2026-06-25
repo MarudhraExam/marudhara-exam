@@ -589,22 +589,24 @@
             const resultPayload = {
                 mockId: examMeta.id,
                 mockTitle: examMeta.title || examMeta.name || "Mock Test",
-                categoryName: examMeta.categoryName || examMeta.category || "",
-                studentName: sessionData.studentName || "Unknown",
-                studentRoll: sessionData.studentRoll || "Unknown",
+                categoryId: examMeta.categoryId || "",
+                name: sessionData.studentName,
+                roll: sessionData.studentRoll,
+                mobile: sessionData.studentMobile,
+                studentName: sessionData.studentName,
+                studentRoll: sessionData.studentRoll,
                 answers,
                 score,
-                totalQuestions,
-                maxScore,
-                percentage,
                 correct: correctCount,
                 wrong,
-                attempted,
+                percentage,
+                maxScore,
                 questionCount: totalQuestions,
+                attempted,
+                timeTaken: timeTakenSeconds,
+                remainingTime: timeRemainingSeconds,
                 submittedAt: finishedAt,
                 durationMinutes: examMeta.durationMinutes || examMeta.duration || 0,
-                timeTakenSeconds,
-                timeRemainingSeconds,
                 reason: reason || "Submitted by student",
                 createdAt: Timestamp.now()
             };
@@ -633,8 +635,8 @@
                 examMeta = await fetchMockDetails(mockId);
                 mockTitle.textContent = examMeta.title || examMeta.name || "Untitled mock";
                 mockCategory.textContent = examMeta.categoryName || examMeta.category || "General";
-                candidateName.textContent = sessionData.studentName || "Unknown";
-                candidateRoll.textContent = sessionData.studentRoll || "Unknown";
+                candidateName.textContent = sessionData.studentName;
+                candidateRoll.textContent = sessionData.studentRoll;
                 loadSavedAnswers();
                 questions = await fetchQuestions(mockId);
                 if (questions.length === 0) {
