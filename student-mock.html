@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Student Mock Tests</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f324f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf2f8 100%);
+    }
+
+    body, button, input, select {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    #studentMockRoot {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 22px 18px 36px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    header .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header .brand .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: #0b4ea2;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 14px 32px rgba(11, 78, 162, 0.18);
+    }
+
+    header .brand h1 {
+      margin: 0;
+      font-size: 1.9rem;
+      letter-spacing: -0.04em;
+    }
+
+    header .brand small {
+      display: block;
+      color: #5f6f8f;
+      margin-top: 2px;
+      font-size: 0.96rem;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .top-actions a,
+    .top-actions button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: #0b4ea2;
+      color: white;
+      cursor: pointer;
+    }
+
+    .top-actions button:hover,
+    .top-actions a:hover {
+      background: #0f3c7f;
+    }
+
+    .status-bar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      margin-bottom: 22px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: #eef4ff;
+      color: #1f3c72;
+      font-weight: 600;
+    }
+
+    .status-bar.error {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .page-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .section-card {
+      background: #ffffff;
+      border: 1px solid rgba(35, 49, 79, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(23, 42, 77, 0.06);
+      overflow: hidden;
+      padding: 26px;
+    }
+
+    .section-card h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      color: #102a52;
+    }
+
+    .section-card p {
+      margin: 0 0 18px;
+      color: #54637d;
+      line-height: 1.8;
+    }
+
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .category-card,
+    .mock-card {
+      background: #f8fbff;
+      border: 1px solid rgba(40, 88, 163, 0.12);
+      border-radius: 22px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .category-card:hover,
+    .mock-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 25px 50px rgba(23, 42, 77, 0.08);
+    }
+
+    .category-card button,
+    .mock-card button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 14px;
+      font-weight: 700;
+      transition: background 0.2s ease;
+    }
+
+    .category-card button {
+      padding: 10px 16px;
+      background: #0b4ea2;
+      color: #fff;
+      margin-top: 16px;
+      align-self: start;
+    }
+
+    .category-card button:hover {
+      background: #0f3c7f;
+    }
+
+    .category-card .category-icon {
+      width: 100%;
+      aspect-ratio: 4/2;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(11,78,162,0.08) 0%, rgba(11,78,162,0.02) 100%);
+    }
+
+    .category-card .category-icon img {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      object-fit: contain;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .category-card .category-content,
+    .mock-card .mock-content {
+      padding: 20px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .category-card strong,
+    .mock-card strong {
+      display: block;
+      font-size: 1rem;
+      color: #102a52;
+    }
+
+    .category-card p,
+    .mock-card p {
+      margin: 0;
+      color: #5f6f8f;
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .mock-card .mock-title {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #102a52;
+    }
+
+    .mock-card .mock-meta {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .mock-card .mock-meta div {
+      color: #4d5f7d;
+      font-size: 0.94rem;
+    }
+
+    .mock-card .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .badge.free {
+      background: #eef7ff;
+      color: #0b4ea2;
+    }
+
+    .badge.premium {
+      background: #fff0f0;
+      color: #b12b29;
+    }
+
+    .mock-card .actions {
+      margin-top: auto;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button-primary {
+      background: #0b4ea2;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 0;
+    }
+
+    .button-secondary {
+      background: #eef2ff;
+      color: #0b4ea2;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 0;
+    }
+
+    .button-secondary:hover {
+      background: #dde6ff;
+    }
+
+    .note-bar {
+      margin-top: 14px;
+      color: #556180;
+      font-size: 0.95rem;
+    }
+
+    #confirmOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 34, 70, 0.42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 18px;
+    }
+
+    #confirmOverlay.active {
+      display: grid;
+    }
+
+    .confirm-panel {
+      width: min(560px, 100%);
+      background: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 28px 70px rgba(25, 55, 103, 0.18);
+      display: grid;
+      gap: 18px;
+    }
+
+    .confirm-panel h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: #102a52;
+    }
+
+    .confirm-panel p {
+      margin: 0;
+      color: #5f6f8f;
+      line-height: 1.7;
+    }
+
+    .confirm-details {
+      padding: 18px;
+      border-radius: 18px;
+      background: #f7f9ff;
+      border: 1px solid rgba(102, 132, 217, 0.14);
+      display: grid;
+      gap: 12px;
+    }
+
+    .confirm-details div {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #44536d;
+      font-size: 0.95rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 860px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .mock-card .mock-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="studentMockRoot">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">M</div>
+        <div>
+          <h1>Mock Tests</h1>
+          <small>Choose your category and start practice tests instantly.</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a href="index.html">Home</a>
+        <button id="refreshButton">Refresh</button>
+      </div>
+    </header>
+
+    <div class="status-bar" id="statusBar">Loading categories...</div>
+
+    <div class="page-grid">
+      <section class="section-card">
+        <h2>Categories</h2>
+        <p>Browse all available mock categories. Tap a category to view tests linked to it.</p>
+        <div id="categoryGrid" class="grid-cards">
+          <div class="placeholder-item">Loading categories...</div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <h2>Mock Tests</h2>
+        <p id="mockSectionDescription">Select a category to see available mock tests.</p>
+        <div id="mockGrid" class="grid-cards">
+          <div class="placeholder-item">Choose a category to continue.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="confirmOverlay" aria-hidden="true">
+    <div class="confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h3 id="confirmTitle">Start mock test</h3>
+      <p id="confirmSubtitle">Confirm before beginning.</p>
+      <div class="confirm-details">
+        <div><span>Category</span><strong id="confirmCategory">-</strong></div>
+        <div><span>Mock test</span><strong id="confirmMock">-</strong></div>
+        <div><span>Questions</span><strong id="confirmQuestions">-</strong></div>
+        <div><span>Duration</span><strong id="confirmDuration">-</strong></div>
+        <div><span>Access</span><strong id="confirmAccess">-</strong></div>
+      </div>
+      <div class="confirm-actions">
+        <button class="button-secondary" id="cancelConfirmBtn">Cancel</button>
+        <button class="button-primary" id="confirmStartBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from './firebase.js';
+    import {
+      collection,
+      getDocs,
+      query,
+      where,
+      orderBy
+    } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const COLLECTIONS = {
+      categories: 'mockCategories',
+      tests: 'mockTests'
+    };
+
+    const elements = {
+      statusBar: document.getElementById('statusBar'),
+      refreshButton: document.getElementById('refreshButton'),
+      categoryGrid: document.getElementById('categoryGrid'),
+      mockGrid: document.getElementById('mockGrid'),
+      mockSectionDescription: document.getElementById('mockSectionDescription'),
+      confirmOverlay: document.getElementById('confirmOverlay'),
+      confirmTitle: document.getElementById('confirmTitle'),
+      confirmSubtitle: document.getElementById('confirmSubtitle'),
+      confirmCategory: document.getElementById('confirmCategory'),
+      confirmMock: document.getElementById('confirmMock'),
+      confirmQuestions: document.getElementById('confirmQuestions'),
+      confirmDuration: document.getElementById('confirmDuration'),
+      confirmAccess: document.getElementById('confirmAccess'),
+      confirmStartBtn: document.getElementById('confirmStartBtn'),
+      cancelConfirmBtn: document.getElementById('cancelConfirmBtn')
+    };
+
+    let categories = [];
+    let mockTests = [];
+    let selectedCategoryId = null;
+    let selectedCategoryName = '';
+    let activeMock = null;
+
+    function setStatus(message, type = 'info') {
+      elements.statusBar.textContent = message;
+      elements.statusBar.className = `status-bar ${type}`.trim();
+    }
+
+    function isFreeTest(mock) {
+      if (mock.isFree != null) {
+        return mock.isFree === true;
+      }
+      return String(mock.premium || '').toLowerCase() !== 'premium';
+    }
+
+    function formatBadge(mock) {
+      const free = isFreeTest(mock);
+      return `<span class="badge ${free ? 'free' : 'premium'}">${free ? 'Free' : 'Premium'}</span>`;
+    }
+
+    function getMockTitle(mock) {
+      return String(mock.title || mock.name || 'Untitled Mock');
+    }
+
+    function getTestValue(mock, field, fallback = '-') {
+      if (mock[field] != null && mock[field] !== '') {
+        return mock[field];
+      }
+      return fallback;
+    }
+
+    function renderCategories() {
+      if (!categories.length) {
+        elements.categoryGrid.innerHTML = '<div class="placeholder-item">No categories available.</div>';
+        return;
+      }
+
+      elements.categoryGrid.innerHTML = categories.map(category => {
+        const icon = category.icon ? `<img src="${category.icon}" alt="${category.name} icon" />` : '<span style="font-size:1.6rem; color:#0b4ea2;">✓</span>';
+        const active = selectedCategoryId === category.id ? 'style="outline: 2px solid #0b4ea2;"' : '';
+        return `
+          <article class="category-card" ${active}>
+            <div class="category-icon">${icon}</div>
+            <div class="category-content">
+              <strong>${category.name || 'Untitled category'}</strong>
+              <p>${category.description || 'Access mock tests under this category.'}</p>
+              <button type="button" data-category-id="${category.id}">View tests</button>
+            </div>
+          </article>`;
+      }).join('');
+
+      document.querySelectorAll('[data-category-id]').forEach(button => {
+        button.addEventListener('click', () => {
+          const categoryId = button.dataset.categoryId;
+          const selected = categories.find(item => item.id === categoryId);
+          selectedCategoryId = categoryId;
+          selectedCategoryName = selected ? selected.name : '';
+          loadMockTests(categoryId);
+        });
+      });
+    }
+
+    function renderMockTests() {
+      if (!selectedCategoryId) {
+        elements.mockSectionDescription.textContent = 'Select a category to view tests.';
+        elements.mockGrid.innerHTML = '<div class="placeholder-item">Choose a category to continue.</div>';
+        return;
+      }
+
+      elements.mockSectionDescription.textContent = `Available mocks in ${selectedCategoryName}.`;
+
+      if (!mockTests.length) {
+        elements.mockGrid.innerHTML = '<div class="placeholder-item">No mock tests available for this category yet.</div>';
+        return;
+      }
+
+      elements.mockGrid.innerHTML = mockTests.map(mock => {
+        const free = isFreeTest(mock);
+        const questions = getTestValue(mock, 'totalQuestions', getTestValue(mock, 'questions', 0));
+        const marks = getTestValue(mock, 'totalMarks', 0);
+        const duration = getTestValue(mock, 'duration', getTestValue(mock, 'durationMinutes', 0));
+        const buttonLabel = free ? 'Start Test' : 'Unlock for ₹11';
+        return `
+          <article class="mock-card">
+            <div class="mock-content">
+              <strong class="mock-title">${escapeHtml(getMockTitle(mock))}</strong>
+              <p>${escapeHtml(mock.description || 'A practice test prepared for the selected category.')}</p>
+              <div class="mock-meta">
+                <div><strong>Questions</strong><span>${questions}</span></div>
+                <div><strong>Marks</strong><span>${marks}</span></div>
+                <div><strong>Duration</strong><span>${duration} min</span></div>
+                <div><strong>Access</strong><span>${free ? 'Free' : 'Premium'}</span></div>
+              </div>
+              ${formatBadge(mock)}
+              <div class="actions">
+                <button type="button" class="button-primary" data-mock-id="${mock.id}" data-mock-free="${free}">${buttonLabel}</button>
+              </div>
+            </div>
+          </article>`;
+      }).join('');
+
+      document.querySelectorAll('[data-mock-id]').forEach(button => {
+        button.addEventListener('click', () => {
+          const mockId = button.dataset.mockId;
+          const free = button.dataset.mockFree === 'true';
+          const mock = mockTests.find(item => item.id === mockId);
+          if (!mock) {
+            setStatus('Selected mock test could not be found.', 'error');
+            return;
+          }
+          activeMock = { ...mock, isFree: free };
+          openConfirmModal(mock, free);
+        });
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function openConfirmModal(mock, free) {
+      const questions = getTestValue(mock, 'totalQuestions', getTestValue(mock, 'questions', 0));
+      const marks = getTestValue(mock, 'totalMarks', 0);
+      const duration = getTestValue(mock, 'duration', getTestValue(mock, 'durationMinutes', 0));
+      elements.confirmCategory.textContent = selectedCategoryName || 'Selected category';
+      elements.confirmMock.textContent = getMockTitle(mock);
+      elements.confirmQuestions.textContent = questions;
+      elements.confirmDuration.textContent = `${duration} min`;
+      elements.confirmAccess.textContent = free ? 'Free' : 'Premium';
+      elements.confirmTitle.textContent = free ? 'Start Free Test' : 'Unlock Premium Test';
+      elements.confirmSubtitle.textContent = free
+        ? 'You are about to begin a free mock test. Confirm to continue.'
+        : 'This premium test requires unlocking for ₹11. Confirm to proceed.';
+      elements.confirmStartBtn.textContent = free ? 'Confirm Start' : 'Confirm Unlock';
+      elements.confirmOverlay.classList.add('active');
+      elements.confirmOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeConfirmModal() {
+      elements.confirmOverlay.classList.remove('active');
+      elements.confirmOverlay.setAttribute('aria-hidden', 'true');
+      activeMock = null;
+    }
+
+    async function loadCategories() {
+      try {
+        setStatus('Loading categories...');
+        const q = query(collection(db, COLLECTIONS.categories), orderBy('order', 'asc'));
+        const snapshot = await getDocs(q);
+        categories = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        renderCategories();
+        setStatus('Categories loaded successfully.', 'success');
+      } catch (error) {
+        console.error(error);
+        setStatus('Unable to load categories. Check console for details.', 'error');
+        elements.categoryGrid.innerHTML = '<div class="placeholder-item">Failed to load categories.</div>';
+      }
+    }
+
+    async function loadMockTests(categoryId) {
+      try {
+        setStatus('Loading mock tests...');
+        const q = query(collection(db, COLLECTIONS.tests), where('categoryId', '==', categoryId), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        mockTests = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        renderCategories();
+        renderMockTests();
+        setStatus(`Loaded ${mockTests.length} mock tests.`, 'success');
+      } catch (error) {
+        console.error(error);
+        setStatus('Unable to load mock tests. Check console for details.', 'error');
+        elements.mockGrid.innerHTML = '<div class="placeholder-item">Failed to load mock tests.</div>';
+      }
+    }
+
+    function handleConfirmAction() {
+      if (!activeMock) {
+        closeConfirmModal();
+        return;
+      }
+      const free = isFreeTest(activeMock);
+      const message = free
+        ? `Starting "${getMockTitle(activeMock)}" now.`
+        : `Unlocking "${getMockTitle(activeMock)}" for ₹11.`;
+      setStatus(message, 'success');
+      closeConfirmModal();
+    }
+
+    elements.refreshButton.addEventListener('click', async () => {
+      if (selectedCategoryId) {
+        await loadMockTests(selectedCategoryId);
+      } else {
+        await loadCategories();
+      }
+    });
+
+    elements.cancelConfirmBtn.addEventListener('click', closeConfirmModal);
+    elements.confirmStartBtn.addEventListener('click', handleConfirmAction);
+    elements.confirmOverlay.addEventListener('click', event => {
+      if (event.target === elements.confirmOverlay) {
+        closeConfirmModal();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCategories();
+    });
+  </script>
+</body>
+</html>

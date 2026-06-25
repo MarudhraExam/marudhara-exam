@@ -517,7 +517,7 @@
 
           <div class="action-group">
             <button type="button" class="button-primary" id="saveCategoryBtn">Add Category</button>
-            <button type="button" class="button-secondary" id="cancelEditBtn">Cancel</button>
+            <button type="button" class="button-secondary" id="cancelEditBtn" hidden>Cancel</button>
             <button type="button" class="button-link" id="clearFieldsBtn">Clear Fields</button>
           </div>
 
@@ -583,21 +583,21 @@
               <input type="number" id="mockNegative" min="0" step="0.25" placeholder="Negative marks per wrong answer" />
             </label>
             <label>
+              Passing Percentage
+              <input type="number" id="mockPassingPercentage" min="0" max="100" step="0.1" placeholder="Passing percentage" />
+            </label>
+            <label>
               Access
               <select id="mockPremium">
                 <option value="free">Free</option>
                 <option value="premium">Premium</option>
               </select>
             </label>
-            <label>
-              Excel Upload
-              <input type="file" id="mockExcelFile" accept=".xlsx" />
-            </label>
           </div>
 
           <div class="action-group">
             <button type="button" class="button-primary" id="publishMockBtn">Publish Mock Test</button>
-            <button type="button" class="button-secondary" id="cancelMockBtn">Cancel</button>
+            <button type="button" class="button-secondary" id="cancelMockBtn" hidden>Cancel Edit</button>
           </div>
 
           <div style="margin-top:32px;">
@@ -625,11 +625,18 @@
 
         <section id="excel-upload" class="section-card">
           <h2>Excel Upload</h2>
-          <p>Upload questions or category metadata from spreadsheet files. The next step integrates parsing logic and batch Firestore uploads.</p>
+          <p>Import questions for an existing mock test. The file should include columns: Question, OptionA, OptionB, OptionC, OptionD, CorrectAnswer, Explanation.</p>
+          <div class="status-bar" id="excelUploadStatusBar">Select a mock test, choose a worksheet, and upload your question bank.</div>
           <div class="form-grid">
             <label>
+              Select mock test
+              <select id="mockUploadSelect">
+                <option value="">Loading mock tests...</option>
+              </select>
+            </label>
+            <label>
               Choose file
-              <input type="file" id="excelUploadInput" accept=".xlsx,.csv" />
+              <input type="file" id="excelUploadInput" accept=".xlsx" />
             </label>
           </div>
           <div class="action-group">
@@ -703,6 +710,8 @@
       uploadExcelBtn: document.getElementById('uploadExcelBtn'),
       excelUploadInput: document.getElementById('excelUploadInput'),
       setupPaymentBtn: document.getElementById('setupPaymentBtn'),
+      excelUploadStatusBar: document.getElementById('excelUploadStatusBar'),
+      mockUploadSelect: document.getElementById('mockUploadSelect'),
       mockStatusBar: document.getElementById('mockStatusBar'),
       mockCategorySelect: document.getElementById('mockCategorySelect'),
       mockName: document.getElementById('mockName'),
@@ -711,7 +720,7 @@
       mockDuration: document.getElementById('mockDuration'),
       mockNegative: document.getElementById('mockNegative'),
       mockPremium: document.getElementById('mockPremium'),
-      mockExcelFile: document.getElementById('mockExcelFile'),
+      mockPassingPercentage: document.getElementById('mockPassingPercentage'),
       publishMockBtn: document.getElementById('publishMockBtn'),
       cancelMockBtn: document.getElementById('cancelMockBtn'),
       mockTestList: document.getElementById('mockTestList')
@@ -751,7 +760,9 @@
       if (['optionc', 'c', 'opt_c'].includes(key)) return 'optionC';
       if (['optiond', 'd', 'opt_d'].includes(key)) return 'optionD';
       if (['optione', 'e', 'opt_e'].includes(key)) return 'optionE';
-      if (['answer', 'correct', 'correctanswer'].includes(key)) return 'answer';
+      if (['answer', 'correct', 'correctanswer'].includes(key)) return 'correctAnswer';
+      if (['marks', 'mark', 'questionmarks', 'question_mark'].includes(key)) return 'marks';
+      if (['negativemarks', 'negative', 'negative_mark', 'penalty'].includes(key)) return 'negativeMarks';
       if (['explanation', 'exp', 'solution'].includes(key)) return 'explanation';
       if (['image', 'imageurl', 'img'].includes(key)) return 'image';
       return null;
@@ -768,7 +779,9 @@
           optionC: row.optionC || '',
           optionD: row.optionD || '',
           optionE: row.optionE || '',
-          answer: row.answer || '',
+          correctAnswer: row.correctAnswer || '',
+          marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
+          negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
           explanation: row.explanation || '',
           image: row.image || ''
         };
@@ -862,28 +875,136 @@
       }
     }
 
+    function renderMockUploadDropdown() {
+      if (!mockTests.length) {
+        elements.mockUploadSelect.innerHTML = '<option value="">No mock tests available</option>';
+        return;
+      }
+
+      const options = ['<option value="">Select mock test</option>'];
+      mockTests.forEach(mock => {
+        const title = mock.title || mock.name || 'Untitled test';
+        options.push(`<option value="${escapeHtml(mock.id)}">${escapeHtml(title)}</option>`);
+      });
+
+      elements.mockUploadSelect.innerHTML = options.join('');
+    }
+
+    function validateQuestionRow(row, index) {
+      const value = val => String(val || '').trim();
+      const question = value(row.question);
+      const optionA = value(row.optionA);
+      const optionB = value(row.optionB);
+      const optionC = value(row.optionC);
+      const optionD = value(row.optionD);
+      const correctAnswer = value(row.correctAnswer);
+      const marks = Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1;
+      const negativeMarks = Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0;
+      const explanation = value(row.explanation);
+      const requiredMissing = [];
+
+      if (!question) requiredMissing.push('Question');
+      if (!optionA) requiredMissing.push('OptionA');
+      if (!optionB) requiredMissing.push('OptionB');
+      if (!optionC) requiredMissing.push('OptionC');
+      if (!optionD) requiredMissing.push('OptionD');
+      if (!correctAnswer) requiredMissing.push('CorrectAnswer');
+
+      if (requiredMissing.length) {
+        throw new Error(`Row ${index + 1} is missing required columns: ${requiredMissing.join(', ')}`);
+      }
+
+      return { question, optionA, optionB, optionC, optionD, correctAnswer, marks, negativeMarks, explanation };
+    }
+
+    async function importMockQuestions(mockId, rows) {
+      const cleanedRows = rows.reduce((acc, row, idx) => {
+        const hasData = ['question', 'optionA', 'optionB', 'optionC', 'optionD', 'correctAnswer', 'explanation']
+          .some(key => String(row[key] || '').trim());
+        if (!hasData) return acc;
+        acc.push(validateQuestionRow(row, idx));
+        return acc;
+      }, []);
+
+      if (!cleanedRows.length) {
+        throw new Error('Excel file contains no valid question rows.');
+      }
+
+      const existingSnapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', mockId)));
+      const existingDocs = existingSnapshot.docs;
+      const batchSize = 450;
+      const batches = [];
+      let batch = writeBatch(db);
+      let opCount = 0;
+
+      existingDocs.forEach(docSnap => {
+        batch.delete(doc(db, COLLECTIONS.questions, docSnap.id));
+        opCount += 1;
+        if (opCount >= batchSize) {
+          batches.push(batch);
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      });
+
+      cleanedRows.forEach((row, index) => {
+        const questionRef = doc(collection(db, COLLECTIONS.questions));
+        batch.set(questionRef, {
+          mockId,
+          questionNo: row.questionNo || index + 1,
+          question: row.question,
+          optionA: row.optionA,
+          optionB: row.optionB,
+          optionC: row.optionC,
+          optionD: row.optionD,
+          correctAnswer: row.correctAnswer,
+          marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
+          negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
+          explanation: row.explanation || null,
+          createdAt: serverTimestamp()
+        });
+        opCount += 1;
+        if (opCount >= batchSize) {
+          batches.push(batch);
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      });
+
+      if (opCount > 0) {
+        batches.push(batch);
+      }
+
+      await Promise.all(batches.map(item => item.commit()));
+      return cleanedRows.length;
+    }
+
     function formatMockRow(mock) {
       const category = categories.find(category => category.id === mock.categoryId);
       const categoryLabel = category ? category.name : 'Unknown category';
-      const badgeClass = mock.premium === 'premium' ? 'mock-badge premium' : 'mock-badge';
-      const fileMeta = mock.excelFileName ? `<div><strong>Excel:</strong> ${escapeHtml(mock.excelFileName)}</div>` : '';
+      const isFree = mock.isFree != null ? mock.isFree : mock.premium !== 'premium';
+      const badgeClass = isFree ? 'mock-badge' : 'mock-badge premium';
+      const accessLabel = isFree ? 'Free' : 'Premium';
+      const totalQuestions = mock.totalQuestions ?? mock.questions ?? 0;
+      const durationMinutes = mock.duration ?? mock.durationMinutes ?? 0;
+      const passing = mock.passingPercentage != null ? `${mock.passingPercentage}%` : 'N/A';
+      const title = mock.title || mock.name || 'Untitled test';
 
       return `
         <article class="mock-card">
           <div class="mock-card-header">
             <div>
-              <p class="mock-card-title">${escapeHtml(mock.name)}</p>
+              <p class="mock-card-title">${escapeHtml(title)}</p>
               <div style="color:#5f6f8f;font-size:0.92rem;">${escapeHtml(categoryLabel)}</div>
             </div>
-            <span class="${badgeClass}">${mock.premium === 'premium' ? 'Premium' : 'Free'}</span>
+            <span class="${badgeClass}">${accessLabel}</span>
           </div>
           <div class="mock-card-meta">
-            <div><strong>Questions:</strong> ${mock.questions}</div>
-            <div><strong>Duration:</strong> ${mock.durationMinutes} min</div>
-            <div><strong>Total marks:</strong> ${mock.totalMarks}</div>
-            <div><strong>Negative:</strong> ${mock.negativeMarks}</div>
+            <div><strong>Questions:</strong> ${totalQuestions}</div>
+            <div><strong>Duration:</strong> ${durationMinutes} min</div>
+            <div><strong>Passing:</strong> ${passing}</div>
+            <div><strong>Total marks:</strong> ${mock.totalMarks ?? 0}</div>
           </div>
-          ${fileMeta}
           <div class="mock-actions">
             <button type="button" class="button-secondary" data-mock-action="edit" data-id="${mock.id}">Edit</button>
             <button type="button" class="button-danger" data-mock-action="delete" data-id="${mock.id}">Delete</button>
@@ -915,6 +1036,7 @@
       elements.description.value = '';
       elements.active.value = 'true';
       elements.saveBtn.textContent = 'Add Category';
+      elements.cancelBtn.hidden = true;
       setStatus('Ready to manage categories.');
     }
 
@@ -926,6 +1048,7 @@
       elements.description.value = category.description || '';
       elements.active.value = category.active ? 'true' : 'false';
       elements.saveBtn.textContent = 'Update Category';
+      elements.cancelBtn.hidden = false;
       setStatus(`Editing "${category.name}". Save to update or cancel to reset.`);
     }
 
@@ -937,23 +1060,26 @@
       elements.mockMarks.value = '';
       elements.mockDuration.value = '';
       elements.mockNegative.value = '';
+      elements.mockPassingPercentage.value = '';
       elements.mockPremium.value = 'free';
-      elements.mockExcelFile.value = '';
       elements.publishMockBtn.textContent = 'Publish Mock Test';
+      elements.cancelMockBtn.hidden = true;
       setMockStatus('Ready to publish mock tests.');
     }
 
     function populateMockForm(mock) {
       editingMockId = mock.id;
       elements.mockCategorySelect.value = mock.categoryId || '';
-      elements.mockName.value = mock.name;
-      elements.mockQuestions.value = mock.questions;
-      elements.mockMarks.value = mock.totalMarks;
-      elements.mockDuration.value = mock.durationMinutes;
-      elements.mockNegative.value = mock.negativeMarks;
-      elements.mockPremium.value = mock.premium;
+      elements.mockName.value = mock.title || mock.name || '';
+      elements.mockQuestions.value = mock.totalQuestions ?? mock.questions ?? '';
+      elements.mockMarks.value = mock.totalMarks ?? '';
+      elements.mockDuration.value = mock.duration ?? mock.durationMinutes ?? '';
+      elements.mockNegative.value = mock.negativeMarks ?? '';
+      elements.mockPassingPercentage.value = mock.passingPercentage ?? '';
+      elements.mockPremium.value = mock.isFree != null ? (mock.isFree ? 'free' : 'premium') : mock.premium || 'free';
       elements.publishMockBtn.textContent = 'Update Mock Test';
-      setMockStatus(`Editing "${mock.name}". Save to update or cancel to reset.`, 'info');
+      elements.cancelMockBtn.hidden = false;
+      setMockStatus(`Editing "${mock.title || mock.name}". Save to update or cancel to reset.`, 'info');
     }
 
     async function loadCategories() {
@@ -978,6 +1104,7 @@
         const snapshot = await getDocs(q);
         mockTests = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
         renderMockTests();
+        renderMockUploadDropdown();
         updateStats();
       } catch (error) {
         console.error(error);
@@ -1060,7 +1187,9 @@
           optionC: question.optionC || '',
           optionD: question.optionD || '',
           optionE: question.optionE || '',
-          answer: question.answer || '',
+          correctAnswer: question.correctAnswer || question.answer || '',
+          marks: Number.isFinite(Number(question.marks)) ? Number(question.marks) : 1,
+          negativeMarks: Number.isFinite(Number(question.negativeMarks)) ? Number(question.negativeMarks) : 0,
           explanation: question.explanation || '',
           image: question.image || '',
           updatedAt: serverTimestamp()
@@ -1090,61 +1219,53 @@
 
     async function saveMockTest() {
       const categoryId = elements.mockCategorySelect.value;
-      const name = elements.mockName.value.trim();
-      const questions = Number(elements.mockQuestions.value);
+      const title = elements.mockName.value.trim();
+      const totalQuestions = Number(elements.mockQuestions.value);
       const totalMarks = Number(elements.mockMarks.value);
-      const durationMinutes = Number(elements.mockDuration.value);
+      const duration = Number(elements.mockDuration.value);
       const negativeMarks = Number(elements.mockNegative.value);
-      const premium = elements.mockPremium.value;
-      const excelFile = elements.mockExcelFile.files[0];
-      const excelFileName = excelFile ? excelFile.name : null;
+      const passingPercentageRaw = elements.mockPassingPercentage.value.trim();
+      const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
+      const isFree = elements.mockPremium.value === 'free';
 
       if (!categoryId) {
         setMockStatus('Please select a category for the mock test.', 'error');
         return;
       }
-      if (!name) {
+      if (!title) {
         setMockStatus('Mock test name is required.', 'error');
         return;
       }
-      if (!Number.isFinite(questions) || questions < 0) {
+      if (!Number.isFinite(totalQuestions) || totalQuestions < 0) {
         setMockStatus('Total questions must be a non-negative number.', 'error');
+        return;
+      }
+      if (passingPercentageRaw === '' || !Number.isFinite(passingPercentage) || passingPercentage < 0 || passingPercentage > 100) {
+        setMockStatus('Passing percentage must be a number between 0 and 100.', 'error');
         return;
       }
 
       const mockPayload = {
         categoryId,
-        name,
-        questions,
+        title,
+        totalQuestions,
         totalMarks: totalMarks || 0,
-        durationMinutes: durationMinutes || 0,
+        duration: duration || 0,
         negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
-        premium,
+        passingPercentage,
+        isFree,
         updatedAt: serverTimestamp()
       };
-
-      if (excelFile) {
-        mockPayload.excelFileName = excelFileName;
-        mockPayload.excelUploadedAt = serverTimestamp();
-      }
 
       try {
         if (editingMockId) {
           await updateDoc(doc(db, COLLECTIONS.tests, editingMockId), mockPayload);
-          if (excelFile) {
-            const questionPayloads = await readExcelFile(excelFile);
-            await syncMockQuestions(editingMockId, questionPayloads);
-          }
           setMockStatus('Mock test updated successfully.', 'success');
         } else {
-          const testRef = await addDoc(collection(db, COLLECTIONS.tests), {
+          await addDoc(collection(db, COLLECTIONS.tests), {
             ...mockPayload,
             createdAt: serverTimestamp()
           });
-          if (excelFile) {
-            const questionPayloads = await readExcelFile(excelFile);
-            await syncMockQuestions(testRef.id, questionPayloads);
-          }
           setMockStatus('Mock test published successfully.', 'success');
         }
 
@@ -1157,16 +1278,13 @@
     }
 
     async function deleteMockTest(mockId) {
-      if (!window.confirm('Delete this mock test and all its questions?')) {
+      if (!window.confirm('Delete this mock test? This action cannot be undone.')) {
         return;
       }
       try {
         await deleteDoc(doc(db, COLLECTIONS.tests, mockId));
-        const questionSnapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', mockId)));
-        const batch = writeBatch(db);
-        questionSnapshot.docs.forEach(item => batch.delete(doc(db, COLLECTIONS.questions, item.id)));
-        await batch.commit();
-        setMockStatus('Mock test and related questions deleted.', 'success');
+        setMockStatus('Mock test deleted successfully.', 'success');
+        resetMockForm();
         await loadMockTests();
       } catch (error) {
         console.error(error);
@@ -1228,18 +1346,32 @@
         await loadCategories();
       });
       elements.uploadExcelBtn.addEventListener('click', async () => {
+        const mockId = elements.mockUploadSelect.value;
         const file = elements.excelUploadInput.files[0];
-        if (!file) {
-          setStatus('Please select an Excel or CSV file to upload.', 'error');
+
+        if (!mockId) {
+          elements.excelUploadStatusBar.textContent = 'Select a mock test before uploading question data.';
+          elements.excelUploadStatusBar.className = 'status-bar error';
           return;
         }
+        if (!file) {
+          elements.excelUploadStatusBar.textContent = 'Please choose an Excel (.xlsx) file to upload.';
+          elements.excelUploadStatusBar.className = 'status-bar error';
+          return;
+        }
+
         try {
-          setStatus(`Parsing ${file.name}...`);
+          elements.excelUploadStatusBar.textContent = `Importing questions for selected mock test...`;
+          elements.excelUploadStatusBar.className = 'status-bar';
           const rows = await readExcelFile(file);
-          setStatus(`Parsed ${rows.length} question rows from ${file.name}. You can now publish or update a mock test with this file.`, 'success');
+          const importedCount = await importMockQuestions(mockId, rows);
+          elements.excelUploadStatusBar.textContent = `Imported ${importedCount} questions and replaced old questions for the selected mock.`;
+          elements.excelUploadStatusBar.className = 'status-bar success';
+          await loadMockTests();
         } catch (error) {
           console.error(error);
-          setStatus(`Unable to parse file: ${error.message}`, 'error');
+          elements.excelUploadStatusBar.textContent = `Upload failed: ${error.message}`;
+          elements.excelUploadStatusBar.className = 'status-bar error';
         }
       });
       elements.setupPaymentBtn.addEventListener('click', () => {
