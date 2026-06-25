@@ -200,6 +200,12 @@
       const questionsQuery = query(questionsRef, where('mockId', '==', mockId), orderBy('questionNo', 'asc'));
       const querySnapshot = await getDocs(questionsQuery);
       const items = [];
+      const querySnapshot = await getDocs(questionsQuery);
+
+console.log("Searching Mock ID:", mockId);
+console.log("Documents Found:", querySnapshot.size);
+
+const items = [];
       querySnapshot.forEach((docSnapshot) => {
         const data = docSnapshot.data();
         items.push({
