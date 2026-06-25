@@ -83,7 +83,7 @@
     }
 
     async function loadCategory() {
-      const categoryId = getQueryParam('categoryId');
+      const categoryId = new URLSearchParams(window.location.search).get('id');
       if (!categoryId) {
         setStatus('Category ID is missing.', 'error');
         testsGrid.innerHTML = '<div class="empty-state">Invalid category selection. Return to categories and choose again.</div>';

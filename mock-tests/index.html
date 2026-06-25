@@ -242,6 +242,12 @@
     const statusBar = document.getElementById('statusBar');
     const categoryGrid = document.getElementById('categoryGrid');
 
+    if (!db) {
+      console.error('Firebase db is not initialized. Verify the import path to ../firebase.js and ensure firebase.js exports db correctly.');
+    } else {
+      console.log('Firebase initialized successfully for category page.');
+    }
+
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
       statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
@@ -286,9 +292,9 @@
         categoryGrid.innerHTML = categories.map(buildCard).join('');
         setStatus('Select a category to view mock tests.');
       } catch (error) {
-        console.error(error);
+        console.error('Error loading categories from Firestore:', error);
         categoryGrid.innerHTML = '<div class="empty-state">Unable to load categories. Please refresh the page.</div>';
-        setStatus('Failed to load categories.', 'error');
+        setStatus(`Failed to load categories: ${error.message || error}`, 'error');
       }
     }
 
