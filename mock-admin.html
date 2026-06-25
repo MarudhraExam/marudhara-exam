@@ -104,6 +104,152 @@ Loading...
 </div>
 
 </div>
+<script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc,
+orderBy,
+query
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
+authDomain:"marudhara-exam.firebaseapp.com",
+projectId:"marudhara-exam",
+storageBucket:"marudhara-exam.firebasestorage.app",
+messagingSenderId:"680152404373",
+appId:"1:680152404373:web:23515d1d06c44dbd33669c"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadCategories(){
+
+const list =
+document.getElementById("categoryList");
+
+list.innerHTML="Loading...";
+
+const q =
+query(
+collection(db,"mockCategories"),
+orderBy("order")
+);
+
+const snapshot =
+await getDocs(q);
+
+list.innerHTML="";
+
+snapshot.forEach((cat)=>{
+
+const data = cat.data();
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:15px;
+margin-bottom:10px;
+border-radius:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+">
+
+<div>
+
+<b>${data.name}</b>
+
+<br>
+
+Order : ${data.order}
+
+</div>
+
+<div>
+
+<button
+onclick="deleteCategory('${cat.id}')"
+style="background:red;">
+Delete
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+window.deleteCategory =
+async function(id){
+
+if(!confirm("Delete Category ?"))
+return;
+
+await deleteDoc(
+doc(db,"mockCategories",id)
+);
+
+loadCategories();
+
+};
+
+document
+.getElementById("saveCategoryBtn")
+.onclick = async ()=>{
+
+const name =
+document.getElementById("categoryName").value;
+
+const icon =
+document.getElementById("categoryIcon").value;
+
+const order =
+Number(
+document.getElementById("categoryOrder").value
+);
+
+if(name==""){
+alert("Category Name Required");
+return;
+}
+
+await addDoc(
+collection(db,"mockCategories"),
+{
+name,
+icon,
+order,
+createdAt:new Date().toISOString()
+}
+);
+
+document.getElementById("categoryName").value="";
+document.getElementById("categoryIcon").value="";
+document.getElementById("categoryOrder").value="";
+
+loadCategories();
+
+};
+
+loadCategories();
+
+</script>
 </body>
 </html>
