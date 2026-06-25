@@ -122,7 +122,12 @@
           return;
         }
 
-        const result = { id: resultDoc.id, ...resultDoc.data() };
+        const result = {
+    id: resultDoc.id,
+    ...resultDoc.data()
+};
+
+console.log(result);
         const studentName = result.name || result.studentName || 'Unknown';
         const studentRoll = result.roll || result.studentRoll || 'Unknown';
         const mockTitle = result.mockTitle || 'Mock exam';
