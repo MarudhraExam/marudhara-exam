@@ -1,1 +1,298 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Categories</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f324f;
+    }
 
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf2f8 100%);
+    }
+
+    body, button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 32px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #0b4ea2;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+
+    .brand small {
+      display: block;
+      color: #5f6f8f;
+      margin-top: 4px;
+      font-size: 0.96rem;
+    }
+
+    .status-bar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 46px;
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: #eef4ff;
+      color: #102a52;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .status-bar.error {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      background: white;
+      border: 1px solid rgba(35, 49, 79, 0.1);
+      border-radius: 24px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 280px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 48px rgba(23, 42, 77, 0.08);
+    }
+
+    .hero {
+      min-height: 140px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(11, 78, 162, 0.08), rgba(11, 78, 162, 0));
+      padding: 18px;
+    }
+
+    .hero img,
+    .hero .fallback-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      background: white;
+      display: grid;
+      place-items: center;
+      object-fit: contain;
+    }
+
+    .hero .fallback-icon {
+      color: #0b4ea2;
+      font-size: 2rem;
+    }
+
+    .card-body {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .card-body h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      line-height: 1.3;
+      color: #102a52;
+    }
+
+    .card-body p {
+      margin: 0;
+      color: #5f6f8f;
+      line-height: 1.75;
+      flex: 1;
+      min-height: 72px;
+    }
+
+    .details {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .badge {
+      background: #eef4ff;
+      color: #0b4ea2;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 22px 22px;
+    }
+
+    .button-primary {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      background: #0b4ea2;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .button-primary:hover {
+      background: #0f3c7f;
+    }
+
+    .empty-state {
+      padding: 34px 24px;
+      border-radius: 24px;
+      background: white;
+      border: 1px dashed rgba(35, 49, 79, 0.15);
+      text-align: center;
+      color: #556180;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 740px) {
+      header { flex-direction: column; align-items: stretch; }
+      .details { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>Marudhara Mock Categories</h1>
+          <small>Find available mock exams by category and begin practice.</small>
+        </div>
+      </div>
+      <a class="button-primary" href="../index.html">Back to main site</a>
+    </header>
+
+    <div id="statusBar" class="status-bar">Loading categories…</div>
+    <section id="categoryGrid" class="grid"></section>
+  </div>
+
+  <script type="module">
+    import { db } from '../firebase.js';
+    import { collection, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const statusBar = document.getElementById('statusBar');
+    const categoryGrid = document.getElementById('categoryGrid');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function buildCard(category) {
+      const icon = category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon" />` : '<div class="fallback-icon">📚</div>';
+      const description = escapeHtml(category.description || 'Browse mock tests in this category.');
+      return `
+        <article class="card">
+          <div class="hero">${icon}</div>
+          <div class="card-body">
+            <h2>${escapeHtml(category.name || 'Untitled category')}</h2>
+            <p>${description}</p>
+            <div class="details">
+              <span class="badge">Category</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="button-primary" type="button" onclick="window.location.href='category.html?id=${encodeURIComponent(category.id)}'">View tests</button>
+          </div>
+        </article>`;
+    }
+
+    async function loadCategories() {
+      try {
+        setStatus('Loading categories…');
+        const categoriesQuery = query(collection(db, 'mockCategories'), where('active', '==', true), orderBy('order', 'asc'));
+        const snapshot = await getDocs(categoriesQuery);
+        const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        if (!categories.length) {
+          categoryGrid.innerHTML = '<div class="empty-state">No active categories are available at this time.</div>';
+          setStatus('No categories available.', 'error');
+          return;
+        }
+
+        categoryGrid.innerHTML = categories.map(buildCard).join('');
+        setStatus('Select a category to view mock tests.');
+      } catch (error) {
+        console.error(error);
+        categoryGrid.innerHTML = '<div class="empty-state">Unable to load categories. Please refresh the page.</div>';
+        setStatus('Failed to load categories.', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCategories);
+  </script>
+</body>
+</html>
