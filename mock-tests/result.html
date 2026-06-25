@@ -207,6 +207,7 @@ console.log("Documents Found:", querySnapshot.size);
 
 const items = [];
       querySnapshot.forEach((docSnapshot) => {
+        console.log("Question Doc:", docSnapshot.id, docSnapshot.data());
         const data = docSnapshot.data();
         items.push({
           id: docSnapshot.id,
