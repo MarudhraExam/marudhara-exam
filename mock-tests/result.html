@@ -134,8 +134,16 @@
         const attempted = result.attempted ?? 0;
         const unattempted = result.unattempted ?? 0;
         const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
-        const totalMarks = (result.positiveMarks || 1) * totalQuestions;
-        const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
+       const totalQuestions =
+    Number(result.totalQuestions) ||
+    Number(result.questionCount) ||
+    Number(result.attempted + result.unattempted) ||
+    0;
+
+const percentage =
+    totalQuestions > 0
+        ? ((correct / totalQuestions) * 100).toFixed(2)
+        : "0.00";
         const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
         const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
         const submittedAt = result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A';
