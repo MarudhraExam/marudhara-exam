@@ -342,20 +342,21 @@
 
       try {
         setStatus('Loading exam details…');
-        const mockDoc = await getDoc(doc(db, 'mockTests', mockId));
-        if (!mockDoc.exists()) {
+        const docRef = doc(db, 'mockTests', mockId);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
           setStatus('Mock test not found.', 'error');
           summaryList.innerHTML = '<div class="empty-state">Selected exam is unavailable.</div>';
           return;
         }
 
-        const mock = { id: mockDoc.id, ...mockDoc.data() };
+        const mock = { id: snap.id, ...snap.data() };
         const summaryItems = [
           { label: 'Mock title', value: mock.title || mock.name || 'Untitled test' },
-          { label: 'Category ID', value: mock.categoryId || 'Unknown' },
           { label: 'Questions', value: String(mock.totalQuestions ?? mock.questions ?? 0) },
+          { label: 'Total marks', value: String(mock.totalMarks ?? mock.marks ?? 0) },
           { label: 'Duration', value: `${String(mock.duration ?? mock.durationMinutes ?? 0)} min` },
-          { label: 'Total marks', value: String(mock.totalMarks ?? mock.marks ?? 0) }
+          { label: 'Negative marks', value: String(mock.negativeMarks ?? mock.negativeMark ?? mock.negative ?? 0) }
         ];
 
         setSummary(summaryItems);
