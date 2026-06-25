@@ -573,9 +573,8 @@
             const attempted = totalQuestions - unattempted;
             const positiveMarks = Number(examMeta.totalMarks) > 0 ? Number(examMeta.totalMarks) / totalQuestions : 1;
             const negativeMarks = Number(examMeta.negativeMarks ?? examMeta.negative ?? 0) || 0;
-            const score = correct * positiveMarks - wrong * negativeMarks;
-            const totalMarks = Number(examMeta.totalMarks) || totalQuestions * positiveMarks;
-            const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+            const score = Number((correct * positiveMarks - wrong * negativeMarks).toFixed(2));
+            const percentage = totalQuestions > 0 ? Number(((correct / totalQuestions) * 100).toFixed(2)) : 0;
             const finishedAt = new Date().toISOString();
             const timeTaken = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
             const remainingTime = endTime ? Math.max(0, Math.floor((endTime - Date.now()) / 1000)) : null;
@@ -587,11 +586,13 @@
                 roll: sessionData.studentRoll,
                 mobile: sessionData.studentMobile || "",
                 answers: answersList,
-                score,
+                questionCount: totalQuestions,
+                totalQuestions,
                 correct,
                 wrong,
                 attempted,
                 unattempted,
+                score,
                 percentage,
                 timeTaken,
                 remainingTime,
