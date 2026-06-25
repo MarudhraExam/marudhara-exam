@@ -93,6 +93,19 @@
       return `${mins}m ${secs}s`;
     }
 
+    async function fetchCategoryName(categoryId) {
+      if (!categoryId) return 'Unknown Category';
+      try {
+        const categoryDoc = await getDoc(doc(db, 'mockCategories', categoryId));
+        if (!categoryDoc.exists()) return 'Unknown Category';
+        const category = categoryDoc.data();
+        return category?.name || category?.title || 'Unknown Category';
+      } catch (error) {
+        console.error('Category lookup failed:', error);
+        return 'Unknown Category';
+      }
+    }
+
     async function loadResult() {
       const resultId = getQueryParam('resultId');
       if (!resultId) {
@@ -113,14 +126,17 @@
         const studentName = result.name || result.studentName || 'Unknown';
         const studentRoll = result.roll || result.studentRoll || 'Unknown';
         const mockTitle = result.mockTitle || 'Mock exam';
-        const categoryName = result.categoryName || result.categoryId || 'Unknown';
+        const categoryId = result.categoryId || result.category || null;
+        const categoryName = await fetchCategoryName(categoryId);
         const score = result.score ?? 0;
         const correct = result.correct ?? 0;
         const wrong = result.wrong ?? 0;
         const attempted = result.attempted ?? 0;
         const unattempted = result.unattempted ?? 0;
-        const questionCount = result.questionCount ?? 0;
-        const percentage = questionCount > 0 ? Math.round((correct / questionCount) * 100) : 0;
+        const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
+        const positiveMarks = result.positiveMarks ?? 1;
+        const totalMarks = result.totalMarks ?? totalQuestions * positiveMarks;
+        const percentage = totalMarks > 0 ? Number(((score / totalMarks) * 100).toFixed(2)) : 0;
         const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
         const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
         const submittedAt = result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A';
@@ -136,7 +152,7 @@
               <div class="summary-row"><strong>Wrong</strong><span>${wrong}</span></div>
               <div class="summary-row"><strong>Attempted</strong><span>${attempted}</span></div>
               <div class="summary-row"><strong>Unattempted</strong><span>${unattempted}</span></div>
-              <div class="summary-row"><strong>Questions</strong><span>${questionCount}</span></div>
+              <div class="summary-row"><strong>Questions</strong><span>${totalQuestions}</span></div>
               <div class="summary-row"><strong>Time taken</strong><span>${escapeHtml(timeTaken)}</span></div>
               <div class="summary-row"><strong>Remaining time</strong><span>${escapeHtml(remainingTime)}</span></div>
               <div class="summary-row"><strong>Submitted on</strong><span>${escapeHtml(submittedAt)}</span></div>
