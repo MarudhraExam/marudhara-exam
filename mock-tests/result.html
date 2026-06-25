@@ -355,10 +355,15 @@ const items = [];
         console.log("Result Mock ID:", result.mockId);
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
-        if (!questions.length) {
-          console.log('Questions Loaded:', questions.length);
-          console.log('Result Answers:', result.answers);
-        }
+
+console.log("Questions Loaded:", questions.length);
+console.log("Questions:", questions);
+console.log("Result Answers:", result.answers);
+
+const answers =
+    result.answers && typeof result.answers === "object"
+        ? result.answers
+        : {};
         const answers = result.answers && typeof result.answers === 'object' ? result.answers : {};
 
         resultContent.innerHTML = `
