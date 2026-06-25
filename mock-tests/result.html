@@ -240,8 +240,14 @@
         return '<div class="empty-state">No questions were found for this mock test.</div>';
       }
 
+      if (!questions.length) {
+        console.log('Questions Loaded:', questions.length);
+        console.log('Result Answers:', answers);
+      }
+
       return questions
         .map((question, index) => {
+          console.log(question);
           const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
           const correctAnswer = normalizeAnswer(question.answer || '');
           const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
@@ -334,6 +340,10 @@
         const result = { id: resultDoc.id, ...resultDoc.data() };
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
+        if (!questions.length) {
+          console.log('Questions Loaded:', questions.length);
+          console.log('Result Answers:', result.answers);
+        }
         const answers = result.answers && typeof result.answers === 'object' ? result.answers : {};
 
         resultContent.innerHTML = `
