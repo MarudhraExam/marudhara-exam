@@ -206,8 +206,14 @@
       const questionsRef = collection(db, 'mockQuestions');
       const questionsQuery = query(questionsRef, where('mockId', '==', mockId), orderBy('questionNo', 'asc'));
       const querySnapshot = await getDocs(questionsQuery);
-      const items = [];
+      
+
+console.log("Searching Mock ID:", mockId);
+console.log("Documents Found:", querySnapshot.size);
+
+const items = [];
       querySnapshot.forEach((docSnapshot) => {
+        console.log("Question Doc:", docSnapshot.id, docSnapshot.data());
         const data = docSnapshot.data();
         items.push({
           id: docSnapshot.id,
@@ -345,6 +351,7 @@
         }
 
         const result = { id: resultDoc.id, ...resultDoc.data() };
+        console.log("Result Mock ID:", result.mockId);
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
         if (!questions.length) {
