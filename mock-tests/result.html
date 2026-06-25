@@ -1,1 +1,152 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Result</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+    body, button { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .page-shell { max-width: 1100px; margin: 0 auto; padding: 24px 18px 32px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 24px; }
+    .brand { display: flex; gap: 14px; align-items: center; }
+    .brand .logo { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 18px; background: #0b4ea2; color: #fff; font-weight: 800; }
+    .brand h1 { margin: 0; font-size: 1.9rem; }
+    .brand small { display: block; color: #5f6f8f; margin-top: 2px; }
+    .top-actions a { border-radius: 999px; padding: 12px 18px; background: #0b4ea2; color: #fff; }
+    .top-actions a:hover { background: #0f3c7f; }
+    .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
+    .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+    .result-grid { display: grid; gap: 20px; grid-template-columns: minmax(0,1.2fr) 360px; }
+    .card { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 24px; padding: 24px; }
+    .card h2 { margin-top: 0; }
+    .summary-block { display: grid; gap: 14px; margin-top: 18px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 18px; background: #f5f8ff; }
+    .summary-row strong { font-size: 0.98rem; }
+    .summary-large { font-size: 3rem; line-height: 1; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #eef4ff; color: #0b4ea2; font-weight: 700; }
+    .details-list { display: grid; gap: 12px; margin-top: 18px; }
+    .details-item { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 18px; background: #fbfbfb; }
+    .details-item strong { color: #102a52; }
+    .neutral-note { margin: 0; padding: 16px 18px; border-radius: 18px; background: #eef4ff; color: #0b4ea2; }
+    .empty-state { padding: 32px 24px; border-radius: 24px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .button-primary, .button-secondary { border: 0; border-radius: 14px; padding: 12px 18px; cursor: pointer; }
+    .button-primary { background: #0b4ea2; color: #fff; }
+    .button-secondary { background: #eef2ff; color: #0b4ea2; }
+    .button-primary:hover { background: #0f3c7f; }
+    .button-secondary:hover { background: #dce6ff; }
+    @media (max-width: 920px) { .result-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>Exam result</h1>
+          <small>Review your performance and return to practice more mock tests.</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a href="index.html">Back to categories</a>
+      </div>
+    </header>
 
+    <div id="statusBar" class="status-bar">Loading result summary…</div>
+    <div id="resultContent" class="result-grid"></div>
+  </div>
+
+  <script type="module">
+    import { db } from '../firebase.js';
+    import { collection, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const statusBar = document.getElementById('statusBar');
+    const resultContent = document.getElementById('resultContent');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function getQueryParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function safeJsonParse(value) {
+      try { return JSON.parse(value || 'null'); } catch { return null; }
+    }
+
+    async function loadResult() {
+      const resultId = getQueryParam('resultId');
+      let result = null;
+      if (resultId) {
+        try {
+          const resultDoc = await getDoc(doc(db, 'mockResults', resultId));
+          if (resultDoc.exists()) {
+            result = { id: resultDoc.id, ...resultDoc.data() };
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      if (!result) {
+        result = safeJsonParse(localStorage.getItem('marudhara_mock_last_result'));
+      }
+
+      if (!result) {
+        setStatus('Result data is unavailable.', 'error');
+        resultContent.innerHTML = '<div class="empty-state">Result could not be found. Return to the categories and start a new exam.</div>';
+        return;
+      }
+
+      const percentage = result.maxScore ? Math.round((result.score / result.maxScore) * 100) : 0;
+      const grade = percentage >= 80 ? 'Excellent' : percentage >= 60 ? 'Good job' : percentage >= 40 ? 'Keep practicing' : 'Needs improvement';
+      const submittedAt = new Date(result.submittedAt || '').toLocaleString();
+
+      resultContent.innerHTML = `
+        <div class="card">
+          <h2>${escapeHtml(result.mockTitle || 'Mock exam')}</h2>
+          <p class="neutral-note">${escapeHtml(result.studentName || 'Student')} · ${escapeHtml(result.studentEmail || '')}</p>
+          <div class="summary-block">
+            <div class="summary-row"><strong>Score</strong><span class="summary-large">${result.score ?? 0}/${result.maxScore ?? 0}</span></div>
+            <div class="summary-row"><strong>Percentage</strong><span>${percentage}%</span></div>
+            <div class="summary-row"><strong>Outcome</strong><span>${grade}</span></div>
+            <div class="summary-row"><strong>Correct</strong><span>${result.correct ?? 0}</span></div>
+            <div class="summary-row"><strong>Wrong</strong><span>${result.wrong ?? 0}</span></div>
+            <div class="summary-row"><strong>Attempted</strong><span>${result.attempted ?? 0}</span></div>
+            <div class="summary-row"><strong>Questions</strong><span>${result.questionCount ?? 0}</span></div>
+            <div class="summary-row"><strong>Submitted on</strong><span>${escapeHtml(submittedAt)}</span></div>
+          </div>
+          <div class="action-row">
+            <button class="button-primary" type="button" onclick="window.location.href='index.html'">Return to categories</button>
+            <button class="button-secondary" type="button" onclick="window.print()">Print result</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Performance details</h2>
+          <div class="details-list">
+            <div class="details-item"><strong>Exam title</strong><span>${escapeHtml(result.mockTitle || '—')}</span></div>
+            <div class="details-item"><strong>Category</strong><span>${escapeHtml(result.categoryName || '—')}</span></div>
+            <div class="details-item"><strong>Time taken</strong><span>${result.timeTakenSeconds != null ? `${result.timeTakenSeconds} sec` : '—'}</span></div>
+            <div class="details-item"><strong>Remaining time</strong><span>${result.timeRemainingSeconds != null ? `${result.timeRemainingSeconds} sec` : '—'}</span></div>
+          </div>
+          <p class="neutral-note">Your result is stored for review in the system. Use the categories page to continue practicing or to take another mock test.</p>
+        </div>`;
+
+      setStatus('Result loaded successfully.');
+    }
+
+    document.addEventListener('DOMContentLoaded', loadResult);
+  </script>
+</body>
+</html>

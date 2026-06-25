@@ -1,1 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Category</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+    body, button { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .page-shell { max-width: 1200px; margin: 0 auto; padding: 24px 18px 32px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 24px; }
+    .brand { display: flex; gap: 14px; align-items: center; }
+    .brand .logo { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 18px; background: #0b4ea2; color: #fff; font-weight: 800; }
+    .brand h1 { margin: 0; font-size: 1.9rem; }
+    .brand small { display: block; color: #5f6f8f; margin-top: 2px; }
+    .top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .top-actions a { border-radius: 999px; padding: 12px 18px; background: #0b4ea2; color: #fff; }
+    .top-actions a:hover { background: #0f3c7f; }
+    .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
+    .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+    .category-header { display: grid; gap: 18px; margin-bottom: 20px; }
+    .category-summary { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 22px; padding: 22px; }
+    .category-summary .icon { width: 92px; height: 92px; border-radius: 22px; background: #eef4ff; display: grid; place-items: center; }
+    .category-summary img { width: 100%; height: 100%; object-fit: contain; border-radius: 18px; }
+    .category-summary .details { display: grid; gap: 10px; }
+    .category-summary h2 { margin: 0; font-size: 1.4rem; }
+    .category-summary p { margin: 0; color: #556180; line-height: 1.7; }
+    .tests-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); }
+    .test-card { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-height: 260px; transition: transform .2s ease, box-shadow .2s ease; }
+    .test-card:hover { transform: translateY(-2px); box-shadow: 0 20px 40px rgba(23,42,77,.08); }
+    .test-card h3 { margin: 0; font-size: 1.15rem; }
+    .test-card p { margin: 0; color: #556180; line-height: 1.75; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #eef4ff; color: #0b4ea2; font-size: 0.95rem; }
+    .button-primary { border: 0; border-radius: 14px; padding: 12px 18px; background: #0b4ea2; color: #fff; cursor: pointer; }
+    .button-primary:hover { background: #0f3c7f; }
+    .empty-state { padding: 32px 24px; border-radius: 24px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+    @media (max-width: 720px) { .category-summary { flex-direction: column; align-items: stretch; } }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>Mock Tests</h1>
+          <small>Select a test from the chosen category and review exam details before starting.</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a href="index.html">Back to categories</a>
+      </div>
+    </header>
 
+    <div id="statusBar" class="status-bar">Loading category…</div>
+    <section id="categoryHeader" class="category-header"></section>
+    <section id="testsGrid" class="tests-grid"></section>
+  </div>
+
+  <script type="module">
+    import { db } from '../firebase.js';
+    import { collection, doc, getDoc, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const statusBar = document.getElementById('statusBar');
+    const categoryHeader = document.getElementById('categoryHeader');
+    const testsGrid = document.getElementById('testsGrid');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function getQueryParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    async function loadCategory() {
+      const categoryId = getQueryParam('categoryId');
+      if (!categoryId) {
+        setStatus('Category ID is missing.', 'error');
+        testsGrid.innerHTML = '<div class="empty-state">Invalid category selection. Return to categories and choose again.</div>';
+        return;
+      }
+
+      try {
+        setStatus('Loading category details…');
+        const categoryDoc = await getDoc(doc(db, 'mockCategories', categoryId));
+        if (!categoryDoc.exists()) {
+          setStatus('Category not found.', 'error');
+          testsGrid.innerHTML = '<div class="empty-state">Selected category does not exist.</div>';
+          return;
+        }
+
+        const category = { id: categoryDoc.id, ...categoryDoc.data() };
+        categoryHeader.innerHTML = `
+          <div class="category-summary">
+            <div class="icon">${category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
+            <div class="details">
+              <h2>${escapeHtml(category.name)}</h2>
+              <p>${escapeHtml(category.description || 'Browse available mock tests for this category and begin your practice session.')}</p>
+            </div>
+          </div>`;
+
+        setStatus('Loading mock tests…');
+        const testsQuery = query(collection(db, 'mockTests'), where('categoryId', '==', categoryId), orderBy('duration', 'asc'));
+        const testsSnapshot = await getDocs(testsQuery);
+        const tests = testsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+        if (!tests.length) {
+          testsGrid.innerHTML = '<div class="empty-state">No mock tests are published for this category yet.</div>';
+          setStatus('No tests found for this category.', 'error');
+          return;
+        }
+
+        testsGrid.innerHTML = tests.map(test => {
+          const title = escapeHtml(test.title || test.name || 'Unnamed test');
+          const questions = Number(test.totalQuestions ?? test.questions ?? 0);
+          const duration = Number(test.duration ?? test.durationMinutes ?? 0);
+          const totalMarks = Number(test.totalMarks ?? test.marks ?? 0);
+          const negativeMarks = Number(test.negativeMarks ?? test.penalty ?? 0);
+          const disabled = questions <= 0 ? 'disabled' : '';
+          return `
+            <article class="test-card">
+              <h3>${title}</h3>
+              <div class="badge-row">
+                <span class="badge">Questions: ${questions}</span>
+                <span class="badge">Duration: ${duration || 0} min</span>
+              </div>
+              <div class="badge-row">
+                <span class="badge">Total Marks: ${totalMarks || 0}</span>
+                <span class="badge">Negative: ${negativeMarks || 0}</span>
+              </div>
+              <p>${escapeHtml(test.description || 'Timed practice exam with one question view and live progress tracking.')}</p>
+              <button class="button-primary" type="button" ${disabled} onclick="window.location.href='confirm.html?mockId=${encodeURIComponent(test.id)}';">${questions <= 0 ? 'No questions available' : 'Start exam'}</button>
+            </article>`;
+        }).join('');
+
+        setStatus('Choose a test and confirm your details before starting.');
+      } catch (error) {
+        console.error(error);
+        testsGrid.innerHTML = '<div class="empty-state">Unable to load mock tests. Try refreshing the page.</div>';
+        setStatus('Failed to load tests.', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCategory);
+  </script>
+</body>
+</html>
