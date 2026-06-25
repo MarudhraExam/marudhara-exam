@@ -301,6 +301,14 @@ console.log("Answers Object:", answers);
               </div>
               ${question.image ? `<img class="question-image" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
               <div class="options-grid">${options}</div>
+              ${question.explanation ? `
+<div class="answer-summary">
+    <div>
+        <strong>Explanation</strong>
+        <span>${escapeHtml(question.explanation)}</span>
+    </div>
+</div>
+` : ''}
               <div class="answer-summary">
                 <div><strong>Your Answer</strong><span>${studentAnswer || 'Unattempted'}</span></div>
                 <div><strong>Correct Answer</strong><span>${correctAnswer || 'N/A'}</span></div>
