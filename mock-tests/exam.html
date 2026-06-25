@@ -430,7 +430,7 @@
             }
             const question = questions[currentIndex];
             questionCountElement.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-            questionTextElement.textContent = question.questionText || "Untitled question.";
+            questionTextElement.textContent = question.question || "Untitled question.";
             optionAElement.textContent = question.optionA || "Option A";
             optionBElement.textContent = question.optionB || "Option B";
             optionCElement.textContent = question.optionC || "Option C";
@@ -507,7 +507,7 @@
 
         async function fetchQuestions(mockId) {
             const questionsRef = collection(db, "mockQuestions");
-            const questionsQuery = query(questionsRef, where("mockId", "==", mockId), orderBy("number", "asc"));
+            const questionsQuery = query(questionsRef, where("mockId", "==", mockId), orderBy("questionNo", "asc"));
             const querySnapshot = await getDocs(questionsQuery);
             const items = [];
             querySnapshot.forEach((docSnapshot) => {
@@ -581,8 +581,8 @@
                 examMeta = await fetchMockDetails(mockId);
                 mockTitle.textContent = examMeta.title || examMeta.name || "Untitled mock";
                 mockCategory.textContent = examMeta.categoryName || examMeta.category || "General";
-                candidateName.textContent = sessionData.name || "Unknown";
-                candidateRoll.textContent = sessionData.roll || "Unknown";
+                candidateName.textContent = sessionData.studentName || "Unknown";
+                candidateRoll.textContent = sessionData.studentRoll || "Unknown";
                 loadSavedAnswers();
                 questions = await fetchQuestions(mockId);
                 if (questions.length === 0) {
