@@ -574,6 +574,16 @@
             const positiveMarks = Number(examMeta.totalMarks) > 0 ? Number(examMeta.totalMarks) / totalQuestions : 1;
             const negativeMarks = Number(examMeta.negativeMarks ?? examMeta.negative ?? 0) || 0;
             const score = Number((correct * positiveMarks - wrong * negativeMarks).toFixed(2));
+
+            console.log({
+                questionsLength: questions.length,
+                correct,
+                wrong,
+                attempted,
+                unattempted,
+                score
+            });
+
             const percentage = totalQuestions > 0 ? Number(((correct / totalQuestions) * 100).toFixed(2)) : 0;
             const finishedAt = new Date().toISOString();
             const timeTaken = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
