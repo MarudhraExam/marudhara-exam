@@ -49,7 +49,7 @@
     .review-card { border: 1px solid rgba(35,49,79,.12); border-radius: 24px; padding: 22px; background: #fff; scroll-margin-top: 96px; }
     .review-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-start; }
     .question-meta { color: #5f6f8f; font-size: 0.92rem; margin-bottom: 8px; }
-    .question-text { color: #162e56; font-weight: 700; line-height: 1.55; }
+    .question-text { color: #162e56; font-weight: 700; line-height: 1.55; white-space: pre-line; }
     .status-badge { padding: 9px 16px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; font-size: .82rem; white-space: nowrap; }
     .status-correct { background: #e6f8eb; color: #077a37; }
     .status-wrong { background: #ffe7e7; color: #961f1f; }
@@ -131,6 +131,13 @@
 
     function normalizeAnswer(value) {
       return String(value || '').trim().toUpperCase();
+    }
+
+    function formatQuestionText(raw) {
+      return String(raw || '')
+        .replace(/\\r\\n/g, '\n')
+        .replace(/\\n/g, '\n')
+        .replace(/\r\n/g, '\n');
     }
 
     async function fetchCategoryName(categoryId) {
@@ -277,7 +284,7 @@
               <div class="review-header">
                 <div>
                   <div class="question-meta">Question ${index + 1}</div>
-                  <div class="question-text">${escapeHtml(question.question)}</div>
+                  <div class="question-text">${escapeHtml(formattedQuestion)}</div>
                 </div>
                 <div class="status-badge status-${status.toLowerCase()}">${status}</div>
               </div>

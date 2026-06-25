@@ -68,6 +68,7 @@
         .question-text {
             margin: 16px 0;
             line-height: 1.65;
+            white-space: pre-line;
         }
         .options-list {
             display: grid;
@@ -425,13 +426,21 @@
             timerInterval = setInterval(updateTimerDisplay, 1000);
         }
 
+        function formatQuestionText(raw) {
+            return String(raw || "")
+                .replace(/\\r\\n/g, "\n")
+                .replace(/\\n/g, "\n")
+                .replace(/\r\n/g, "\n");
+        }
+
         function renderQuestion() {
             if (!questions.length || currentIndex < 0 || currentIndex >= questions.length) {
                 return;
             }
             const question = questions[currentIndex];
             questionCountElement.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-            questionTextElement.textContent = question.question || "Untitled question.";
+            const formattedQuestion = formatQuestionText(question.question);
+            questionTextElement.textContent = formattedQuestion || "Untitled question.";
             optionAElement.textContent = question.optionA || "Option A";
             optionBElement.textContent = question.optionB || "Option B";
             optionCElement.textContent = question.optionC || "Option C";
