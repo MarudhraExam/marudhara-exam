@@ -508,13 +508,51 @@
         async function fetchQuestions(mockId) {
             const questionsRef = collection(db, "mockQuestions");
             const questionsQuery = query(questionsRef, where("mockId", "==", mockId), orderBy("questionNo", "asc"));
-            const querySnapshot = await getDocs(questionsQuery);
-            const items = [];
-            querySnapshot.forEach((docSnapshot) => {
-                const data = docSnapshot.data();
-                items.push({ id: docSnapshot.id, ...data });
-            });
-            return items;
+            try {
+                const querySnapshot = await getDocs(questionsQuery);
+                const items = [];
+                querySnapshot.forEach((docSnapshot) => {
+                    const data = docSnapshot.data();
+                    items.push({
+                        id: docSnapshot.id,
+                        question: data.question || data.questionText || "",
+                        optionA: data.optionA || "",
+                        optionB: data.optionB || "",
+                        optionC: data.optionC || "",
+                        optionD: data.optionD || "",
+                        optionE: data.optionE || "",
+                        answer: data.answer || data.correctAnswer || data.correctOption || "",
+                        explanation: data.explanation || "",
+                        image: data.image || "",
+                        questionNo: data.questionNo ?? 0,
+                        mockId: data.mockId || mockId
+                    });
+                });
+                return items;
+            } catch (queryError) {
+                console.warn("Primary question query failed, falling back to all mockQuestions fetch:", queryError);
+                const querySnapshot = await getDocs(questionsRef);
+                const items = [];
+                querySnapshot.forEach((docSnapshot) => {
+                    const data = docSnapshot.data();
+                    if (data?.mockId !== mockId) return;
+                    items.push({
+                        id: docSnapshot.id,
+                        question: data.question || data.questionText || "",
+                        optionA: data.optionA || "",
+                        optionB: data.optionB || "",
+                        optionC: data.optionC || "",
+                        optionD: data.optionD || "",
+                        optionE: data.optionE || "",
+                        answer: data.answer || data.correctAnswer || data.correctOption || "",
+                        explanation: data.explanation || "",
+                        image: data.image || "",
+                        questionNo: data.questionNo ?? 0,
+                        mockId: data.mockId || mockId
+                    });
+                });
+                return items.sort((a, b) => Number(a.questionNo) - Number(b.questionNo));
+            }
         }
 
         function redirectTo(page) {
@@ -533,26 +571,40 @@
             const correctCount = questions.reduce((count, question) => {
                 const selected = (answers[question.id] || "").toString().trim().toUpperCase();
                 if (!selected) return count;
-                if (question.correctOption && selected === question.correctOption.toString().trim().toUpperCase()) {
+                const correctAnswer = question.answer || "";
+                if (selected === correctAnswer.toString().trim().toUpperCase()) {
                     return count + 1;
                 }
                 return count;
             }, 0);
             const totalQuestions = questions.length;
+            const attempted = Object.values(answers).filter((value) => String(value).trim() !== "").length;
+            const wrong = attempted - correctCount;
+            const maxScore = Number(examMeta.totalMarks ?? examMeta.questions ?? totalQuestions) || totalQuestions;
+            const timeTakenSeconds = sessionData.startedAt ? Math.max(0, Math.floor((Date.now() - new Date(sessionData.startedAt).getTime()) / 1000)) : null;
+            const timeRemainingSeconds = endTime ? Math.max(0, Math.floor((endTime - Date.now()) / 1000)) : null;
             const score = correctCount;
-            const percentage = Math.round((score / totalQuestions) * 100);
+            const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
             const finishedAt = new Date().toISOString();
             const resultPayload = {
                 mockId: examMeta.id,
                 mockTitle: examMeta.title || examMeta.name || "Mock Test",
-                name: sessionData.name || "Unknown",
-                roll: sessionData.roll || "Unknown",
+                categoryName: examMeta.categoryName || examMeta.category || "",
+                studentName: sessionData.studentName || "Unknown",
+                studentRoll: sessionData.studentRoll || "Unknown",
                 answers,
                 score,
                 totalQuestions,
+                maxScore,
                 percentage,
+                correct: correctCount,
+                wrong,
+                attempted,
+                questionCount: totalQuestions,
                 submittedAt: finishedAt,
                 durationMinutes: examMeta.durationMinutes || examMeta.duration || 0,
+                timeTakenSeconds,
+                timeRemainingSeconds,
                 reason: reason || "Submitted by student",
                 createdAt: Timestamp.now()
             };
