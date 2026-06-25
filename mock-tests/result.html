@@ -261,6 +261,10 @@ const items = [];
       return questions
         .map((question, index) => {
           console.log(question);
+          console.log("Question ID:", question.id);
+console.log("Correct:", question.answer);
+console.log("Student:", answers?.[question.id]);
+console.log("Answers Object:", answers);
           const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
           const correctAnswer = normalizeAnswer(question.answer || '');
           const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
