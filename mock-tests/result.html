@@ -291,8 +291,8 @@ const items = [];
               <div class="review-header">
                 <div>
                   <div class="question-meta">Question ${index + 1}</div>
-                  <div class="question-text">${escapeHtml(formattedQuestion)}</div>
-                </div>
+<div class="question-text">${escapeHtml(formatQuestionText(question.question))}</div>
+</div>
                 <div class="status-badge status-${status.toLowerCase()}">${status}</div>
               </div>
               ${question.image ? `<img class="question-image" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
