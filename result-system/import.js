@@ -233,35 +233,7 @@ async function processAndImportNewExam(examName, file) {
   }
 }
 
-async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  const numPages = pdf.numPages;
-  const parsedRecords = [];
-
-  let columnsDetected = null;
-
-  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-    const pageProgress = 15 + Math.round((pageNum / numPages) * 50);
-    setProgressBar(fill, label, percent, log, pageProgress, `Reading PDF page text content (${pageNum}/${numPages})...`);
-
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const items = textContent.items;
-
-    // Line assembly based on vertical position
-    const lineMap = {};
-    items.forEach(item => {
-      const yCoord = Math.round(item.transform[5]);
-      let matched = false;
-      for (const keyY in lineMap) {
-        if (Math.abs(Number(keyY) - yCoord) < 5) {
-          lineMap[keyY].push(item);
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
+     if (!matched) {
         lineMap[yCoord] = [item];
       }
     });
