@@ -232,6 +232,117 @@ async function processAndImportNewExam(examName, file) {
     showProgress(progressWrapper, false);
   }
 }
+async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
+
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer
+  }).promise;
+
+  const parsedRecords = [];
+
+  const totalPages = pdf.numPages;
+
+  for (let pageNo = 1; pageNo <= totalPages; pageNo++) {
+
+    const progress =
+      15 + Math.floor((pageNo / totalPages) * 50);
+
+    setProgressBar(
+      fill,
+      label,
+      percent,
+      log,
+      progress,
+      `Reading Page ${pageNo} of ${totalPages}`
+    );
+
+    const page = await pdf.getPage(pageNo);
+
+    const text = await page.getTextContent();
+
+    const items = text.items;
+
+    const rows = {};
+
+    items.forEach(item => {
+
+      const y = Math.round(item.transform[5]);
+
+      let found = false;
+
+      Object.keys(rows).forEach(key => {
+
+        if (Math.abs(key - y) <= 3) {
+
+          rows[key].push(item);
+
+          found = true;
+
+        }
+
+      });
+
+      if (!found) {
+
+        rows[y] = [item];
+
+      }
+
+    });
+
+    const sortedRows =
+      Object.keys(rows)
+      .sort((a,b)=>b-a);
+
+    for(const y of sortedRows){
+
+      const rowItems =
+      rows[y]
+      .sort((a,b)=>a.transform[4]-b.transform[4]);
+
+      const line =
+      rowItems
+      .map(i=>i.str)
+      .join(" ")
+      .replace(/\s+/g," ")
+      .trim();
+
+      if(line=="") continue;
+
+      if(
+        line.includes("ROLL_NO") ||
+        line.includes("ROLL NO")
+      ){
+
+        continue;
+
+      }
+
+      const firstWord =
+      line.split(" ")[0];
+
+      if(!/^\d+$/.test(firstWord)){
+
+        continue;
+
+      }
+
+      const student =
+      extractCandidateRecord(line);
+
+      if(student){
+
+        parsedRecords.push(student);
+
+      }
+
+    }
+
+  }
+
+  return parsedRecords;
+
+}
 function detectHeaderMap() {
   return {
     roll: /^\d{5,12}$/,
@@ -359,7 +470,104 @@ function extractCandidateRecord(line) {
 
   return parsedRecords;
 }
+function detectHeaderMap() {
 
+  return {
+
+    rollRegex: /^\d{5,12}$/,
+
+    dobRegex: /^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/,
+
+    genderRegex: /^(MALE|FEMALE|M|F)$/i,
+
+    categoryRegex: /^(GEN|GENERAL|OBC|OBC-NCL|SC|ST|EWS|MBC|SBC|PWD|EXS)$/i
+
+  };
+
+}
+
+function extractCandidateRecord(line){
+
+  const cfg = detectHeaderMap();
+
+  const parts = line
+    .replace(/\s+/g," ")
+    .trim()
+    .split(" ");
+
+  if(parts.length < 8) return null;
+
+  if(!cfg.rollRegex.test(parts[0])) return null;
+
+  const rollNo = parts.shift();
+
+  let dobIndex = -1;
+
+  for(let i=0;i<parts.length;i++){
+
+    if(cfg.dobRegex.test(parts[i])){
+
+      dobIndex = i;
+
+      break;
+
+    }
+
+  }
+
+  if(dobIndex==-1) return null;
+    const dob = parts[dobIndex];
+
+  const gender = parts[dobIndex + 1] || "";
+
+  const category = parts[dobIndex + 2] || "";
+
+  const remaining = parts.slice(0, dobIndex);
+
+  const tail = parts.slice(dobIndex + 3);
+
+  let net = "";
+
+  let selectionCategory = "";
+
+  if (tail.length >= 2) {
+
+    net = tail[tail.length - 2];
+
+    selectionCategory = tail[tail.length - 1];
+
+  }
+
+  const third = Math.floor(remaining.length / 3);
+
+  const name = remaining.slice(0, third).join(" ");
+
+  const fatherName = remaining.slice(third, third * 2).join(" ");
+
+  const motherName = remaining.slice(third * 2).join(" ");
+
+  return {
+
+    rollNo,
+
+    name,
+
+    fatherName,
+
+    motherName,
+
+    dob,
+
+    gender,
+
+    category,
+
+    net,
+
+    selectionCategory
+
+  };
+  }
 async function batchWriteStudents(examId, examName, students, fill, label, percent, log) {
   const batchLimit = 500;
   const total = students.length;
