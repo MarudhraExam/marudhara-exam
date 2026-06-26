@@ -839,6 +839,8 @@
       }
       const sheet = workbook.Sheets[sheetName];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      console.log("RAW QUESTION:");
+console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       if (!rawRows.length) {
         throw new Error('Excel sheet contains no rows.');
       }
