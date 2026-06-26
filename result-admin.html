@@ -184,7 +184,65 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 window.db = db;
+window.saveResult = async function(){
 
+try{
+
+const examName =
+document.getElementById("examName").value.trim();
+
+const pdf =
+document.getElementById("resultPdf").files[0];
+
+if(examName==""){
+
+alert("Exam Name likho");
+
+return;
+
+}
+
+if(!pdf){
+
+alert("PDF Select karo");
+
+return;
+
+}
+
+await addDoc(
+
+collection(db,"results"),
+
+{
+
+examName:examName,
+
+pdfName:pdf.name,
+
+createdAt:new Date().toISOString()
+
+}
+
+);
+
+alert("Result Saved Successfully ✅");
+
+document.getElementById("examName").value="";
+
+document.getElementById("resultPdf").value="";
+
+loadResults();
+
+}
+
+catch(error){
+
+alert(error.message);
+
+}
+
+}
 </script>
 </body>
 </html>
