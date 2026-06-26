@@ -1682,7 +1682,18 @@ window.uploadResult = async function () {
         alert(error.message);
 
     }
+window.deleteResult = async function(id){
 
+    if(!confirm("क्या आप यह Result Delete करना चाहते हैं?"))
+        return;
+
+    await deleteDoc(doc(db,"results",id));
+
+    alert("Result Deleted Successfully ✅");
+
+    loadResults();
+
+}
 };
 
 </script>
