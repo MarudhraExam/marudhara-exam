@@ -1378,6 +1378,38 @@ document
 loadTopics(this.value);
 
 });
+window.loadTopics = async function(subjectId){
+
+const topicSelect =
+document.getElementById("noteTopicSelect");
+
+if(!topicSelect) return;
+
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+topicSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
+
+});
+
+};
 window.saveNote = async function(){
 
 try{
