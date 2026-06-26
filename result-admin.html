@@ -194,7 +194,31 @@ document.getElementById("examName").value.trim();
 
 const pdf =
 document.getElementById("resultPdf").files[0];
+async function readPdf(file){
 
+const arrayBuffer = await file.arrayBuffer();
+
+const pdf = await pdfjsLib.getDocument({
+data: arrayBuffer
+}).promise;
+
+let fullText = "";
+
+for(let i=1;i<=pdf.numPages;i++){
+
+const page = await pdf.getPage(i);
+
+const content = await page.getTextContent();
+
+fullText += content.items
+.map(item=>item.str)
+.join(" ");
+
+}
+
+return fullText;
+
+}
 if(examName==""){
 
 alert("Exam Name likho");
