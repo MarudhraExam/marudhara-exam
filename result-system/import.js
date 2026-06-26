@@ -273,31 +273,7 @@ async function processAndImportNewExam(examName, file) {
   return parsedRecords;
 }
 
-function detectHeaderMap(headerString) {
-  const columns = ["ROLL_NO", "CAND_NAME", "FATHER_NAM", "MOTHER_NAM", "DOB", "GENDER", "CATEGORY", "NET", "SEL_CAT"];
-  const map = {};
-  
-  // Create relative index positions based on structural layout substrings
-  columns.forEach(col => {
-    const index = headerString.indexOf(col);
-    if (index !== -1) {
-      map[col] = { start: index };
-    }
-  });
 
-  const sortedCols = Object.keys(map).sort((a, b) => map[a].start - map[b].start);
-  for (let i = 0; i < sortedCols.length; i++) {
-    const currentCol = sortedCols[i];
-    const nextCol = sortedCols[i + 1];
-    if (nextCol) {
-      map[currentCol].end = map[nextCol].start;
-    } else {
-      map[currentCol].end = 9999; // captures the remainder of the text string
-    }
-  }
-
-  return map;
-}
 
 function extractCandidateRecord(line, map) {
   try {
