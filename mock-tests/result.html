@@ -64,10 +64,10 @@
     .filter-button { border: 1px solid rgba(35,49,79,.12); background: #fff; color: #102a52; padding: 11px 18px; border-radius: 16px; font-weight: 700; cursor: pointer; transition: transform .18s ease, background .2s ease, border-color .2s ease; }
     .filter-button:hover { transform: translateY(-1px); }
     .filter-button.active { background: #0b4ea2; color: #fff; border-color: #0b4ea2; }
-    .question-palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(36px, 1fr)); gap: 10px; padding: 8px 0; }
+    .question-palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(42px, 1fr)); gap: 10px; padding: 8px 0; justify-items: center; }
     .question-pill { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid transparent; font-weight: 700; font-size: .95rem; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; color: #fff; background: #3f7ffc; outline: none; }
     .question-pill:hover { transform: scale(1.06); box-shadow: 0 12px 22px rgba(30,57,105,.16); }
-    .question-pill.active { border-color: rgba(1,10,32,.15); box-shadow: 0 0 0 4px rgba(11,78,162,.12); }
+    .question-pill.active { border-color: #0b4ea2; box-shadow: 0 0 0 4px rgba(11,78,162,.18); }
     .question-pill.correct { background: #33b34a; }
     .question-pill.wrong { background: #f64b4b; }
     .question-pill.unattempted { background: #3f7ffc; }
@@ -248,6 +248,7 @@ function T() {
         attempted: "Attempted",
         unattempted: "Unattempted",
         questions: "Questions",
+        totalQuestions: "Total Questions",
         timeTaken: "Time Taken",
         remainingTime: "Remaining Time",
         submitted: "Submitted On",
@@ -267,6 +268,7 @@ function T() {
         attempted: "प्रयास किए",
         unattempted: "अनुत्तरित",
         questions: "प्रश्न",
+        totalQuestions: "कुल प्रश्न",
         timeTaken: "लिया गया समय",
         remainingTime: "शेष समय",
         submitted: "जमा करने का समय",
@@ -398,6 +400,30 @@ const items = [];
       });
       stats.attempted = stats.total - stats.unattempted;
       return stats;
+    }
+
+    function renderSummaryCards(stats, result) {
+      const t = T();
+      const totalQuestions = stats.total;
+      const score = result.score ?? 0;
+      const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+      const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
+      const cards = [
+        { label: t.totalQuestions || 'Total Questions', value: totalQuestions, filter: 'All' },
+        { label: t.correct, value: stats.correct, filter: 'Correct' },
+        { label: t.wrong, value: stats.wrong, filter: 'Wrong' },
+        { label: t.unattempted, value: stats.unattempted, filter: 'Unattempted' },
+        { label: t.score, value: score, filter: 'All' },
+        { label: t.percentage, value: `${percentage}%`, filter: 'All' }
+      ];
+
+      return cards
+        .map((card) => `
+          <button type="button" class="summary-card ${pageState.activeFilter === card.filter ? 'active' : ''}" data-filter="${card.filter}" aria-label="${card.label}">
+            <strong>${card.label}</strong>
+            <span class="summary-value">${card.value}</span>
+          </button>`)
+        .join('');
     }
 
     function buildOptionHtml(letter, optionText, status) {
