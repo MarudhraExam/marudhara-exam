@@ -336,6 +336,7 @@ const items = [];
     }
 
     function renderReviewCards(questions, answers) {
+      const t = T();
       if (!questions.length) {
         return '<div class="empty-state">No questions were found for this mock test.</div>';
       }
