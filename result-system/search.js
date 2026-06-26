@@ -52,7 +52,10 @@ searchForm.addEventListener("submit", async (e) => {
     }
 
     try {
-        let q = query(collection(db, "results"), where("examId", "==", examId));
+       let q = query(
+    collection(db, "resultStudents"),
+    where("examId","==",examId)
+);
 
         // Apply filters dynamically using standard indexes
         if (roll) {
