@@ -1,1 +1,152 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result Manager</title>
 
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:#fff;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+
+h2{
+text-align:center;
+color:#002B5B;
+}
+
+label{
+display:block;
+margin-top:15px;
+font-weight:bold;
+}
+
+input,
+select{
+width:100%;
+padding:10px;
+margin-top:5px;
+border:1px solid #ccc;
+border-radius:6px;
+box-sizing:border-box;
+}
+
+button{
+margin-top:20px;
+padding:12px;
+width:100%;
+background:#002B5B;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+}
+
+table{
+width:100%;
+margin-top:30px;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#002B5B;
+color:white;
+}
+
+.action-btn{
+padding:6px 12px;
+margin:2px;
+cursor:pointer;
+}
+
+.edit{
+background:#2196F3;
+color:#fff;
+}
+
+.replace{
+background:#FF9800;
+color:#fff;
+}
+
+.delete{
+background:#F44336;
+color:#fff;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📊 Result Manager</h2>
+
+<label>Exam Name</label>
+
+<input
+type="text"
+id="examName">
+
+<label>Result PDF</label>
+
+<input
+type="file"
+id="resultPdf"
+accept=".pdf">
+
+<button
+onclick="saveResult()">
+
+Upload Result
+
+</button>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Exam</th>
+
+<th>PDF</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="resultList">
+
+</tbody>
+
+</table>
+
+</div>
+
+</body>
+</html>
