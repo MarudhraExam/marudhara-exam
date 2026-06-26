@@ -1,91 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Result Management</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- PDF.js library to parse PDFs client-side -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Marudhara Exam Result Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
+  <div class="header-banner">
+    <div class="logo-container">
+      <div class="portal-logo">ME</div>
+      <div>
+        <h1>Marudhara Exam Result Portal</h1>
+        <p>Government of Marudhara Examination Authority</p>
+      </div>
+    </div>
+    <div class="navigation-bar">
+      <a href="index.html">Student Search Portal</a>
+      <a href="admin.html" class="active">Admin Dashboard</a>
+    </div>
+  </div>
 
-    <header>
-        <h1>Result Management System</h1>
-        <div class="nav-links">
-            <a href="index.html">Student Search Portal</a>
-            <a href="admin.html" style="text-decoration: underline;">Admin Control Panel</a>
-        </div>
-    </header>
-
-    <div class="container">
-        
-        <!-- Add / Edit Exam Form -->
+  <div class="app-container">
+    <div class="row">
+      <!-- Exam Upload Form Card -->
+      <div class="col-12 col-md-5">
         <div class="card">
-            <h2 id="form-title">Upload & Import New Exam</h2>
-            <form id="upload-form">
-                <input type="hidden" id="edit-exam-id">
-                
-                <div class="form-group">
-                    <label for="exam-name">Exam / Semester Name</label>
-                    <input type="text" id="exam-name" placeholder="e.g. Autumn Semester 2024" required>
-                </div>
+          <div class="card-header">
+            <h2 id="form-action-title">Create & Import Exam</h2>
+          </div>
+          <div class="card-body">
+            <form id="exam-form">
+              <input type="hidden" id="exam-id" value="">
+              
+              <div class="form-group">
+                <label for="exam-name">Exam Name</label>
+                <input type="text" id="exam-name" placeholder="e.g. Senior Secondary Examination 2025" required>
+              </div>
 
-                <div class="form-group" id="file-group">
-                    <label for="pdf-file">Upload Result PDF</label>
-                    <input type="file" id="pdf-file" accept=".pdf">
-                    <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                        Supported structural block formats or comma-separated lines.
-                    </small>
-                </div>
+              <div class="form-group" id="pdf-file-group">
+                <label for="pdf-file">Select Result PDF</label>
+                <input type="file" id="pdf-file" accept=".pdf">
+                <p class="field-help">Upload text-based PDF containing tabular candidate results.</p>
+              </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" id="submit-btn">Parse & Import Records</button>
-                    <button type="button" class="secondary-btn" id="cancel-btn" style="display: none;">Cancel Edit</button>
-                </div>
+              <div class="button-group">
+                <button type="submit" id="submit-btn" class="btn btn-primary">Process and Import</button>
+                <button type="button" id="cancel-btn" class="btn btn-secondary" style="display: none;">Cancel</button>
+              </div>
             </form>
 
-            <div class="progress-container" id="progress-container">
-                <label>Processing Pipeline</label>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-                <div class="progress-status" id="progress-status">Preparing file processing...</div>
+            <div class="progress-wrapper" id="progress-wrapper" style="display: none;">
+              <div class="progress-header">
+                <span id="progress-label">Uploading...</span>
+                <span id="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+              </div>
+              <p class="progress-log" id="progress-log">Initializing pipeline...</p>
             </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Format Helper Card -->
+      <!-- Exam List Card -->
+      <div class="col-12 col-md-7">
         <div class="card">
-            <h2>Expected PDF Structural Formats</h2>
-            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">The client-side parser searches the PDF text lines for student data structures. For optimal results, use either of the layouts below:</p>
-            <div class="grid-2">
-                <div style="background: #f1f5f9; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
-                    <strong>Option A (Multi-line Block):</strong><br>
-                    Roll No: 104001<br>
-                    Name: JOHN DOE<br>
-                    Father's Name: ROBERT DOE<br>
-                    Mother's Name: MARY DOE<br>
-                    Subjects: Math:85, English:78, Physics:90<br>
-                    Total: 253<br>
-                    Status: PASS
-                </div>
-                <div style="background: #f1f5f9; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
-                    <strong>Option B (Single Line CSV Style):</strong><br>
-                    104002 | JANE SMITH | ALBERT SMITH | ANNE SMITH | Math:90, English:88, Physics:92 | 270 | PASS
-                </div>
-            </div>
+          <div class="card-header">
+            <h2>Manage Examinations</h2>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Exam Name</th>
+                  <th>Source PDF</th>
+                  <th>Created At</th>
+                  <th class="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="exams-list">
+                <tr>
+                  <td colspan="4" class="text-center text-muted">Retrieving examination records...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <!-- Registered Exams list -->
-        <div class="card">
-            <h2>Published Examinations</h2>
-            <div id="exams-list">
-                <p style="color: var(--text-muted);">Retrieving data lists...</p>
-            </div>
-        </div>
-
+      </div>
     </div>
+  </div>
 
-    <script type="module" src="import.js"></script>
+  <div class="footer-banner">
+    <p>© 2025 Marudhara Exam Result Portal. All rights reserved.</p>
+    <p>Official URL: <a href="http://www.marudharaexam.in" target="_blank">www.marudharaexam.in</a></p>
+  </div>
+
+  <!-- Replace PDF Modal -->
+  <div class="modal-overlay" id="replace-modal" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Replace Exam PDF Content</h3>
+      </div>
+      <div class="modal-body">
+        <p>Replacing the PDF will delete all existing student records for the selected exam, parse the new PDF, and import the new dataset.</p>
+        <form id="replace-form">
+          <input type="hidden" id="replace-exam-id" value="">
+          <div class="form-group">
+            <label for="replace-pdf-file">Select New Result PDF</label>
+            <input type="file" id="replace-pdf-file" accept=".pdf" required>
+          </div>
+          <div class="button-group text-right">
+            <button type="button" class="btn btn-secondary" id="close-replace-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Process Replacement</button>
+          </div>
+        </form>
+        <div class="progress-wrapper" id="replace-progress-wrapper" style="display: none; margin-top: 15px;">
+          <div class="progress-header">
+            <span id="replace-progress-label">Processing...</span>
+            <span id="replace-progress-percent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="replace-progress-fill" style="width: 0%;"></div>
+          </div>
+          <p class="progress-log" id="replace-progress-log">Initializing pipeline...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="import.js"></script>
 </body>
 </html>
