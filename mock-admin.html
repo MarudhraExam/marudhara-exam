@@ -785,7 +785,11 @@
     function parseExcelQuestions(rows) {
       return rows.map((row, index) => {
         const questionNo = Number(row.questionNo || row.question_no || row.qno || index + 1);
-        const questionHindi = String(row.questionHindi || row.question || '').trim();
+        const questionHindi = String(row.questionHindi || row.question || '')
+  .replace(/_x000D_/g, '\n')
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n')
+  .trim();
         const questionEnglish = String(row.questionEnglish || '').trim();
         const optionAHindi = String(row.optionAHindi || row.optionA || '').trim();
         const optionAEnglish = String(row.optionAEnglish || '').trim();
