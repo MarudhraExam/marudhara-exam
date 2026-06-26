@@ -184,7 +184,47 @@
         return 'Unknown Category';
       }
     }
-
+function T() {
+  return getSavedLanguage() === 'en'
+    ? {
+        score: "Score",
+        percentage: "Percentage",
+        correct: "Correct",
+        wrong: "Wrong",
+        attempted: "Attempted",
+        unattempted: "Unattempted",
+        questions: "Questions",
+        timeTaken: "Time Taken",
+        remainingTime: "Remaining Time",
+        submitted: "Submitted On",
+        details: "Details",
+        mockTitle: "Mock Title",
+        category: "Category",
+        name: "Name",
+        roll: "Roll Number",
+        returnBtn: "Return to Categories",
+        printBtn: "Print Result"
+      }
+    : {
+        score: "अंक",
+        percentage: "प्रतिशत",
+        correct: "सही",
+        wrong: "गलत",
+        attempted: "प्रयास किए",
+        unattempted: "अनुत्तरित",
+        questions: "प्रश्न",
+        timeTaken: "लिया गया समय",
+        remainingTime: "शेष समय",
+        submitted: "जमा करने का समय",
+        details: "विवरण",
+        mockTitle: "मॉक टेस्ट",
+        category: "श्रेणी",
+        name: "नाम",
+        roll: "रोल नंबर",
+        returnBtn: "श्रेणियों पर जाएँ",
+        printBtn: "प्रिंट रिजल्ट"
+      };
+}
     function renderSummary(result, categoryName) {
       const studentName = result.name || result.studentName || 'Unknown';
       const studentRoll = result.roll || result.studentRoll || 'Unknown';
