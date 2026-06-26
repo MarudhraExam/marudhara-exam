@@ -1557,7 +1557,62 @@ alert("Error : " + error.message);
 }
 
 };
+window.uploadResult = async function () {
 
+    try {
+
+        const examName = document.getElementById("resultExamName").value.trim();
+        const resultDate = document.getElementById("resultDate").value;
+        const status = document.getElementById("resultStatus").value;
+        const pdfFile = document.getElementById("resultPdf").files[0];
+
+        if (examName === "") {
+            alert("Exam Name भरें");
+            return;
+        }
+
+        if (!pdfFile) {
+            alert("Result PDF Select करें");
+            return;
+        }
+
+        await addDoc(collection(db, "results"), {
+
+            examName,
+
+            resultDate,
+
+            status,
+
+            fileName: pdfFile.name,
+
+            students: 0,
+
+            pages: 0,
+
+            createdAt: new Date().toISOString(),
+
+            updatedAt: new Date().toISOString()
+
+        });
+
+        alert("Result Saved Successfully ✅");
+
+        document.getElementById("resultExamName").value = "";
+        document.getElementById("resultDate").value = "";
+        document.getElementById("resultPdf").value = "";
+
+        loadResults();
+
+    }
+
+    catch (error) {
+
+        alert(error.message);
+
+    }
+
+};
 
 </script>
 <script>
