@@ -243,6 +243,54 @@ alert(error.message);
 }
 
 }
+async function loadResults(){
+
+const tbody=document.getElementById("resultList");
+
+tbody.innerHTML="";
+
+const snapshot=await getDocs(collection(db,"results"));
+
+snapshot.forEach((docItem)=>{
+
+const data=docItem.data();
+
+tbody.innerHTML+=`
+
+<tr>
+
+<td>${data.examName}</td>
+
+<td>${data.pdfName}</td>
+
+<td>
+
+<button onclick="deleteResult('${docItem.id}')">
+
+Delete
+
+</button>
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+}
+window.deleteResult=async function(id){
+
+if(!confirm("Delete Result?")) return;
+
+await deleteDoc(doc(db,"results",id));
+
+loadResults();
+
+}
+
+loadResults();
 </script>
 </body>
 </html>
