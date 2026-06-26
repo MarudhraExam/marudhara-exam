@@ -19,6 +19,7 @@
     .brand small { display: block; color: #5f6f8f; margin-top: 2px; }
     .top-actions a { border-radius: 999px; padding: 12px 18px; background: #0b4ea2; color: #fff; }
     .top-actions a:hover { background: #0f3c7f; }
+    .language-select { font-size: 1rem; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(35,49,79,.2); background: #fff; color: #102a52; }
     .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
     .status-bar.error { background: #ffe7e6; color: #8a1f19; }
     .result-grid { display: grid; gap: 20px; }
@@ -81,6 +82,10 @@
         </div>
       </div>
       <div class="top-actions">
+        <select id="languageSelect" class="language-select" aria-label="Select language">
+          <option value="hi">हिन्दी</option>
+          <option value="en">English</option>
+        </select>
         <a href="index.html">Back to categories</a>
       </div>
     </header>
@@ -103,6 +108,8 @@
 
     const statusBar = document.getElementById('statusBar');
     const resultContent = document.getElementById('resultContent');
+    const languageSelect = document.getElementById('languageSelect');
+    const languageKey = 'mockExamLanguage';
 
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
@@ -127,6 +134,26 @@
       const mins = Math.floor(seconds / 60);
       const secs = seconds % 60;
       return `${mins}m ${secs}s`;
+    }
+
+    function getSavedLanguage() {
+      const stored = localStorage.getItem(languageKey);
+      return stored === 'en' ? 'en' : 'hi';
+    }
+
+    function saveLanguage(lang) {
+      localStorage.setItem(languageKey, lang === 'en' ? 'en' : 'hi');
+    }
+
+    function getLocalizedField(question, fieldBase) {
+      const lang = getSavedLanguage();
+      const english = String(question[`${fieldBase}English`] || '').trim();
+      const hindi = String(question[`${fieldBase}Hindi`] || '').trim();
+      const fallback = String(question[fieldBase] || '').trim();
+      if (lang === 'en') {
+        return english || hindi || fallback;
+      }
+      return hindi || fallback || english;
     }
 
     function normalizeAnswer(value) {
@@ -218,11 +245,23 @@ const items = [];
         items.push({
           id: docSnapshot.id,
           question: data.question || '',
+          questionHindi: data.questionHindi || data.question || '',
+          questionEnglish: data.questionEnglish || '',
           optionA: data.optionA || '',
+          optionAHindi: data.optionAHindi || data.optionA || '',
+          optionAEnglish: data.optionAEnglish || '',
           optionB: data.optionB || '',
+          optionBHindi: data.optionBHindi || data.optionB || '',
+          optionBEnglish: data.optionBEnglish || '',
           optionC: data.optionC || '',
+          optionCHindi: data.optionCHindi || data.optionC || '',
+          optionCEnglish: data.optionCEnglish || '',
           optionD: data.optionD || '',
+          optionDHindi: data.optionDHindi || data.optionD || '',
+          optionDEnglish: data.optionDEnglish || '',
           optionE: data.optionE || '',
+          optionEHindi: data.optionEHindi || data.optionE || '',
+          optionEEnglish: data.optionEEnglish || '',
           answer: data.answer || data.correctAnswer || data.correctOption || '',
           explanation: data.explanation || '',
           image: data.image || '',
@@ -270,7 +309,7 @@ console.log("Answers Object:", answers);
           const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
           const options = ['A', 'B', 'C', 'D', 'E']
             .map((letter) => {
-              const optionText = question[`option${letter}`] || '';
+              const optionText = getLocalizedField(question, `option${letter}`) || '';
               let optionStatus = '';
               const isSelected = studentAnswer === letter;
               const isCorrect = correctAnswer === letter;
@@ -289,13 +328,13 @@ console.log("Answers Object:", answers);
             })
             .join('');
 
-          const formattedQuestion = formatQuestionText(question.question);
+          const localizedQuestion = getLocalizedField(question, 'question');
           return `
             <article class="review-card" data-status="${status}">
               <div class="review-header">
                 <div>
                   <div class="question-meta">Question ${index + 1}</div>
-<div class="question-text">${escapeHtml(formatQuestionText(question.question))}</div>
+<div class="question-text">${escapeHtml(formatQuestionText(localizedQuestion))}</div>
 </div>
                 <div class="status-badge status-${status.toLowerCase()}">${status}</div>
               </div>
@@ -384,7 +423,7 @@ const answers =
           ${renderReviewSection(questions, answers)}`;
 
         setStatus('Result loaded successfully.');
-        document.querySelector('.filter-bar').addEventListener('click', onFilterClick);
+        document.querySelector('.filter-bar')?.addEventListener('click', onFilterClick);
       } catch (error) {
         console.error(error);
         setStatus('Unable to load result data.', 'error');
@@ -392,7 +431,14 @@ const answers =
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadResult);
+    document.addEventListener('DOMContentLoaded', () => {
+      languageSelect.value = getSavedLanguage();
+      languageSelect.addEventListener('change', () => {
+        saveLanguage(languageSelect.value);
+        loadResult();
+      });
+      loadResult();
+    });
   </script>
 </body>
 </html>

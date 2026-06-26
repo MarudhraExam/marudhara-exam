@@ -34,6 +34,14 @@
             margin: 0;
             font-size: 1.4rem;
         }
+        .language-select {
+            font-size: 1rem;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1f2937;
+        }
         .meta-list {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -224,6 +232,12 @@
                 <h1>Mock Exam</h1>
                 <p class="small-note">Answer one question at a time. Save and restore work automatically.</p>
             </div>
+            <div>
+                <select id="languageSelect" class="language-select" aria-label="Select language">
+                    <option value="hi">हिन्दी</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
             <div class="timer-box" id="timer">Loading timer...</div>
         </div>
 
@@ -325,6 +339,8 @@
         const candidateRoll = document.getElementById("candidateRoll");
         const errorMessage = document.getElementById("errorMessage");
         const optionsForm = document.getElementById("optionsForm");
+        const languageSelect = document.getElementById("languageSelect");
+        const languageKey = "mockExamLanguage";
 
         let questions = [];
         let currentIndex = 0;
@@ -392,6 +408,26 @@
             }
         }
 
+        function getSavedLanguage() {
+            const stored = localStorage.getItem(languageKey);
+            return stored === "en" ? "en" : "hi";
+        }
+
+        function saveLanguage(lang) {
+            localStorage.setItem(languageKey, lang === "en" ? "en" : "hi");
+        }
+
+        function getLocalizedField(question, fieldBase) {
+            const lang = getSavedLanguage();
+            const english = String(question[`${fieldBase}English`] || "").trim();
+            const hindi = String(question[`${fieldBase}Hindi`] || "").trim();
+            const fallback = String(question[fieldBase] || "").trim();
+            if (lang === "en") {
+                return english || hindi || fallback;
+            }
+            return hindi || fallback || english;
+        }
+
         function formatDuration(seconds) {
             const minutes = Math.floor(seconds / 60);
             const remaining = seconds % 60;
@@ -439,13 +475,13 @@
             }
             const question = questions[currentIndex];
             questionCountElement.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-            const formattedQuestion = formatQuestionText(question.question);
+            const formattedQuestion = getLocalizedField(question, "question");
             questionTextElement.textContent = formattedQuestion || "Untitled question.";
-            optionAElement.textContent = question.optionA || "Option A";
-            optionBElement.textContent = question.optionB || "Option B";
-            optionCElement.textContent = question.optionC || "Option C";
-            optionDElement.textContent = question.optionD || "Option D";
-            optionEElement.textContent = question.optionE || "Option E";
+            optionAElement.textContent = getLocalizedField(question, "optionA") || "Option A";
+            optionBElement.textContent = getLocalizedField(question, "optionB") || "Option B";
+            optionCElement.textContent = getLocalizedField(question, "optionC") || "Option C";
+            optionDElement.textContent = getLocalizedField(question, "optionD") || "Option D";
+            optionEElement.textContent = getLocalizedField(question, "optionE") || "Option E";
 
             const selectedValue = answers[question.id];
             const optionInputs = optionsForm.answer;
@@ -525,11 +561,23 @@
                 items.push({
                     id: docSnapshot.id,
                     question: data.question || "",
+                    questionHindi: data.questionHindi || data.question || "",
+                    questionEnglish: data.questionEnglish || "",
                     optionA: data.optionA || "",
+                    optionAHindi: data.optionAHindi || data.optionA || "",
+                    optionAEnglish: data.optionAEnglish || "",
                     optionB: data.optionB || "",
+                    optionBHindi: data.optionBHindi || data.optionB || "",
+                    optionBEnglish: data.optionBEnglish || "",
                     optionC: data.optionC || "",
+                    optionCHindi: data.optionCHindi || data.optionC || "",
+                    optionCEnglish: data.optionCEnglish || "",
                     optionD: data.optionD || "",
+                    optionDHindi: data.optionDHindi || data.optionD || "",
+                    optionDEnglish: data.optionDEnglish || "",
                     optionE: data.optionE || "",
+                    optionEHindi: data.optionEHindi || data.optionE || "",
+                    optionEEnglish: data.optionEEnglish || "",
                     answer: data.answer || data.correctAnswer || data.correctOption || "",
                     explanation: data.explanation || "",
                     image: data.image || "",
@@ -652,6 +700,11 @@
                 if (questions.length === 0) {
                     throw new Error("No questions found for this mock.");
                 }
+                languageSelect.value = getSavedLanguage();
+                languageSelect.addEventListener("change", () => {
+                    saveLanguage(languageSelect.value);
+                    renderQuestion();
+                });
                 buildPalette();
                 attachOptionListeners();
                 renderQuestion();
