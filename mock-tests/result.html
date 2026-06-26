@@ -296,6 +296,10 @@
       const unattempted = result.unattempted ?? 0;
       const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
       const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+      console.log("Score:", score);
+      console.log("Positive Marks:", result.positiveMarks);
+      console.log("Total Questions:", totalQuestions);
+      console.log("Total Marks:", totalMarks);
       const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
       const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
       const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
