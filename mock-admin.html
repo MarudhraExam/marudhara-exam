@@ -755,11 +755,23 @@
       const key = String(header || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
       if (['questionno', 'qno', 'sno', 'no'].includes(key)) return 'questionNo';
       if (['question', 'ques', 'questiontext'].includes(key)) return 'question';
+      if (['questionhindi', 'question_hindi', 'hindiquestion', 'question_hi'].includes(key)) return 'questionHindi';
+      if (['questionenglish', 'question_english', 'englishquestion', 'question_en'].includes(key)) return 'questionEnglish';
       if (['optiona', 'a', 'opt_a'].includes(key)) return 'optionA';
+      if (['optionahindi', 'option_a_hindi', 'optionahindi', 'optionahi'].includes(key)) return 'optionAHindi';
+      if (['optionaenglish', 'option_a_english', 'optionaenglish', 'optionaen'].includes(key)) return 'optionAEnglish';
       if (['optionb', 'b', 'opt_b'].includes(key)) return 'optionB';
+      if (['optionbhindi', 'option_b_hindi', 'optionbhindi', 'optionbhi'].includes(key)) return 'optionBHindi';
+      if (['optionbenglish', 'option_b_english', 'optionbenglish', 'optionben'].includes(key)) return 'optionBEnglish';
       if (['optionc', 'c', 'opt_c'].includes(key)) return 'optionC';
+      if (['optionchindi', 'option_c_hindi', 'optionchindi', 'optionchi'].includes(key)) return 'optionCHindi';
+      if (['optioncenglish', 'option_c_english', 'optioncenglish', 'optioncen'].includes(key)) return 'optionCEnglish';
       if (['optiond', 'd', 'opt_d'].includes(key)) return 'optionD';
+      if (['optiondhindi', 'option_d_hindi', 'optiondhindi', 'optiondhi'].includes(key)) return 'optionDHindi';
+      if (['optiondenglish', 'option_d_english', 'optiondenglish', 'optionden'].includes(key)) return 'optionDEnglish';
       if (['optione', 'e', 'opt_e'].includes(key)) return 'optionE';
+      if (['optionehindi', 'option_e_hindi', 'optionehindi', 'optionehi'].includes(key)) return 'optionEHindi';
+      if (['optioneenglish', 'option_e_english', 'optioneenglish', 'optioneen'].includes(key)) return 'optionEEnglish';
       if (['answer', 'correct', 'correctanswer'].includes(key)) return 'correctAnswer';
       if (['marks', 'mark', 'questionmarks', 'question_mark'].includes(key)) return 'marks';
       if (['negativemarks', 'negative', 'negative_mark', 'penalty'].includes(key)) return 'negativeMarks';
@@ -771,15 +783,39 @@
     function parseExcelQuestions(rows) {
       return rows.map((row, index) => {
         const questionNo = Number(row.questionNo || row.question_no || row.qno || index + 1);
+        const questionHindi = String(row.questionHindi || row.question || '').trim();
+        const questionEnglish = String(row.questionEnglish || '').trim();
+        const optionAHindi = String(row.optionAHindi || row.optionA || '').trim();
+        const optionAEnglish = String(row.optionAEnglish || '').trim();
+        const optionBHindi = String(row.optionBHindi || row.optionB || '').trim();
+        const optionBEnglish = String(row.optionBEnglish || '').trim();
+        const optionCHindi = String(row.optionCHindi || row.optionC || '').trim();
+        const optionCEnglish = String(row.optionCEnglish || '').trim();
+        const optionDHindi = String(row.optionDHindi || row.optionD || '').trim();
+        const optionDEnglish = String(row.optionDEnglish || '').trim();
+        const optionEHindi = String(row.optionEHindi || row.optionE || '').trim();
+        const optionEEnglish = String(row.optionEEnglish || '').trim();
         return {
           questionNo: Number.isFinite(questionNo) && questionNo > 0 ? questionNo : index + 1,
-          question: row.question || '',
-          optionA: row.optionA || '',
-          optionB: row.optionB || '',
-          optionC: row.optionC || '',
-          optionD: row.optionD || '',
-          optionE: row.optionE || '',
-          correctAnswer: row.correctAnswer || '',
+          questionHindi,
+          questionEnglish,
+          question: questionHindi || questionEnglish || '',
+          optionAHindi,
+          optionAEnglish,
+          optionA: optionAHindi || optionAEnglish || '',
+          optionBHindi,
+          optionBEnglish,
+          optionB: optionBHindi || optionBEnglish || '',
+          optionCHindi,
+          optionCEnglish,
+          optionC: optionCHindi || optionCEnglish || '',
+          optionDHindi,
+          optionDEnglish,
+          optionD: optionDHindi || optionDEnglish || '',
+          optionEHindi,
+          optionEEnglish,
+          optionE: optionEHindi || optionEEnglish || '',
+          correctAnswer: row.correctAnswer || row.answer || '',
           marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
           negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
           explanation: row.explanation || '',
@@ -892,11 +928,24 @@
 
     function validateQuestionRow(row, index) {
       const value = val => String(val || '').trim();
+      const questionHindi = value(row.questionHindi);
+      const questionEnglish = value(row.questionEnglish);
       const question = value(row.question);
+      const optionAHindi = value(row.optionAHindi);
+      const optionAEnglish = value(row.optionAEnglish);
       const optionA = value(row.optionA);
+      const optionBHindi = value(row.optionBHindi);
+      const optionBEnglish = value(row.optionBEnglish);
       const optionB = value(row.optionB);
+      const optionCHindi = value(row.optionCHindi);
+      const optionCEnglish = value(row.optionCEnglish);
       const optionC = value(row.optionC);
+      const optionDHindi = value(row.optionDHindi);
+      const optionDEnglish = value(row.optionDEnglish);
       const optionD = value(row.optionD);
+      const optionEHindi = value(row.optionEHindi);
+      const optionEEnglish = value(row.optionEEnglish);
+      const optionE = value(row.optionE);
       const correctAnswer = value(row.correctAnswer);
       const marks = Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1;
       const negativeMarks = Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0;
@@ -914,12 +963,36 @@
         throw new Error(`Row ${index + 1} is missing required columns: ${requiredMissing.join(', ')}`);
       }
 
-      return { question, optionA, optionB, optionC, optionD, correctAnswer, marks, negativeMarks, explanation };
+      return {
+        questionHindi,
+        questionEnglish,
+        question,
+        optionAHindi,
+        optionAEnglish,
+        optionA,
+        optionBHindi,
+        optionBEnglish,
+        optionB,
+        optionCHindi,
+        optionCEnglish,
+        optionC,
+        optionDHindi,
+        optionDEnglish,
+        optionD,
+        optionEHindi,
+        optionEEnglish,
+        optionE,
+        correctAnswer,
+        marks,
+        negativeMarks,
+        explanation,
+        image: value(row.image)
+      };
     }
 
     async function importMockQuestions(mockId, rows) {
       const cleanedRows = rows.reduce((acc, row, idx) => {
-        const hasData = ['question', 'optionA', 'optionB', 'optionC', 'optionD', 'correctAnswer', 'explanation']
+        const hasData = ['question', 'optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'correctAnswer', 'explanation']
           .some(key => String(row[key] || '').trim());
         if (!hasData) return acc;
         acc.push(validateQuestionRow(row, idx));
@@ -953,14 +1026,28 @@
           mockId,
           questionNo: row.questionNo || index + 1,
           question: row.question,
+          questionHindi: row.questionHindi || row.question || '',
+          questionEnglish: row.questionEnglish || '',
           optionA: row.optionA,
+          optionAHindi: row.optionAHindi || row.optionA || '',
+          optionAEnglish: row.optionAEnglish || '',
           optionB: row.optionB,
+          optionBHindi: row.optionBHindi || row.optionB || '',
+          optionBEnglish: row.optionBEnglish || '',
           optionC: row.optionC,
+          optionCHindi: row.optionCHindi || row.optionC || '',
+          optionCEnglish: row.optionCEnglish || '',
           optionD: row.optionD,
+          optionDHindi: row.optionDHindi || row.optionD || '',
+          optionDEnglish: row.optionDEnglish || '',
+          optionE: row.optionE || '',
+          optionEHindi: row.optionEHindi || row.optionE || '',
+          optionEEnglish: row.optionEEnglish || '',
           correctAnswer: row.correctAnswer,
           marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
           negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
           explanation: row.explanation || null,
+          image: row.image || null,
           createdAt: serverTimestamp()
         });
         opCount += 1;
