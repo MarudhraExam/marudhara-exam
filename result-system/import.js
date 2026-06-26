@@ -374,8 +374,7 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
 
     for (const colData of pageRows) {
       const cleanRoll = colData.roll.replace(/\s+/g, "");
-      const isNewRoll = /^\d{6}$/.test(cleanRoll);
-
+      const isNewRoll = /^\d{5,8}$/.test(cleanRoll);
       if (isNewRoll) {
         if (currentCandidate && currentCandidate.rollNo && currentCandidate.dob && currentCandidate.gender) {
           parsedRecords.push(currentCandidate);
