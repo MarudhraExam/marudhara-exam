@@ -26,7 +26,7 @@ async function loadExams() {
             const data = doc.data();
             const option = document.createElement("option");
             option.value = doc.id;
-            option.textContent = data.name;
+          option.textContent = data.examName;
             examSelector.appendChild(option);
         });
     } catch (e) {
