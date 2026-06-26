@@ -46,30 +46,84 @@
     .button-secondary:hover { background: #dce6ff; }
     .button-secondary.active { background: #0b4ea2; color: #fff; }
     .review-section { padding-bottom: 0; }
-    .review-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
-    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-    .review-list { display: grid; gap: 18px; margin-top: 20px; }
-    .review-card { border: 1px solid rgba(35,49,79,.12); border-radius: 24px; padding: 22px; background: #fff; scroll-margin-top: 96px; }
-    .review-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-start; }
-    .question-meta { color: #5f6f8f; font-size: 0.92rem; margin-bottom: 8px; }
-    .question-text { color: #162e56; font-weight: 700; line-height: 1.55; white-space: pre-line; }
-    .status-badge { padding: 9px 16px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; font-size: .82rem; white-space: nowrap; }
+    .analysis-panel { display: flex; flex-direction: column; gap: 18px; }
+    .analysis-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px; align-items: flex-start; }
+    .analysis-header h2 { margin: 0; }
+    .analysis-legend { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .legend-chip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #fff; border: 1px solid rgba(35,49,79,.12); color: #22355d; font-weight: 700; font-size: .95rem; }
+    .legend-bullet { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .legend-correct { background: #33b34a; }
+    .legend-wrong { background: #f64b4b; }
+    .legend-unattempted { background: #3f7ffc; }
+    .summary-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+    .summary-card { display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 18px; border-radius: 20px; border: 1px solid rgba(35,49,79,.12); background: #fff; color: #102a52; text-align: left; cursor: pointer; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; min-height: 110px; }
+    .summary-card:hover, .summary-card.active { transform: translateY(-2px); box-shadow: 0 18px 30px rgba(24,52,95,.09); border-color: rgba(11,78,162,.22); }
+    .summary-card strong { font-size: .92rem; color: #5f6f8f; }
+    .summary-card .summary-value { font-size: 1.8rem; line-height: 1; font-weight: 800; }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .filter-button { border: 1px solid rgba(35,49,79,.12); background: #fff; color: #102a52; padding: 11px 18px; border-radius: 16px; font-weight: 700; cursor: pointer; transition: transform .18s ease, background .2s ease, border-color .2s ease; }
+    .filter-button:hover { transform: translateY(-1px); }
+    .filter-button.active { background: #0b4ea2; color: #fff; border-color: #0b4ea2; }
+    .question-palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(36px, 1fr)); gap: 10px; padding: 8px 0; }
+    .question-pill { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid transparent; font-weight: 700; font-size: .95rem; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; color: #fff; background: #3f7ffc; outline: none; }
+    .question-pill:hover { transform: scale(1.06); box-shadow: 0 12px 22px rgba(30,57,105,.16); }
+    .question-pill.active { border-color: rgba(1,10,32,.15); box-shadow: 0 0 0 4px rgba(11,78,162,.12); }
+    .question-pill.correct { background: #33b34a; }
+    .question-pill.wrong { background: #f64b4b; }
+    .question-pill.unattempted { background: #3f7ffc; }
+    .question-pill[hidden] { display: none !important; }
+    .question-review-panel { margin-top: 22px; }
+    .question-review-card { background: #fff; border-radius: 28px; border: 1px solid rgba(35,49,79,.12); box-shadow: 0 22px 50px rgba(42,74,123,.08); padding: 26px; transition: opacity .24s ease, transform .24s ease; }
+    .question-review-card.fade-in { animation: fadeInCard .24s ease both; }
+    .review-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .review-meta-left { min-width: 180px; }
+    .question-label { color: #5f6f8f; font-size: .9rem; margin-bottom: 8px; }
+    .question-text { margin: 0; color: #162e56; line-height: 1.8; font-weight: 700; white-space: pre-wrap; }
+    .review-status-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .status-pill { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 999px; font-weight: 700; font-size: .86rem; text-transform: uppercase; letter-spacing: .01em; }
     .status-correct { background: #e6f8eb; color: #077a37; }
     .status-wrong { background: #ffe7e7; color: #961f1f; }
     .status-unattempted { background: #eef2ff; color: #0b4ea2; }
-    .question-image { width: 100%; max-height: 320px; object-fit: contain; border-radius: 18px; margin: 20px 0; }
+    .question-asset { width: 100%; max-height: 340px; object-fit: contain; border-radius: 20px; margin: 20px 0; }
     .options-grid { display: grid; gap: 12px; margin-top: 18px; }
-    .option-chip { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 16px; background: #f8f9fd; border: 1px solid rgba(35,49,79,.08); color: #1b2d4f; }
-    .option-label { min-width: 36px; min-height: 36px; display: grid; place-items: center; border-radius: 999px; background: #dbe6ff; color: #0b4ea2; font-weight: 700; }
-    .option-correct { background: #ecf9f1; border-color: #80d7a7; }
-    .option-selected-correct { background: #d8efff; border-color: #80c1ff; }
-    .option-selected-wrong { background: #ffe9e9; border-color: #ff9a9a; }
-    .option-unattempted { background: #f4f5f8; border-color: #ccd4e3; color: #6d7586; }
-    .answer-summary { display: grid; gap: 10px; margin-top: 24px; padding: 18px; border-radius: 18px; background: #f8faff; border: 1px solid rgba(11,78,162,.1); }
-    .answer-summary div { display: flex; justify-content: space-between; gap: 12px; }
-    .answer-summary strong { color: #102a52; }
-    .card-grid + .review-section { margin-top: 20px; }
-    @media (max-width: 920px) { .card-grid { grid-template-columns: 1fr; } }
+    .option-chip { position: relative; display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 18px; background: #f8f9fd; border: 1px solid rgba(35,49,79,.12); color: #1c3154; min-height: 68px; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+    .option-chip:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(20,42,85,.1); }
+    .option-chip.correct, .option-chip.selected-correct { background: #e9f8ef; border-color: #8bd5a1; color: #0f4a2c; }
+    .option-chip.selected-wrong { background: #ffecee; border-color: #f39a9a; color: #7f2424; }
+    .option-chip.unattempted { background: #eef4ff; border-color: #bdd2ff; color: #1f3f7a; }
+    .option-label { min-width: 40px; min-height: 40px; display: grid; place-items: center; border-radius: 50%; background: #dbe6ff; color: #0b4ea2; font-weight: 700; }
+    .option-chip.correct .option-label, .option-chip.selected-correct .option-label { background: #26a74b; color: #fff; }
+    .option-chip.selected-wrong .option-label { background: #d33f3f; color: #fff; }
+    .option-chip.unattempted .option-label { background: #2f7ffc; color: #fff; }
+    .option-text { flex: 1; font-size: .96rem; line-height: 1.7; word-break: break-word; }
+    .option-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.85); font-size: .9rem; color: #102a52; }
+    .option-chip.correct .option-icon, .option-chip.selected-correct .option-icon { background: #26a74b; color: #fff; }
+    .option-chip.selected-wrong .option-icon { background: #d33f3f; color: #fff; }
+    .option-chip.unattempted .option-icon { background: #2f7ffc; color: #fff; }
+    .review-stats { display: grid; gap: 10px; margin-top: 24px; padding: 20px; border-radius: 22px; background: #f7fbff; border: 1px solid rgba(11,78,162,.14); }
+    .review-stats div { display: flex; justify-content: space-between; gap: 12px; color: #22355d; }
+    .review-stats strong { font-weight: 700; }
+    .question-explanation { margin-top: 24px; padding: 22px; border-radius: 22px; background: #fff; border: 1px solid rgba(35,49,79,.08); }
+    .question-explanation h4 { margin: 0 0 14px; font-size: 1rem; color: #102a52; }
+    .question-explanation > *:not(:first-child) { margin-top: 12px; }
+    .question-explanation img { max-width: 100%; height: auto; border-radius: 16px; display: block; }
+    .question-explanation table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .question-explanation th, .question-explanation td { padding: 10px 12px; border: 1px solid rgba(46,68,101,.12); text-align: left; }
+    .question-explanation blockquote { padding: 14px 18px; border-left: 4px solid #0b4ea2; background: #eef5ff; color: #1d365f; margin: 0; }
+    .nav-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .nav-controls button { min-width: 130px; border: 1px solid rgba(35,49,79,.14); background: #fff; color: #102a52; padding: 12px 18px; border-radius: 16px; cursor: pointer; transition: transform .18s ease, background .2s ease; }
+    .nav-controls button:hover { background: #eef4ff; transform: translateY(-1px); }
+    .nav-controls button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .question-pill.correct { background: #33b34a; }
+    .question-pill.wrong { background: #f64b4b; }
+    .question-pill.unattempted { background: #3f7ffc; }
+    .question-pill:focus-visible,
+    .filter-button:focus-visible,
+    .summary-card:focus-visible,
+    .nav-controls button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(11,78,162,.24); }
+    @keyframes fadeInCard { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 920px) { .card-grid { grid-template-columns: 1fr; } .analysis-header { flex-direction: column; } .question-palette { grid-template-columns: repeat(auto-fit, minmax(34px, 1fr)); } }
+    @media (max-width: 720px) { .options-grid { grid-template-columns: 1fr; } .analysis-header { gap: 12px; } .summary-card { min-height: auto; } }
     @media (min-width: 680px) { .options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
@@ -279,118 +333,331 @@ const items = [];
       return items;
     }
 
+    const pageState = {
+      questions: [],
+      answers: {},
+      activeFilter: 'All',
+      selectedQuestionIndex: 0
+    };
+
+    function getQuestionStatus(question, answers) {
+      const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
+      const correctAnswer = normalizeAnswer(question.answer || '');
+      if (!studentAnswer) return 'Unattempted';
+      return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+    }
+
+    function getPaletteStats(questions, answers) {
+      const stats = { total: questions.length, correct: 0, wrong: 0, unattempted: 0 };
+      questions.forEach((question) => {
+        const status = getQuestionStatus(question, answers);
+        if (status === 'Correct') stats.correct += 1;
+        else if (status === 'Wrong') stats.wrong += 1;
+        else stats.unattempted += 1;
+      });
+      stats.attempted = stats.total - stats.unattempted;
+      return stats;
+    }
+
     function buildOptionHtml(letter, optionText, status) {
       const text = optionText ? escapeHtml(optionText) : '—';
       const classes = ['option-chip'];
-      if (status === 'correct') classes.push('option-correct');
-      if (status === 'selected-correct') classes.push('option-selected-correct');
-      if (status === 'selected-wrong') classes.push('option-selected-wrong');
-      if (status === 'unattempted') classes.push('option-unattempted');
+      let icon = '';
+      if (status === 'correct') {
+        classes.push('correct');
+        icon = '✔';
+      }
+      if (status === 'selected-correct') {
+        classes.push('selected-correct');
+        icon = '✓';
+      }
+      if (status === 'selected-wrong') {
+        classes.push('selected-wrong');
+        icon = '✕';
+      }
+      if (status === 'unattempted') {
+        classes.push('unattempted');
+      }
 
       return `
-        <div class="${classes.join(' ')}">
+        <div class="${classes.join(' ')}" role="group" aria-label="Option ${letter} ${status}">
           <span class="option-label">${letter}</span>
-          <span>${text}</span>
+          <span class="option-text">${text}</span>
+          <span class="option-icon">${icon}</span>
         </div>`;
     }
 
-    function renderReviewCards(questions, answers) {
-      if (!questions.length) {
-        return '<div class="empty-state">No questions were found for this mock test.</div>';
-      }
+    function renderHtmlContent(value) {
+      const content = String(value || '').trim();
+      if (!content) return '';
+      return sanitizeHtml(content);
+    }
 
-      if (!questions.length) {
-        console.log('Questions Loaded:', questions.length);
-        console.log('Result Answers:', answers);
-      }
+    function sanitizeHtml(html) {
+      const template = document.createElement('template');
+      template.innerHTML = html;
+      const allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div', 'blockquote', 'pre', 'code', 'a'];
+      const allowedAttributes = {
+        a: ['href', 'title', 'target', 'rel'],
+        img: ['src', 'alt', 'title'],
+        td: ['colspan', 'rowspan'],
+        th: ['colspan', 'rowspan']
+      };
 
-      return questions
+      const cleanNode = (node) => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const tagName = node.tagName.toLowerCase();
+        if (!allowedTags.includes(tagName)) {
+          node.replaceWith(...Array.from(node.childNodes));
+          return;
+        }
+
+        Array.from(node.attributes).forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          const value = attr.value;
+          const allowed = allowedAttributes[tagName] && allowedAttributes[tagName].includes(name);
+
+          if (name === 'href' || name === 'src') {
+            const isSafe = value && !/^\s*(javascript|data):/i.test(value);
+            if (!isSafe) {
+              node.removeAttribute(name);
+              return;
+            }
+          }
+
+          if (!allowed) {
+            node.removeAttribute(name);
+          }
+        });
+
+        Array.from(node.childNodes).forEach(cleanNode);
+      };
+
+      Array.from(template.content.querySelectorAll('*')).forEach(cleanNode);
+      return template.innerHTML;
+    }
+
+    function renderSummaryCards(stats, result) {
+      const totalQuestions = result.totalQuestions ?? pageState.questions.length ?? 0;
+      const score = Number.isFinite(result.score) ? result.score : result.score ?? 0;
+      const totalMarks = (result.positiveMarks ?? 1) * totalQuestions;
+      const percentage = totalMarks > 0 ? ((score / totalMarks) * 100).toFixed(2) : '0.00';
+      const cards = [
+        { label: 'Total Questions', value: stats.total, filter: 'All' },
+        { label: 'Attempted', value: stats.attempted, filter: 'All' },
+        { label: 'Correct', value: stats.correct, filter: 'Correct' },
+        { label: 'Wrong', value: stats.wrong, filter: 'Wrong' },
+        { label: 'Not Attempted', value: stats.unattempted, filter: 'Unattempted' },
+        { label: 'Score Obtained', value: score, filter: 'All' },
+        { label: 'Percentage', value: `${percentage}%`, filter: 'All' }
+      ];
+
+      return cards
+        .map((card) => `
+          <button type="button" class="summary-card ${pageState.activeFilter === card.filter ? 'active' : ''}" data-filter="${card.filter}" aria-label="${card.label}">
+            <strong>${card.label}</strong>
+            <span class="summary-value">${card.value}</span>
+          </button>`)
+        .join('');
+    }
+
+    function renderReviewCard(question, index, total, answers) {
+      const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
+      const correctAnswer = normalizeAnswer(question.answer || '');
+      const status = getQuestionStatus(question, answers);
+      const optionsHtml = ['A', 'B', 'C', 'D', 'E']
+        .map((letter) => {
+          const optionText = getLocalizedField(question, `option${letter}`) || '';
+          if (!optionText) return '';
+          const isSelected = studentAnswer === letter;
+          const isCorrect = correctAnswer === letter;
+          let optionStatus = 'unattempted';
+          if (!studentAnswer) {
+            optionStatus = 'unattempted';
+          } else if (isCorrect && isSelected) {
+            optionStatus = 'selected-correct';
+          } else if (isCorrect) {
+            optionStatus = 'correct';
+          } else if (isSelected) {
+            optionStatus = 'selected-wrong';
+          }
+          return buildOptionHtml(letter, optionText, optionStatus);
+        })
+        .join('');
+
+      const explanationHtml = renderHtmlContent(getLocalizedField(question, 'explanation'));
+
+      return `
+        <article class="question-review-card fade-in" aria-live="polite">
+          <div class="review-meta">
+            <div class="review-meta-left">
+              <div class="question-label">Question ${index + 1} of ${total}</div>
+              <h3 class="question-text">${escapeHtml(formatQuestionText(getLocalizedField(question, 'question')))}</h3>
+            </div>
+            <div class="review-status-group">
+              <span class="status-pill status-${status.toLowerCase()}">${status}</span>
+            </div>
+          </div>
+          ${question.image ? `<img class="question-asset" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
+          <div class="options-grid">${optionsHtml}</div>
+          <div class="review-stats">
+            <div><strong>Your Answer</strong><span>${studentAnswer || 'Unattempted'}</span></div>
+            <div><strong>Correct Answer</strong><span>${correctAnswer || 'N/A'}</span></div>
+            <div><strong>Status</strong><span>${status}</span></div>
+          </div>
+          ${explanationHtml ? `
+            <section class="question-explanation">
+              <h4>Explanation</h4>
+              <div>${explanationHtml}</div>
+            </section>` : ''}
+          <div class="nav-controls">
+            <button type="button" id="prevQuestionBtn" ${index === 0 ? 'disabled' : ''} aria-label="Previous question">Previous</button>
+            <button type="button" id="nextQuestionBtn" ${index === total - 1 ? 'disabled' : ''} aria-label="Next question">Next</button>
+          </div>
+        </article>`;
+    }
+
+    function renderReviewSection(questions, answers, result) {
+      const stats = getPaletteStats(questions, answers);
+      return `
+        <div class="card review-section">
+          <div class="analysis-panel" aria-label="Question analysis section">
+            <div class="analysis-header">
+              <div>
+                <h2>Question Analysis</h2>
+                <p class="neutral-note">View your question palette, filter results, and review the selected question.</p>
+              </div>
+              <div class="analysis-legend" role="group" aria-label="Answer legend">
+                <span class="legend-chip"><span class="legend-bullet legend-correct"></span> Correct</span>
+                <span class="legend-chip"><span class="legend-bullet legend-wrong"></span> Wrong</span>
+                <span class="legend-chip"><span class="legend-bullet legend-unattempted"></span> Not Attempted</span>
+              </div>
+            </div>
+            <div class="summary-grid">${renderSummaryCards(stats, result)}</div>
+            <div class="filter-bar" role="toolbar" aria-label="Question filters">
+              <button type="button" class="filter-button active" data-filter="All" aria-pressed="true">All</button>
+              <button type="button" class="filter-button" data-filter="Correct" aria-pressed="false">Correct</button>
+              <button type="button" class="filter-button" data-filter="Wrong" aria-pressed="false">Wrong</button>
+              <button type="button" class="filter-button" data-filter="Unattempted" aria-pressed="false">Not Attempted</button>
+            </div>
+            <div id="questionPalette" class="question-palette" aria-label="Question palette"></div>
+          </div>
+          <div id="questionReviewContainer" class="question-review-panel"></div>
+        </div>`;
+    }
+
+    function updateFilterButtons(filter) {
+      pageState.activeFilter = filter;
+      document.querySelectorAll('.filter-button').forEach((button) => {
+        const isActive = button.dataset.filter === filter;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+      document.querySelectorAll('.summary-card').forEach((button) => {
+        const isActive = button.dataset.filter === filter;
+        button.classList.toggle('active', isActive);
+      });
+    }
+
+    function renderQuestionPalette() {
+      const palette = document.getElementById('questionPalette');
+      if (!palette) return;
+      palette.innerHTML = pageState.questions
         .map((question, index) => {
-          console.log(question);
-          console.log("Question ID:", question.id);
-console.log("Correct:", question.answer);
-console.log("Student:", answers?.[question.id]);
-console.log("Answers Object:", answers);
-          const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
-          const correctAnswer = normalizeAnswer(question.answer || '');
-          const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
-          const options = ['A', 'B', 'C', 'D', 'E']
-            .map((letter) => {
-              const optionText = getLocalizedField(question, `option${letter}`) || '';
-              let optionStatus = '';
-              const isSelected = studentAnswer === letter;
-              const isCorrect = correctAnswer === letter;
-
-              if (!studentAnswer) {
-                optionStatus = 'unattempted';
-              } else if (isCorrect && isSelected) {
-                optionStatus = 'selected-correct';
-              } else if (isCorrect) {
-                optionStatus = 'correct';
-              } else if (isSelected) {
-                optionStatus = 'selected-wrong';
-              }
-
-              return buildOptionHtml(letter, optionText, optionStatus);
-            })
-            .join('');
-
-          const localizedQuestion = getLocalizedField(question, 'question');
+          const status = getQuestionStatus(question, pageState.answers);
+          const isSelected = index === pageState.selectedQuestionIndex;
+          const visible = pageState.activeFilter === 'All' || status === pageState.activeFilter;
           return `
-            <article class="review-card" data-status="${status}">
-              <div class="review-header">
-                <div>
-                  <div class="question-meta">Question ${index + 1}</div>
-<div class="question-text">${escapeHtml(formatQuestionText(localizedQuestion))}</div>
-</div>
-                <div class="status-badge status-${status.toLowerCase()}">${status}</div>
-              </div>
-              ${question.image ? `<img class="question-image" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
-              <div class="options-grid">${options}</div>
-              ${getLocalizedField(question, 'explanation') ? `
-<div class="answer-summary">
-    <div>
-        <strong>Explanation</strong>
-        <span>${escapeHtml(getLocalizedField(question, 'explanation'))}</span>
-    </div>
-</div>
-` : ''}
-              <div class="answer-summary">
-                <div><strong>Your Answer</strong><span>${studentAnswer || 'Unattempted'}</span></div>
-                <div><strong>Correct Answer</strong><span>${correctAnswer || 'N/A'}</span></div>
-              </div>
-            </article>`;
+            <button
+              type="button"
+              class="question-pill ${status.toLowerCase()}${isSelected ? ' active' : ''}"
+              data-index="${index}"
+              data-status="${status}"
+              aria-label="Question ${index + 1}, ${status}"
+              aria-pressed="${isSelected}"
+              ${visible ? '' : 'hidden'}>
+              ${index + 1}
+            </button>`;
         })
         .join('');
     }
 
-    function onFilterClick(event) {
-      const button = event.target.closest('button[data-filter]');
-      if (!button) return;
-      const filter = button.dataset.filter;
-      document.querySelectorAll('.filter-bar button').forEach((btn) => btn.classList.toggle('active', btn === button));
-      document.querySelectorAll('.review-card').forEach((card) => {
-        card.style.display = filter === 'All' || card.dataset.status === filter ? '' : 'none';
-      });
+    function renderQuestionReview() {
+      const container = document.getElementById('questionReviewContainer');
+      if (!container) return;
+      const question = pageState.questions[pageState.selectedQuestionIndex];
+      if (!question) {
+        container.innerHTML = '<div class="empty-state">Select a question to review its details.</div>';
+        return;
+      }
+      const status = getQuestionStatus(question, pageState.answers);
+      if (pageState.activeFilter !== 'All' && status !== pageState.activeFilter) {
+        container.innerHTML = '<div class="empty-state">No questions match the selected filter.</div>';
+        return;
+      }
+      container.innerHTML = renderReviewCard(question, pageState.selectedQuestionIndex, pageState.questions.length, pageState.answers);
+      document.getElementById('prevQuestionBtn')?.addEventListener('click', () => selectQuestion(pageState.selectedQuestionIndex - 1));
+      document.getElementById('nextQuestionBtn')?.addEventListener('click', () => selectQuestion(pageState.selectedQuestionIndex + 1));
     }
 
-    function renderReviewSection(questions, answers) {
-      return `
-        <div class="card review-section">
-          <div class="review-top">
-            <div>
-              <h2>Question Review</h2>
-              <p class="neutral-note">Compare student selections with the correct answer and filter by status.</p>
-            </div>
-            <div class="filter-bar">
-              <button class="button-secondary active" type="button" data-filter="All">All</button>
-              <button class="button-secondary" type="button" data-filter="Correct">Correct</button>
-              <button class="button-secondary" type="button" data-filter="Wrong">Wrong</button>
-              <button class="button-secondary" type="button" data-filter="Unattempted">Unattempted</button>
-            </div>
-          </div>
-          <div id="reviewCards" class="review-list">${renderReviewCards(questions, answers)}</div>
-        </div>`;
+    function selectQuestion(index, options = { scroll: true }) {
+      if (index < 0 || index >= pageState.questions.length) return;
+      pageState.selectedQuestionIndex = index;
+      renderQuestionPalette();
+      renderQuestionReview();
+      if (options.scroll) {
+        document.getElementById('questionReviewContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function applyFilter(filter) {
+      updateFilterButtons(filter);
+      const visibleQuestions = pageState.questions.filter((question) => {
+        const status = getQuestionStatus(question, pageState.answers);
+        return filter === 'All' || status === filter;
+      });
+      if (visibleQuestions.length && !visibleQuestions.some((question) => pageState.questions[pageState.selectedQuestionIndex] === question)) {
+        pageState.selectedQuestionIndex = pageState.questions.indexOf(visibleQuestions[0]);
+      }
+      renderQuestionPalette();
+      renderQuestionReview();
+    }
+
+    function handlePaletteClick(event) {
+      const button = event.target.closest('.question-pill');
+      if (!button || !button.dataset.index) return;
+      selectQuestion(Number(button.dataset.index));
+    }
+
+    function handleFilterBarClick(event) {
+      const button = event.target.closest('.filter-button, .summary-card');
+      if (!button || !button.dataset.filter) return;
+      applyFilter(button.dataset.filter);
+    }
+
+    function handleKeyboardNavigation(event) {
+      if (event.defaultPrevented) return;
+      if (event.key === 'ArrowLeft') {
+        selectQuestion(Math.max(0, pageState.selectedQuestionIndex - 1));
+      } else if (event.key === 'ArrowRight') {
+        selectQuestion(Math.min(pageState.questions.length - 1, pageState.selectedQuestionIndex + 1));
+      } else {
+        return;
+      }
+      event.preventDefault();
+    }
+
+    function initializeQuestionAnalysis(questions, answers) {
+      pageState.questions = questions;
+      pageState.answers = answers;
+      pageState.activeFilter = 'All';
+      pageState.selectedQuestionIndex = 0;
+      renderQuestionPalette();
+      renderQuestionReview();
+      document.querySelector('.analysis-panel')?.addEventListener('click', handleFilterBarClick);
+      document.getElementById('questionPalette')?.addEventListener('click', handlePaletteClick);
+      document.removeEventListener('keydown', handleKeyboardNavigation);
+      document.addEventListener('keydown', handleKeyboardNavigation);
     }
 
     async function loadResult() {
@@ -427,10 +694,10 @@ const answers =
           <div class="card-grid">
             ${renderSummary(result, categoryName)}
           </div>
-          ${renderReviewSection(questions, answers)}`;
+          ${renderReviewSection(questions, answers, result)}`;
 
         setStatus('Result loaded successfully.');
-        document.querySelector('.filter-bar')?.addEventListener('click', onFilterClick);
+        initializeQuestionAnalysis(questions, answers);
       } catch (error) {
         console.error(error);
         setStatus('Unable to load result data.', 'error');
