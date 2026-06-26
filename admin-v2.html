@@ -135,9 +135,6 @@ window.location.href="index.html";
 <div class="card" onclick="location.href='mock-admin.html'">
 🎯 Mock Test Manager
 </div>
-<div class="card" onclick="showSection('resultSection')">
-📊 Result Manager
-</div>
 </div>
 
 <div id="answerSection" class="section">
@@ -380,44 +377,6 @@ style="background:red;color:white;margin-left:10px;">
 🚀 Upload Notes
 </button>
 </div>
-<div id="resultSection" class="section">
-
-<h2>📊 Result Manager</h2>
-
-<label>Exam Name</label>
-<input type="text" id="resultExamName"
-placeholder="RSSB Basic Computer Instructor Result 2026">
-
-<label>Result Date</label>
-<input type="date" id="resultDate">
-
-<label>Status</label>
-<select id="resultStatus">
-    <option value="Draft">🟡 Draft</option>
-    <option value="Published">🟢 Published</option>
-</select>
-
-<label>Result PDF</label>
-<input
-type="file"
-id="resultPdf"
-accept=".pdf">
-
-<button onclick="uploadResult()">
-📤 Upload Result
-</button>
-
-<hr>
-
-<h3>📋 Uploaded Results</h3>
-
-<div id="resultList">
-
-No Result Uploaded
-
-</div>
-
-</div>
 <script type="module">
 
 import {
@@ -432,8 +391,7 @@ collection,
 addDoc,
 getDocs,
 deleteDoc,
-doc,
-updateDoc
+doc
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -891,79 +849,8 @@ alert("Quiz Deleted ✅");
 loadQuizzes();
 
 };
-snapshot.forEach((result)=>{
-
-const data = result.data();
-
-list.innerHTML += `
-
-<div style="
-border:1px solid #ddd;
-padding:15px;
-margin-bottom:12px;
-border-radius:10px;
-">
-
-<b>${data.examName}</b>
-
-<br><br>
-
-📅 ${data.resultDate || "-"}
-
-<br>
-
-📄 ${data.fileName}
-
-<br>
-
-👥 Students : ${data.students}
-
-<br>
-
-📑 Pages : ${data.pages}
-
-<br>
-
-Status :
-${data.status}
-
-<br><br>
-
-<button
-onclick="deleteResult('${result.id}')"
-style="
-background:red;
-padding:8px 15px;
-">
-
-🗑 Delete
-
-</button>
-
-</div>
-
-`;
-
-});
-
-}
-};
 
 loadQuizzes();
-window.deleteQuiz = async function(id){
-
-if(!confirm("Quiz Delete करना है?"))
-return;
-
-await deleteDoc(
-doc(db,"quizzes",id)
-);
-
-alert("Quiz Deleted ✅");
-
-loadQuizzes();
-
-};
 window.saveVacancy =
 async function(){
 
@@ -1628,73 +1515,7 @@ alert("Error : " + error.message);
 }
 
 };
-window.uploadResult = async function () {
 
-    try {
-
-        const examName = document.getElementById("resultExamName").value.trim();
-        const resultDate = document.getElementById("resultDate").value;
-        const status = document.getElementById("resultStatus").value;
-        const pdfFile = document.getElementById("resultPdf").files[0];
-
-        if (examName === "") {
-            alert("Exam Name भरें");
-            return;
-        }
-
-        if (!pdfFile) {
-            alert("Result PDF Select करें");
-            return;
-        }
-
-        await addDoc(collection(db, "results"), {
-
-            examName,
-
-            resultDate,
-
-            status,
-
-            fileName: pdfFile.name,
-
-            students: 0,
-
-            pages: 0,
-
-            createdAt: new Date().toISOString(),
-
-            updatedAt: new Date().toISOString()
-
-        });
-
-        alert("Result Saved Successfully ✅");
-
-        document.getElementById("resultExamName").value = "";
-        document.getElementById("resultDate").value = "";
-        document.getElementById("resultPdf").value = "";
-
-        loadResults();
-
-    }
-
-    catch (error) {
-
-        alert(error.message);
-
-    }
-window.deleteResult = async function(id){
-
-    if(!confirm("क्या आप यह Result Delete करना चाहते हैं?"))
-        return;
-
-    await deleteDoc(doc(db,"results",id));
-
-    alert("Result Deleted Successfully ✅");
-
-    loadResults();
-
-}
-};
 
 </script>
 <script>
