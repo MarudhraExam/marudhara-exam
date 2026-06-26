@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -239,49 +239,51 @@
         return 'Unknown Category';
       }
     }
-function T() {
-  return getSavedLanguage() === 'en'
-    ? {
-        score: "Score",
-        percentage: "Percentage",
-        correct: "Correct",
-        wrong: "Wrong",
-        attempted: "Attempted",
-        unattempted: "Unattempted",
-        questions: "Questions",
-        totalQuestions: "Total Questions",
-        timeTaken: "Time Taken",
-        remainingTime: "Remaining Time",
-        submitted: "Submitted On",
-        details: "Details",
-        mockTitle: "Mock Title",
-        category: "Category",
-        name: "Name",
-        roll: "Roll Number",
-        returnBtn: "Return to Categories",
-        printBtn: "Print Result"
-      }
-    : {
-        score: "अंक",
-        percentage: "प्रतिशत",
-        correct: "सही",
-        wrong: "गलत",
-        attempted: "प्रयास किए",
-        unattempted: "अनुत्तरित",
-        questions: "प्रश्न",
-        totalQuestions: "कुल प्रश्न",
-        timeTaken: "लिया गया समय",
-        remainingTime: "शेष समय",
-        submitted: "जमा करने का समय",
-        details: "विवरण",
-        mockTitle: "मॉक टेस्ट",
-        category: "श्रेणी",
-        name: "नाम",
-        roll: "रोल नंबर",
-        returnBtn: "श्रेणियों पर जाएँ",
-        printBtn: "प्रिंट रिजल्ट"
-      };
-}
+
+    function T() {
+      return getSavedLanguage() === 'en'
+        ? {
+            score: "Score",
+            percentage: "Percentage",
+            correct: "Correct",
+            wrong: "Wrong",
+            attempted: "Attempted",
+            unattempted: "Unattempted",
+            questions: "Questions",
+            totalQuestions: "Total Questions",
+            timeTaken: "Time Taken",
+            remainingTime: "Remaining Time",
+            submitted: "Submitted On",
+            details: "Details",
+            mockTitle: "Mock Title",
+            category: "Category",
+            name: "Name",
+            roll: "Roll Number",
+            returnBtn: "Return to Categories",
+            printBtn: "Print Result"
+          }
+        : {
+            score: "अंक",
+            percentage: "प्रतिशत",
+            correct: "सही",
+            wrong: "गलत",
+            attempted: "प्रयास किए",
+            unattempted: "अनुत्तरित",
+            questions: "प्रश्न",
+            totalQuestions: "कुल प्रश्न",
+            timeTaken: "लिया गया समय",
+            remainingTime: "शेष समय",
+            submitted: "जमा करने का समय",
+            details: "विवरण",
+            mockTitle: "मॉक टेस्ट",
+            category: "श्रेणी",
+            name: "नाम",
+            roll: "रोल नंबर",
+            returnBtn: "श्रेणियों पर जाएँ",
+            printBtn: "प्रिंट रिजल्ट"
+          };
+    }
+
     function renderSummary(result, categoryName) {
       const t = T();
       const studentName = result.name || result.studentName || 'Unknown';
@@ -337,11 +339,10 @@ function T() {
       const questionsQuery = query(questionsRef, where('mockId', '==', mockId), orderBy('questionNo', 'asc'));
       const querySnapshot = await getDocs(questionsQuery);
       
+      console.log("Searching Mock ID:", mockId);
+      console.log("Documents Found:", querySnapshot.size);
 
-console.log("Searching Mock ID:", mockId);
-console.log("Documents Found:", querySnapshot.size);
-
-const items = [];
+      const items = [];
       querySnapshot.forEach((docSnapshot) => {
         console.log("Question Doc:", docSnapshot.id, docSnapshot.data());
         const data = docSnapshot.data();
@@ -455,46 +456,38 @@ const items = [];
         </div>`;
     }
 
-    function renderReviewCards(questions, answers) {
-      if (!questions.length) {
-        return '<div class="empty-state">No questions were found for this mock test.</div>';
-      }
+    // Helper function to handle formatting of explanations (allows safe nested HTML tags if specified in Firestore explanation field)
+    function renderHtmlContent(raw) {
+      if (!raw) return '';
+      return formatQuestionText(raw);
+    }
 
-      if (!questions.length) {
-        console.log('Questions Loaded:', questions.length);
-        console.log('Result Answers:', answers);
-      }
+    // Fixed functional logic rendering single selected question cards matching container selector needs
+    function renderReviewCard(question, index, total, answers) {
+      const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
+      const correctAnswer = normalizeAnswer(question.answer || '');
+      const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+      const optionsHtml = ['A', 'B', 'C', 'D', 'E']
+        .map((letter) => {
+          const optionText = getLocalizedField(question, `option${letter}`) || '';
+          if (!optionText && letter === 'E') return ''; // Skip empty option E
+          let optionStatus = '';
+          const isSelected = studentAnswer === letter;
+          const isCorrect = correctAnswer === letter;
 
-      return questions
-        .map((question, index) => {
-          console.log(question);
-          console.log("Question ID:", question.id);
-console.log("Correct:", question.answer);
-console.log("Student:", answers?.[question.id]);
-console.log("Answers Object:", answers);
-          const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
-          const correctAnswer = normalizeAnswer(question.answer || '');
-          const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
-          const options = ['A', 'B', 'C', 'D', 'E']
-            .map((letter) => {
-              const optionText = getLocalizedField(question, `option${letter}`) || '';
-              let optionStatus = '';
-              const isSelected = studentAnswer === letter;
-              const isCorrect = correctAnswer === letter;
+          if (!studentAnswer) {
+            optionStatus = 'unattempted';
+          } else if (isCorrect && isSelected) {
+            optionStatus = 'selected-correct';
+          } else if (isCorrect) {
+            optionStatus = 'correct';
+          } else if (isSelected) {
+            optionStatus = 'selected-wrong';
+          }
 
-              if (!studentAnswer) {
-                optionStatus = 'unattempted';
-              } else if (isCorrect && isSelected) {
-                optionStatus = 'selected-correct';
-              } else if (isCorrect) {
-                optionStatus = 'correct';
-              } else if (isSelected) {
-                optionStatus = 'selected-wrong';
-              }
-
-              return buildOptionHtml(letter, optionText, optionStatus);
-            })
-            .join('');
+          return buildOptionHtml(letter, optionText, optionStatus);
+        })
+        .join('');
 
       const explanationHtml = renderHtmlContent(getLocalizedField(question, 'explanation'));
 
@@ -692,14 +685,14 @@ console.log("Answers Object:", answers);
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
 
-console.log("Questions Loaded:", questions.length);
-console.log("Questions:", questions);
-console.log("Result Answers:", result.answers);
+        console.log("Questions Loaded:", questions.length);
+        console.log("Questions:", questions);
+        console.log("Result Answers:", result.answers);
 
-const answers =
-    result.answers && typeof result.answers === "object"
-        ? result.answers
-        : {};
+        const answers =
+            result.answers && typeof result.answers === "object"
+                ? result.answers
+                : {};
 
         resultContent.innerHTML = `
           <div class="card-grid">
