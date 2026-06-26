@@ -1264,21 +1264,38 @@ ${data.name}
                 }
 
             };
-            window.loadSubjects = async function (categoryId) {
+            window.loadSubjects = async function(categoryId){
 
-                const topicSelect =
-                    document.getElementById("noteTopicSelect");
+    const subjectSelect =
+    document.getElementById("topicSubjectSelect");
 
-                if (!topicSelect) return;
+    if(!subjectSelect) return;
 
-                topicSelect.innerHTML =
-                    '<option value="">Select Topic</option>';
+    subjectSelect.innerHTML =
+    '<option value="">Select Subject</option>';
 
-                const snapshot =
-                    await getDocs(
-                        collection(db, "notesTopics")
-                    );
+    const snapshot =
+    await getDocs(
+        collection(db,"notesSubjects")
+    );
 
+    snapshot.forEach((docItem)=>{
+
+        const data = docItem.data();
+
+        if(data.categoryId === categoryId){
+
+            subjectSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+        }
+
+    });
+
+};
                 snapshot.forEach((docItem) => {
 
                     const data = docItem.data();
