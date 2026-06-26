@@ -123,7 +123,8 @@
     .nav-controls button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(11,78,162,.24); }
     @keyframes fadeInCard { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 920px) { .card-grid { grid-template-columns: 1fr; } .analysis-header { flex-direction: column; } .question-palette { grid-template-columns: repeat(auto-fit, minmax(34px, 1fr)); } }
-    @media (max-width: 720px) { .options-grid { grid-template-columns: 1fr; } .analysis-header { gap: 12px; } .summary-card { min-height: auto; } }
+    @media (max-width: 720px) { .options-grid { grid-template-columns: 1fr; } .analysis-header { gap: 12px; } .summary-card { min-height: auto; } .question-palette { grid-template-columns: repeat(auto-fit, minmax(30px, 1fr)); } }
+    @media (max-width: 560px) { .filter-bar { justify-content: stretch; } .filter-button { flex: 1 1 100%; } }
     @media (min-width: 680px) { .options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
