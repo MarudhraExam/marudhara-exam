@@ -59,17 +59,17 @@ searchForm.addEventListener("submit", async (e) => {
 
         // Apply filters dynamically using standard indexes
         if (roll) {
-            q = query(q, where("rollNo_search", "==", roll));
+            q = query(q, where("rollNo", "==", roll));
         }
         if (name) {
             // Firestore prefix matching implementation
-            q = query(q, where("name_search", ">=", name), where("name_search", "<=", name + "\uf8ff"));
+            q = query(q, where("searchName", ">=", name), where("name_search", "<=", name + "\uf8ff"));
         }
         if (father) {
-            q = query(q, where("fatherName_search", ">=", father), where("fatherName_search", "<=", father + "\uf8ff"));
+            q = query(q, where("searchFather", ">=", father), where("fatherName_search", "<=", father + "\uf8ff"));
         }
         if (mother) {
-            q = query(q, where("motherName_search", ">=", mother), where("motherName_search", "<=", mother + "\uf8ff"));
+            q = query(q, where("searchMother", ">=", mother), where("motherName_search", "<=", mother + "\uf8ff"));
         }
 
         const querySnapshot = await getDocs(q);
