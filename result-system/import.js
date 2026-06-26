@@ -273,37 +273,6 @@ async function processAndImportNewExam(examName, file) {
   return parsedRecords;
 }
 
-
-
-function extractCandidateRecord(line, map) {
-  try {
-    const getVal = (colName) => {
-      const config = map[colName];
-      if (!config) return "";
-      const textVal = line.substring(config.start, config.end);
-      return textVal ? textVal.trim() : "";
-    };
-
-    const rollNo = getVal("ROLL_NO");
-    if (!rollNo) return null;
-
-    return {
-      rollNo: rollNo,
-      name: getVal("CAND_NAME"),
-      fatherName: getVal("FATHER_NAM"),
-      motherName: getVal("MOTHER_NAM"),
-      dob: getVal("DOB"),
-      gender: getVal("GENDER"),
-      category: getVal("CATEGORY"),
-      net: getVal("NET"),
-      selectionCategory: getVal("SEL_CAT")
-    };
-  } catch (err) {
-    console.error("Failed to parse structural layout boundaries for record line:", line, err);
-    return null;
-  }
-}
-
 async function batchWriteStudents(examId, examName, students, fill, label, percent, log) {
   const batchLimit = 500;
   const total = students.length;
