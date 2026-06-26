@@ -776,6 +776,8 @@
       if (['marks', 'mark', 'questionmarks', 'question_mark'].includes(key)) return 'marks';
       if (['negativemarks', 'negative', 'negative_mark', 'penalty'].includes(key)) return 'negativeMarks';
       if (['explanation', 'exp', 'solution'].includes(key)) return 'explanation';
+      if (['explanationhindi', 'explanation_hindi', 'hindiexplanation', 'explanation_hi'].includes(key)) return 'explanationHindi';
+      if (['explanationenglish', 'explanation_english', 'englishexplanation', 'explanation_en'].includes(key)) return 'explanationEnglish';
       if (['image', 'imageurl', 'img'].includes(key)) return 'image';
       return null;
     }
@@ -795,6 +797,8 @@
         const optionDEnglish = String(row.optionDEnglish || '').trim();
         const optionEHindi = String(row.optionEHindi || row.optionE || '').trim();
         const optionEEnglish = String(row.optionEEnglish || '').trim();
+        const explanationHindi = String(row.explanationHindi || row.explanation || '').trim();
+        const explanationEnglish = String(row.explanationEnglish || '').trim();
         return {
           questionNo: Number.isFinite(questionNo) && questionNo > 0 ? questionNo : index + 1,
           questionHindi,
@@ -819,6 +823,8 @@
           marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
           negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
           explanation: row.explanation || '',
+          explanationHindi,
+          explanationEnglish,
           image: row.image || ''
         };
       });
@@ -950,6 +956,8 @@
       const marks = Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1;
       const negativeMarks = Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0;
       const explanation = value(row.explanation);
+      const explanationHindi = value(row.explanationHindi);
+      const explanationEnglish = value(row.explanationEnglish);
       const requiredMissing = [];
 
       if (!question) requiredMissing.push('Question');
@@ -986,6 +994,8 @@
         marks,
         negativeMarks,
         explanation,
+        explanationHindi,
+        explanationEnglish,
         image: value(row.image)
       };
     }
@@ -1047,6 +1057,8 @@
           marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
           negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
           explanation: row.explanation || null,
+          explanationHindi: row.explanationHindi || row.explanation || '',
+          explanationEnglish: row.explanationEnglish || '',
           image: row.image || null,
           createdAt: serverTimestamp()
         });
