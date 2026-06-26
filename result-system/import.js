@@ -238,6 +238,7 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
 
   const parsedRecords = [];
   const totalPages = pdf.numPages;
+  let globalColBounds = null;
 
   for (let pageNo = 1; pageNo <= totalPages; pageNo++) {
     const progress = 15 + Math.floor((pageNo / totalPages) * 50);
@@ -254,14 +255,50 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
     const page = await pdf.getPage(pageNo);
     const text = await page.getTextContent();
     const items = text.items;
-    const rows = {};
 
+    if (items.length === 0) continue;
+
+    let maxX = 0;
+    items.forEach(item => {
+      if (item.transform[4] > maxX) {
+        maxX = item.transform[4];
+      }
+    });
+
+    const headers = {
+      roll: ["ROLL_NO", "ROLL NO"],
+      name: ["CAND_NAME", "CAND NAME"],
+      father: ["FATHER_NAM", "FATHER NAME"],
+      mother: ["MOTHER_NAM", "MOTHER NAME"],
+      dob: ["DOB"],
+      gender: ["GENDER"],
+      cat: ["CAT"],
+      tsp: ["TSP"],
+      net: ["NET"],
+      selCat: ["Sel_Cat", "Sel Cat"]
+    };
+
+    const foundCoords = {};
+    items.forEach(item => {
+      const textVal = item.str.trim();
+      for (const [key, aliases] of Object.entries(headers)) {
+        if (aliases.some(alias => textVal === alias || textVal.includes(alias))) {
+          foundCoords[key] = item.transform[4];
+        }
+      }
+    });
+
+    if (foundCoords.roll && foundCoords.name && foundCoords.father && foundCoords.mother && foundCoords.dob) {
+      globalColBounds = foundCoords;
+    }
+
+    const rows = {};
     items.forEach(item => {
       const y = Math.round(item.transform[5]);
       let found = false;
 
       Object.keys(rows).forEach(key => {
-        if (Math.abs(Number(key) - y) <= 3) {
+        if (Math.abs(Number(key) - y) <= 4) {
           rows[key].push(item);
           found = true;
         }
@@ -273,6 +310,7 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
     });
 
     const sortedRows = Object.keys(rows).sort((a, b) => Number(b) - Number(a));
+    const pageRows = [];
 
     for (const y of sortedRows) {
       const rowItems = rows[y].sort((a, b) => a.transform[4] - b.transform[4]);
@@ -284,88 +322,168 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
 
       if (line === "") continue;
 
-      if (line.includes("ROLL_NO") || line.includes("ROLL NO")) {
+      if (
+        line.includes("Direct Recruitment") ||
+        line.includes("List of Finally Selected Candidates") ||
+        line.includes("NON SCHEDULED AREA") ||
+        line.includes("DATE:") ||
+        line.includes("Signature Not Verified") ||
+        line.includes("Digitally signed by") ||
+        line.includes("Designation :") ||
+        line.includes("RajKaj Ref") ||
+        line.includes("M e-Sign") ||
+        line.includes("Chairman") ||
+        line.includes("Member") ||
+        line.includes("Secretary") ||
+        line.includes("Page ") ||
+        line.includes("NTSP_FINAL") ||
+        line.includes("SLNO RANK") ||
+        line.includes("ROLL_NO") ||
+        line.includes("ROLL NO")
+      ) {
         continue;
       }
 
-      const firstWord = line.split(" ")[0];
-      if (!/^\d+$/.test(firstWord)) {
-        continue;
-      }
+      const colData = {
+        roll: "",
+        name: "",
+        father: "",
+        mother: "",
+        dob: "",
+        gender: "",
+        cat: "",
+        tsp: "",
+        net: "",
+        selCat: ""
+      };
 
-      const student = extractCandidateRecord(line);
-      if (student) {
-        parsedRecords.push(student);
+      rowItems.forEach(item => {
+        const text = item.str.trim();
+        if (!text) return;
+        const x = item.transform[4];
+        const colKey = getColumnKey(x, maxX, globalColBounds);
+        if (colKey !== "prefix") {
+          colData[colKey] = (colData[colKey] + " " + text).trim();
+        }
+      });
+
+      pageRows.push(colData);
+    }
+
+    let currentCandidate = null;
+
+    for (const colData of pageRows) {
+      const cleanRoll = colData.roll.replace(/\s+/g, "");
+      const isNewRoll = /^\d{6}$/.test(cleanRoll);
+
+      if (isNewRoll) {
+        if (currentCandidate && currentCandidate.rollNo && currentCandidate.dob && currentCandidate.gender) {
+          parsedRecords.push(currentCandidate);
+        }
+        currentCandidate = {
+          rollNo: cleanRoll,
+          name: colData.name,
+          fatherName: colData.father,
+          motherName: colData.mother,
+          dob: colData.dob,
+          gender: colData.gender,
+          category: colData.cat,
+          net: colData.net,
+          selectionCategory: colData.selCat
+        };
+      } else if (currentCandidate) {
+        if (colData.name) {
+          currentCandidate.name = (currentCandidate.name + " " + colData.name).trim();
+        }
+        if (colData.father) {
+          currentCandidate.fatherName = (currentCandidate.fatherName + " " + colData.father).trim();
+        }
+        if (colData.mother) {
+          currentCandidate.motherName = (currentCandidate.motherName + " " + colData.mother).trim();
+        }
+        if (colData.dob) {
+          currentCandidate.dob = colData.dob;
+        }
+        if (colData.gender) {
+          currentCandidate.gender = colData.gender;
+        }
+        if (colData.cat) {
+          currentCandidate.category = colData.cat;
+        }
+        if (colData.net) {
+          currentCandidate.net = colData.net;
+        }
+        if (colData.selCat) {
+          currentCandidate.selectionCategory = colData.selCat;
+        }
       }
+    }
+
+    if (currentCandidate && currentCandidate.rollNo && currentCandidate.dob && currentCandidate.gender) {
+      parsedRecords.push(currentCandidate);
     }
   }
 
-  return parsedRecords;
+  const seenRolls = new Set();
+  const uniqueRecords = [];
+  parsedRecords.forEach(rec => {
+    if (!seenRolls.has(rec.rollNo)) {
+      seenRolls.add(rec.rollNo);
+      uniqueRecords.push(rec);
+    }
+  });
+
+  return uniqueRecords;
+}
+
+function getColumnKey(x, maxX, bounds) {
+  const activeBounds = bounds || {
+    roll: 0.18 * maxX,
+    name: 0.29 * maxX,
+    father: 0.41 * maxX,
+    mother: 0.54 * maxX,
+    dob: 0.64 * maxX,
+    gender: 0.70 * maxX,
+    cat: 0.75 * maxX,
+    tsp: 0.81 * maxX,
+    net: 0.85 * maxX,
+    selCat: 0.89 * maxX
+  };
+
+  const rollStart = activeBounds.roll - (activeBounds.name - activeBounds.roll) * 0.5;
+  if (x < rollStart) {
+    return "prefix";
+  }
+
+  if (x < (activeBounds.roll + activeBounds.name) / 2) {
+    return "roll";
+  } else if (x < (activeBounds.name + activeBounds.father) / 2) {
+    return "name";
+  } else if (x < (activeBounds.father + activeBounds.mother) / 2) {
+    return "father";
+  } else if (x < (activeBounds.mother + activeBounds.dob) / 2) {
+    return "mother";
+  } else if (x < (activeBounds.dob + activeBounds.gender) / 2) {
+    return "dob";
+  } else if (x < (activeBounds.gender + activeBounds.cat) / 2) {
+    return "gender";
+  } else if (x < (activeBounds.cat + activeBounds.tsp) / 2) {
+    return "cat";
+  } else if (x < (activeBounds.tsp + activeBounds.net) / 2) {
+    return "tsp";
+  } else if (x < (activeBounds.net + activeBounds.selCat) / 2) {
+    return "net";
+  } else {
+    return "selCat";
+  }
 }
 
 function detectHeaderMap() {
-  return {
-    rollRegex: /^\d{5,12}$/,
-    dobRegex: /^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/,
-    genderRegex: /^(MALE|FEMALE|M|F)$/i,
-    categoryRegex: /^(GEN|GENERAL|OBC|OBC-NCL|SC|ST|EWS|MBC|SBC|PWD|EXS)$/i
-  };
+  return {};
 }
 
 function extractCandidateRecord(line) {
-  const cfg = detectHeaderMap();
-  const parts = line
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ");
-
-  if (parts.length < 8) return null;
-  if (!cfg.rollRegex.test(parts[0])) return null;
-
-  const rollNo = parts.shift();
-
-  let dobIndex = -1;
-  for (let i = 0; i < parts.length; i++) {
-    if (cfg.dobRegex.test(parts[i])) {
-      dobIndex = i;
-      break;
-    }
-  }
-
-  if (dobIndex === -1) return null;
-  const dob = parts[dobIndex];
-  const gender = parts[dobIndex + 1] || "";
-  const category = parts[dobIndex + 2] || "";
-
-  const remaining = parts.slice(0, dobIndex);
-  const tail = parts.slice(dobIndex + 3);
-
-  let net = "";
-  let selectionCategory = "";
-
-  if (tail.length >= 2) {
-    net = tail[tail.length - 2];
-    selectionCategory = tail[tail.length - 1];
-  } else if (tail.length === 1) {
-    net = tail[0];
-  }
-
-  const third = Math.floor(remaining.length / 3);
-  const name = remaining.slice(0, third).join(" ");
-  const fatherName = remaining.slice(third, third * 2).join(" ");
-  const motherName = remaining.slice(third * 2).join(" ");
-
-  return {
-    rollNo,
-    name,
-    fatherName,
-    motherName,
-    dob,
-    gender,
-    category,
-    net,
-    selectionCategory
-  };
+  return null;
 }
 
 async function batchWriteStudents(examId, examName, students, fill, label, percent, log) {
