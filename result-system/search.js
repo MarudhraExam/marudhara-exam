@@ -20,7 +20,7 @@ const closeReportBtn = document.getElementById("close-report-btn");
 // Populate examinations selector dropdown list
 async function loadExams() {
     try {
-        const querySnapshot = await getDocs(collection(db, "exams"));
+      const querySnapshot = await getDocs(collection(db, "results"));
         examSelector.innerHTML = `<option value="">-- Choose Target Exam --</option>`;
         querySnapshot.forEach(doc => {
             const data = doc.data();
