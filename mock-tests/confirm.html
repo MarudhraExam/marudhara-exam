@@ -362,15 +362,15 @@
         const existing = loadSession();
         if (existing) {
           studentName.value = existing.studentName || '';
-          studentRoll.value = existing.studentRoll || '';
+        
           studentMobile.value = existing.studentMobile || '';
         }
 
         startExamBtn.addEventListener('click', () => {
           const name = studentName.value;
-          const roll = studentRoll.value;
+       
           const mobile = studentMobile.value;
-          if (!validateInput(name, roll)) return;
+      
           saveSession({ mockId, studentName: name.trim(), studentMobile: mobile.trim() });
           navigateToExam(mockId);
         });
