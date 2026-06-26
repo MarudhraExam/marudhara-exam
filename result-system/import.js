@@ -9,7 +9,8 @@ import {
   deleteDoc,
   query,
   where,
-  writeBatch
+  writeBatch,
+  getDoc
 } from "./firebase.js";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -134,13 +135,11 @@ examForm.addEventListener("submit", async (e) => {
   const examName = examNameInput.value.trim();
 
   if (examId) {
-    // Edit Exam Name Action
     try {
       submitBtn.disabled = true;
       const examRef = doc(db, "results", examId);
       await updateDoc(examRef, { examName: examName });
 
-      // Update examName field inside student records
       await updateStudentsExamName(examId, examName);
 
       alert("Exam name updated successfully.");
@@ -153,7 +152,6 @@ examForm.addEventListener("submit", async (e) => {
       submitBtn.disabled = false;
     }
   } else {
-    // Create and Import New Action
     const pdfFile = pdfFileInput.files[0];
     if (!pdfFile) {
       alert("Please choose a results PDF to import.");
@@ -232,20 +230,17 @@ async function processAndImportNewExam(examName, file) {
     showProgress(progressWrapper, false);
   }
 }
-async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
 
+async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
   const pdf = await pdfjsLib.getDocument({
     data: arrayBuffer
   }).promise;
 
   const parsedRecords = [];
-
   const totalPages = pdf.numPages;
 
   for (let pageNo = 1; pageNo <= totalPages; pageNo++) {
-
-    const progress =
-      15 + Math.floor((pageNo / totalPages) * 50);
+    const progress = 15 + Math.floor((pageNo / totalPages) * 50);
 
     setProgressBar(
       fill,
@@ -257,317 +252,122 @@ async function parseResultPDF(arrayBuffer, fill, label, percent, log) {
     );
 
     const page = await pdf.getPage(pageNo);
-
     const text = await page.getTextContent();
-
     const items = text.items;
-
     const rows = {};
 
     items.forEach(item => {
-
       const y = Math.round(item.transform[5]);
-
       let found = false;
 
       Object.keys(rows).forEach(key => {
-
-        if (Math.abs(key - y) <= 3) {
-
+        if (Math.abs(Number(key) - y) <= 3) {
           rows[key].push(item);
-
           found = true;
-
         }
-
       });
 
       if (!found) {
-
         rows[y] = [item];
-
       }
-
     });
 
-    const sortedRows =
-      Object.keys(rows)
-      .sort((a,b)=>b-a);
+    const sortedRows = Object.keys(rows).sort((a, b) => Number(b) - Number(a));
 
-    for(const y of sortedRows){
+    for (const y of sortedRows) {
+      const rowItems = rows[y].sort((a, b) => a.transform[4] - b.transform[4]);
+      const line = rowItems
+        .map(i => i.str)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
 
-      const rowItems =
-      rows[y]
-      .sort((a,b)=>a.transform[4]-b.transform[4]);
+      if (line === "") continue;
 
-      const line =
-      rowItems
-      .map(i=>i.str)
-      .join(" ")
-      .replace(/\s+/g," ")
-      .trim();
-
-      if(line=="") continue;
-
-      if(
-        line.includes("ROLL_NO") ||
-        line.includes("ROLL NO")
-      ){
-
+      if (line.includes("ROLL_NO") || line.includes("ROLL NO")) {
         continue;
-
       }
 
-      const firstWord =
-      line.split(" ")[0];
-
-      if(!/^\d+$/.test(firstWord)){
-
+      const firstWord = line.split(" ")[0];
+      if (!/^\d+$/.test(firstWord)) {
         continue;
-
       }
 
-      const student =
-      extractCandidateRecord(line);
-
-      if(student){
-
+      const student = extractCandidateRecord(line);
+      if (student) {
         parsedRecords.push(student);
-
-      }
-
-    }
-
-  }
-
-  return parsedRecords;
-
-}
-function detectHeaderMap() {
-  return {
-    roll: /^\d{5,12}$/,
-
-    gender: /^(MALE|FEMALE|M|F)$/i,
-
-    category: /^(GEN|GENERAL|OBC|OBC-NCL|SC|ST|EWS|MBC|SBC|PWD|EXS)$/i
-  };
-}
-function extractCandidateRecord(line) {
-
-  const parts = line.trim().replace(/\s+/g," ").split(" ");
-
-  if(parts.length < 8) return null;
-
-  if(!/^\d+$/.test(parts[0])) return null;
-
-  const rollNo = parts[0];
-
-  const net = parts[parts.length-2];
-
-  const selectionCategory = parts[parts.length-1];
-
-  let genderIndex = -1;
-
-  for(let i=1;i<parts.length;i++){
-
-    if(
-      parts[i]=="MALE" ||
-      parts[i]=="FEMALE" ||
-      parts[i]=="M" ||
-      parts[i]=="F"
-    ){
-
-      genderIndex=i;
-
-      break;
-
-    }
-
-  }
-
-  if(genderIndex==-1) return null;
-
-  const gender = parts[genderIndex];
-
-  const dob = parts[genderIndex-1];
-
-  const category = parts[genderIndex+1];
-
-  const beforeDob =
-  parts.slice(1,genderIndex-1);
-
-  const oneThird =
-  Math.floor(beforeDob.length/3);
-
-  const name =
-  beforeDob.slice(0,oneThird).join(" ");
-
-  const fatherName =
-  beforeDob.slice(oneThird,oneThird*2).join(" ");
-
-  const motherName =
-  beforeDob.slice(oneThird*2).join(" ");
-
-  return{
-
-    rollNo,
-
-    name,
-
-    fatherName,
-
-    motherName,
-
-    dob,
-
-    gender,
-
-    category,
-
-    net,
-
-    selectionCategory
-
-  };
-
-}
-     if (!matched) {
-        lineMap[yCoord] = [item];
-      }
-    });
-
-    const sortedY = Object.keys(lineMap).sort((a, b) => Number(b) - Number(a));
-    const pageLines = [];
-
-    sortedY.forEach(y => {
-      const itemsInLine = lineMap[y].sort((a, b) => a.transform[4] - b.transform[4]);
-      const lineString = itemsInLine.map(item => item.str).join(" ");
-      pageLines.push(lineString);
-    });
-
-    for (let index = 0; index < pageLines.length; index++) {
-      const line = pageLines[index].trim();
-      if (!line) continue;
-
-      // Auto detect columns header signature sequence
-      if (!columnsDetected && line.includes("ROLL_NO") && (line.includes("CAND_NAME") || line.includes("FATHER_NAM"))) {
-        columnsDetected = detectHeaderMap(line);
-        continue;
-      }
-
-      if (columnsDetected) {
-        // Evaluate if this line represents a structural candidate record starting with a Roll Number (numerical sequence)
-        const possibleRoll = line.split(/\s+/)[0];
-        if (/^\d+$/.test(possibleRoll)) {
-          const parsedCandidate = extractCandidateRecord(line, columnsDetected);
-          if (parsedCandidate) {
-            parsedRecords.push(parsedCandidate);
-          }
-        }
       }
     }
   }
 
   return parsedRecords;
 }
+
 function detectHeaderMap() {
-
   return {
-
     rollRegex: /^\d{5,12}$/,
-
     dobRegex: /^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/,
-
     genderRegex: /^(MALE|FEMALE|M|F)$/i,
-
     categoryRegex: /^(GEN|GENERAL|OBC|OBC-NCL|SC|ST|EWS|MBC|SBC|PWD|EXS)$/i
-
   };
-
 }
 
-function extractCandidateRecord(line){
-
+function extractCandidateRecord(line) {
   const cfg = detectHeaderMap();
-
   const parts = line
-    .replace(/\s+/g," ")
+    .replace(/\s+/g, " ")
     .trim()
     .split(" ");
 
-  if(parts.length < 8) return null;
-
-  if(!cfg.rollRegex.test(parts[0])) return null;
+  if (parts.length < 8) return null;
+  if (!cfg.rollRegex.test(parts[0])) return null;
 
   const rollNo = parts.shift();
 
   let dobIndex = -1;
-
-  for(let i=0;i<parts.length;i++){
-
-    if(cfg.dobRegex.test(parts[i])){
-
+  for (let i = 0; i < parts.length; i++) {
+    if (cfg.dobRegex.test(parts[i])) {
       dobIndex = i;
-
       break;
-
     }
-
   }
 
-  if(dobIndex==-1) return null;
-    const dob = parts[dobIndex];
-
+  if (dobIndex === -1) return null;
+  const dob = parts[dobIndex];
   const gender = parts[dobIndex + 1] || "";
-
   const category = parts[dobIndex + 2] || "";
 
   const remaining = parts.slice(0, dobIndex);
-
   const tail = parts.slice(dobIndex + 3);
 
   let net = "";
-
   let selectionCategory = "";
 
   if (tail.length >= 2) {
-
     net = tail[tail.length - 2];
-
     selectionCategory = tail[tail.length - 1];
-
+  } else if (tail.length === 1) {
+    net = tail[0];
   }
 
   const third = Math.floor(remaining.length / 3);
-
   const name = remaining.slice(0, third).join(" ");
-
   const fatherName = remaining.slice(third, third * 2).join(" ");
-
   const motherName = remaining.slice(third * 2).join(" ");
 
   return {
-
     rollNo,
-
     name,
-
     fatherName,
-
     motherName,
-
     dob,
-
     gender,
-
     category,
-
     net,
-
     selectionCategory
-
   };
-  }
+}
+
 async function batchWriteStudents(examId, examName, students, fill, label, percent, log) {
   const batchLimit = 500;
   const total = students.length;
@@ -613,7 +413,6 @@ async function deleteExamWithStudents(examId, examName) {
   try {
     lockFormControls(true);
     
-    // Query and delete matched student records
     const studentsRef = collection(db, "resultStudents");
     const q = query(studentsRef, where("examId", "==", examId));
     const snapshot = await getDocs(q);
@@ -639,7 +438,6 @@ async function deleteExamWithStudents(examId, examName) {
       await Promise.all(batches);
     }
 
-    // Delete Exam document
     await deleteDoc(doc(db, "results", examId));
 
     alert("Examination and student documents purged successfully.");
@@ -653,7 +451,6 @@ async function deleteExamWithStudents(examId, examName) {
   }
 }
 
-// Replace PDF Modal functions
 function openReplaceModal(examId) {
   replaceExamIdInput.value = examId;
   replacePdfFileInput.value = "";
@@ -681,7 +478,6 @@ replaceForm.addEventListener("submit", async (e) => {
     showProgress(replaceProgressWrapper, true);
     setProgressBar(replaceProgressFill, replaceProgressLabel, replaceProgressPercent, replaceProgressLog, 5, "Accessing examination meta attributes...");
 
-    // Retrieve Exam metadata
     const examDocRef = doc(db, "results", examId);
     const examSnapshot = await getDoc(examDocRef);
     if (!examSnapshot.exists()) {
@@ -691,7 +487,6 @@ replaceForm.addEventListener("submit", async (e) => {
 
     setProgressBar(replaceProgressFill, replaceProgressLabel, replaceProgressPercent, replaceProgressLog, 15, "Deleting existing student records...");
 
-    // Query and delete previous records
     const studentsRef = collection(db, "resultStudents");
     const q = query(studentsRef, where("examId", "==", examId));
     const snapshot = await getDocs(q);
