@@ -232,7 +232,94 @@ async function processAndImportNewExam(examName, file) {
     showProgress(progressWrapper, false);
   }
 }
+function detectHeaderMap() {
+  return {
+    roll: /^\d{5,12}$/,
 
+    gender: /^(MALE|FEMALE|M|F)$/i,
+
+    category: /^(GEN|GENERAL|OBC|OBC-NCL|SC|ST|EWS|MBC|SBC|PWD|EXS)$/i
+  };
+}
+function extractCandidateRecord(line) {
+
+  const parts = line.trim().replace(/\s+/g," ").split(" ");
+
+  if(parts.length < 8) return null;
+
+  if(!/^\d+$/.test(parts[0])) return null;
+
+  const rollNo = parts[0];
+
+  const net = parts[parts.length-2];
+
+  const selectionCategory = parts[parts.length-1];
+
+  let genderIndex = -1;
+
+  for(let i=1;i<parts.length;i++){
+
+    if(
+      parts[i]=="MALE" ||
+      parts[i]=="FEMALE" ||
+      parts[i]=="M" ||
+      parts[i]=="F"
+    ){
+
+      genderIndex=i;
+
+      break;
+
+    }
+
+  }
+
+  if(genderIndex==-1) return null;
+
+  const gender = parts[genderIndex];
+
+  const dob = parts[genderIndex-1];
+
+  const category = parts[genderIndex+1];
+
+  const beforeDob =
+  parts.slice(1,genderIndex-1);
+
+  const oneThird =
+  Math.floor(beforeDob.length/3);
+
+  const name =
+  beforeDob.slice(0,oneThird).join(" ");
+
+  const fatherName =
+  beforeDob.slice(oneThird,oneThird*2).join(" ");
+
+  const motherName =
+  beforeDob.slice(oneThird*2).join(" ");
+
+  return{
+
+    rollNo,
+
+    name,
+
+    fatherName,
+
+    motherName,
+
+    dob,
+
+    gender,
+
+    category,
+
+    net,
+
+    selectionCategory
+
+  };
+
+}
      if (!matched) {
         lineMap[yCoord] = [item];
       }
