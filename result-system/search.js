@@ -131,7 +131,7 @@ async function showMarksheet(student) {
     // Look up parent exam collection name parameter mapping
     let examName = "Semester Exam Evaluation Report";
     try {
-        const examDoc = await getDoc(doc(db, "exams", student.examId));
+   const examDoc = await getDoc(doc(db, "results", student.examId));
         if (examDoc.exists()) {
             examName = examDoc.data().name;
         }
