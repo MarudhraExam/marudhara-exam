@@ -889,23 +889,7 @@ doc(db,"quizzes",id)
 alert("Quiz Deleted ✅");
 
 loadQuizzes();
-async function loadResults() {
 
-const list = document.getElementById("resultList");
-
-if (!list) return;
-
-list.innerHTML = "";
-
-const snapshot = await getDocs(collection(db,"results"));
-
-if(snapshot.empty){
-
-list.innerHTML = "No Result Uploaded";
-
-return;
-
-}
 
 snapshot.forEach((result)=>{
 
