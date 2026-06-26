@@ -490,8 +490,11 @@
             }
             const question = questions[currentIndex];
             questionCountElement.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-            const formattedQuestion = getLocalizedField(question, "question");
-            questionTextElement.textContent = formattedQuestion || "Untitled question.";
+            const formattedQuestion = formatQuestionText(getLocalizedField(question, "question"));
+
+questionTextElement.innerHTML =
+    (formattedQuestion || "Untitled question.")
+    .replace(/\n/g, "<br>");
             optionAElement.textContent = getLocalizedField(question, "optionA") || "Option A";
             optionBElement.textContent = getLocalizedField(question, "optionB") || "Option B";
             optionCElement.textContent = getLocalizedField(question, "optionC") || "Option C";
