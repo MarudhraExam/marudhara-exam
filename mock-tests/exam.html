@@ -711,7 +711,6 @@
                 mockTitle.textContent = examMeta.title || examMeta.name || "Untitled mock";
                 mockCategory.textContent = examMeta.categoryName || examMeta.category || "General";
                 candidateName.textContent = sessionData.studentName;
-                candidateRoll.textContent = sessionData.studentRoll;
                 loadSavedAnswers();
                 questions = await fetchQuestions(mockId);
                 if (questions.length === 0) {
