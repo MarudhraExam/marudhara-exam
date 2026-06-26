@@ -148,92 +148,53 @@ Upload Result
 
 </div>
 <script type="module">
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.js";
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc,
-updateDoc
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore,collection,addDoc,getDocs,deleteDoc,doc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",authDomain:"marudhara-exam.firebaseapp.com",projectId:"marudhara-exam",storageBucket:"marudhara-exam.firebasestorage.app",messagingSenderId:"680152404373",appId:"1:680152404373:web:23515d1d06c44dbd33669c"};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+async function readPdf(file){
+ const arrayBuffer=await file.arrayBuffer();
+ const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+ let fullText="";
+ for(let i=1;i<=pdf.numPages;i++){
+  const page=await pdf.getPage(i);
+  const content=await page.getTextContent();
+  fullText+=content.items.map(i=>i.str).join(" ");
+ }
+ return fullText;
 }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-const firebaseConfig = {
-
-apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
-
-authDomain:"marudhara-exam.firebaseapp.com",
-
-projectId:"marudhara-exam",
-
-storageBucket:"marudhara-exam.firebasestorage.app",
-
-messagingSenderId:"680152404373",
-
-appId:"1:680152404373:web:23515d1d06c44dbd33669c"
-
+window.saveResult=async function(){
+ try{
+  const examName=document.getElementById("examName").value.trim();
+  const pdf=document.getElementById("resultPdf").files[0];
+  if(!examName){alert("Exam Name likho");return;}
+  if(!pdf){alert("PDF Select karo");return;}
+  const pdfText=await readPdf(pdf);
+  console.log(pdfText);
+  await addDoc(collection(db,"results"),{examName,pdfName:pdf.name,pdfText,createdAt:new Date().toISOString()});
+  alert("Result Saved Successfully ✅");
+  document.getElementById("examName").value="";
+  document.getElementById("resultPdf").value="";
+  loadResults();
+ }catch(e){console.error(e);alert(e.message);}
 };
-
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-
-window.db = db;
-
 async function loadResults(){
-
-const tbody=document.getElementById("resultList");
-
-tbody.innerHTML="";
-
-const snapshot=await getDocs(collection(db,"results"));
-
-snapshot.forEach((docItem)=>{
-
-const data=docItem.data();
-
-tbody.innerHTML+=`
-
-<tr>
-
-<td>${data.examName}</td>
-
-<td>${data.pdfName}</td>
-
-<td>
-
-<button onclick="deleteResult('${docItem.id}')">
-
-Delete
-
-</button>
-
-</td>
-
-</tr>
-
-`;
-
-});
-
+ const tbody=document.getElementById("resultList");
+ tbody.innerHTML="";
+ const snapshot=await getDocs(collection(db,"results"));
+ snapshot.forEach((d)=>{
+  const data=d.data();
+  tbody.innerHTML+=`<tr><td>${data.examName}</td><td>${data.pdfName}</td><td><button onclick="deleteResult('${d.id}')">Delete</button></td></tr>`;
+ });
 }
 window.deleteResult=async function(id){
-
-if(!confirm("Delete Result?")) return;
-
-await deleteDoc(doc(db,"results",id));
-
+ if(!confirm("Delete Result?")) return;
+ await deleteDoc(doc(db,"results",id));
+ loadResults();
+};
 loadResults();
-
-}
-
-loadResults();
-</script>
+</script></script>
 </body>
 </html>
