@@ -34,12 +34,26 @@
             margin: 0;
             font-size: 1.4rem;
         }
+        .language-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+        .language-switcher label {
+            font-size: 0.95rem;
+            color: #334155;
+            white-space: nowrap;
+        }
         .language-select {
             font-size: 1rem;
             padding: 8px 12px;
             border-radius: 10px;
             border: 1px solid #cbd5e1;
-            background: #f8fafc;
+            background: #ffffff;
             color: #1f2937;
         }
         .meta-list {
@@ -232,8 +246,9 @@
                 <h1>Mock Exam</h1>
                 <p class="small-note">Answer one question at a time. Save and restore work automatically.</p>
             </div>
-            <div>
-                <select id="languageSelect" class="language-select" aria-label="Select language">
+            <div class="language-switcher">
+                <label for="languageSelect">Language</label>
+                <select id="languageSelect" class="language-select" aria-label="Language">
                     <option value="hi">हिन्दी</option>
                     <option value="en">English</option>
                 </select>

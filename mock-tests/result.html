@@ -19,6 +19,8 @@
     .brand small { display: block; color: #5f6f8f; margin-top: 2px; }
     .top-actions a { border-radius: 999px; padding: 12px 18px; background: #0b4ea2; color: #fff; }
     .top-actions a:hover { background: #0f3c7f; }
+    .language-switcher { display: inline-flex; align-items: center; gap: 8px; margin-right: 10px; }
+    .language-switcher label { font-size: 0.95rem; color: #fff; }
     .language-select { font-size: 1rem; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(35,49,79,.2); background: #fff; color: #102a52; }
     .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
     .status-bar.error { background: #ffe7e6; color: #8a1f19; }
@@ -82,10 +84,13 @@
         </div>
       </div>
       <div class="top-actions">
-        <select id="languageSelect" class="language-select" aria-label="Select language">
-          <option value="hi">हिन्दी</option>
-          <option value="en">English</option>
-        </select>
+        <div class="language-switcher">
+          <label for="languageSelect">Language</label>
+          <select id="languageSelect" class="language-select" aria-label="Language">
+            <option value="hi">हिन्दी</option>
+            <option value="en">English</option>
+          </select>
+        </div>
         <a href="index.html">Back to categories</a>
       </div>
     </header>
