@@ -889,7 +889,80 @@ doc(db,"quizzes",id)
 alert("Quiz Deleted ✅");
 
 loadQuizzes();
+async function loadResults() {
 
+const list = document.getElementById("resultList");
+
+if (!list) return;
+
+list.innerHTML = "";
+
+const snapshot = await getDocs(collection(db,"results"));
+
+if(snapshot.empty){
+
+list.innerHTML = "No Result Uploaded";
+
+return;
+
+}
+
+snapshot.forEach((result)=>{
+
+const data = result.data();
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:15px;
+margin-bottom:12px;
+border-radius:10px;
+">
+
+<b>${data.examName}</b>
+
+<br><br>
+
+📅 ${data.resultDate || "-"}
+
+<br>
+
+📄 ${data.fileName}
+
+<br>
+
+👥 Students : ${data.students}
+
+<br>
+
+📑 Pages : ${data.pages}
+
+<br>
+
+Status :
+${data.status}
+
+<br><br>
+
+<button
+onclick="deleteResult('${result.id}')"
+style="
+background:red;
+padding:8px 15px;
+">
+
+🗑 Delete
+
+</button>
+
+</div>
+
+`;
+
+});
+
+}
 };
 
 loadQuizzes();
