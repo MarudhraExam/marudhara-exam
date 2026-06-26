@@ -251,12 +251,12 @@ function T() {
             <div class="summary-row"><strong>${t.score}</strong><span>${percentage}%</span></div>
             <div class="summary-row"><strong>${t.correct}</strong><span>${correct}</span></div>
             <div class="summary-row"><strong>${t.wrong}</strong><span>${wrong}</span></div>
-            <div class="summary-row"><strong>Attempted</strong><span>${attempted}</span></div>
-            <div class="summary-row"><strong>Unattempted</strong><span>${unattempted}</span></div>
-            <div class="summary-row"><strong>Questions</strong><span>${totalQuestions}</span></div>
-            <div class="summary-row"><strong>Time taken</strong><span>${escapeHtml(timeTaken)}</span></div>
-            <div class="summary-row"><strong>Remaining time</strong><span>${escapeHtml(remainingTime)}</span></div>
-            <div class="summary-row"><strong>Submitted on</strong><span>${escapeHtml(submittedAt)}</span></div>
+            <div class="summary-row"><strong>${t.attempted}</strong><span>${attempted}</span></div>
+            <div class="summary-row"><strong>${t.unattempted}</strong><span>${unattempted}</span></div>
+            <div class="summary-row"><strong>${t.questions}</strong><span>${totalQuestions}</span></div>
+            <div class="summary-row"><strong>${t.timeTaken}</strong><span>${escapeHtml(timeTaken)}</span></div>
+            <div class="summary-row"><strong>${t.remainingTime}</strong><span>${escapeHtml(remainingTime)}</span></div>
+            <div class="summary-row"><strong>${t.submitted}</strong><span>${escapeHtml(submittedAt)}</span></div>
           </div>
           <div class="action-row">
             <button class="button-primary" type="button" onclick="window.location.href='index.html'">Return to categories</button>
