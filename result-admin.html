@@ -219,6 +219,9 @@ fullText += content.items
 return fullText;
 
 }
+const pdfText = await readPdf(pdf);
+
+console.log(pdfText);
 if(examName==""){
 
 alert("Exam Name likho");
