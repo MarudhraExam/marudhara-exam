@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -284,7 +284,7 @@
           };
     }
 
-    function renderSummary(result, categoryName) {
+    function renderSummary(result, categoryName, rankInfo = { rank: 1, total: 1 }) {
       const t = T();
       const studentName = result.name || result.studentName || 'Unknown';
       const mockTitle = result.mockTitle || 'Mock exam';
@@ -303,6 +303,7 @@
       const timeTaken = formatSeconds(result.timeTakenSeconds ?? result.timeTaken);
       const remainingTime = formatSeconds(result.timeRemainingSeconds ?? result.remainingTime);
       const submittedAt = result.submittedAt ? new Date(result.submittedAt).toLocaleString() : 'N/A';
+      const studentLabel = rankInfo.total === 1 ? 'Student' : 'Students';
 
       return `
         <div class="card">
@@ -323,6 +324,13 @@
           <div class="action-row">
             <button class="button-primary" type="button" onclick="window.location.href='index.html'">Return to categories</button>
             <button class="button-secondary" type="button" onclick="window.print()">Print result</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>🏆 Overall Rank</h2>
+          <div class="summary-block">
+            <div class="summary-row"><strong>#${rankInfo.rank}</strong><span></span></div>
+            <div class="summary-row"><strong>Out of</strong><span>${rankInfo.total} ${studentLabel}</span></div>
           </div>
         </div>
         <div class="card">
@@ -378,6 +386,44 @@
         });
       });
       return items;
+    }
+
+    function normalizeSubmissionTime(value) {
+      if (!value) return Number.MAX_SAFE_INTEGER;
+      if (typeof value === 'number') return value;
+      if (value instanceof Date) return value.getTime();
+      if (value?.toMillis) return value.toMillis();
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+    }
+
+    async function fetchOverallRank(mockId, currentResultId) {
+      if (!mockId) return { rank: 1, total: 1 };
+      try {
+        const resultsQuery = query(collection(db, 'mockResults'), where('mockId', '==', mockId));
+        const snapshot = await getDocs(resultsQuery);
+        const allResults = [];
+        snapshot.forEach((docSnapshot) => {
+          const data = docSnapshot.data();
+          allResults.push({
+            id: docSnapshot.id,
+            score: Number(data.score ?? 0),
+            submittedAt: normalizeSubmissionTime(data.submittedAt)
+          });
+        });
+
+        allResults.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.submittedAt - b.submittedAt;
+        });
+
+        const total = allResults.length;
+        const position = allResults.findIndex((item) => item.id === currentResultId);
+        return { rank: position >= 0 ? position + 1 : total || 1, total: total || 1 };
+      } catch (error) {
+        console.error('Rank lookup failed:', error);
+        return { rank: 1, total: 1 };
+      }
     }
 
     const pageState = {
@@ -686,23 +732,24 @@
         console.log("Result Mock ID:", result.mockId);
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
+        const rankInfo = await fetchOverallRank(result.mockId, result.id);
 
-        console.log("Questions Loaded:", questions.length);
-        console.log("Questions:", questions);
-        console.log("Result Answers:", result.answers);
+console.log("Questions Loaded:", questions.length);
+console.log("Questions:", questions);
+console.log("Result Answers:", result.answers);
+console.log("Rank Info:", rankInfo);
 
-        const answers =
-            result.answers && typeof result.answers === "object"
-                ? result.answers
-                : {};
+const answers =
+    result.answers && typeof result.answers === "object"
+        ? result.answers
+        : {};
 
         resultContent.innerHTML = `
           <div class="card-grid">
-            ${renderSummary(result, categoryName)}
+            ${renderSummary(result, categoryName, rankInfo)}
           </div>
           ${renderReviewSection(questions, answers, result)}`;
 
-        setStatus('Result loaded successfully.');
         initializeQuestionAnalysis(questions, answers);
       } catch (error) {
         console.error(error);
