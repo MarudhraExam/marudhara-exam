@@ -133,8 +133,7 @@ async function showMarksheet(student) {
     try {
    const examDoc = await getDoc(doc(db, "results", student.examId));
         if (examDoc.exists()) {
-            examName = examDoc.data().name;
-        }
+        examName = examDoc.data().examName;
     } catch (err) {
         console.error("Could not fetch corresponding examination attributes.", err);
     }
