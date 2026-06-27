@@ -6,7 +6,7 @@
  */
 
 import {
-    getFirestore,
+    db,
     collection,
     addDoc,
     getDocs,
@@ -53,7 +53,6 @@ const replaceProgressLog = document.getElementById('replace-progress-log');
 
 
 // --- Firestore Initialization ---
-const db = getFirestore();
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const BATCH_SIZE = 400;
@@ -226,8 +225,7 @@ const createExam = async (examName, file) => {
         const snapshot = await getDocs(q);
         if(!snapshot.empty) {
             snapshot.forEach(doc => deleteDoc(doc.ref));
-            progressLog.textContent += "
-Rolled back exam creation due to an error.";
+            progressLog.textContent += "\nRolled back exam creation due to an error.";
         }
     } finally {
         setTimeout(() => resetProgress({ wrapper: progressWrapper, fill: progressFill, percent: progressPercent, log: progressLog }), 5000);
