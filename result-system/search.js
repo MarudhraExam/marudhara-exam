@@ -366,7 +366,10 @@ examSelect.addEventListener('change', () => {
   resultsSection.classList.remove('visible');
   resultsTbody.innerHTML = '';
   hideSearchAlert();
-  searchInput.value = '';
+ rollInput.value = '';
+nameInput.value = '';
+fatherInput.value = '';
+motherInput.value = '';
 });
 
 // Reset results when search field changes
