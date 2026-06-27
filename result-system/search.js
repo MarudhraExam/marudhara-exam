@@ -34,7 +34,6 @@ const closeButton = document.getElementById('close-report-btn');
 
 
 // --- Firestore Initialization ---
-<<<<<<< HEAD
 
 =======
 >>>>>>> 5748c96 (new569)
