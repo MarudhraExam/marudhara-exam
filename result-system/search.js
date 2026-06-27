@@ -140,6 +140,7 @@ async function loadExams() {
   } catch (err) {
     examLoadAlert.className = 'alert alert-danger';
     examLoadAlert.textContent = 'Failed to load exams: ' + err.message;
+    console.error(err);
     examLoadAlert.classList.remove('hidden');
   } finally {
     examSelect.disabled = false;
