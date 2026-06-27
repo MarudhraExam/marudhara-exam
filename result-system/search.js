@@ -1,3 +1,4 @@
+console.log("SEARCH JS VERSION 999");
 import {
     db,
     collection,
