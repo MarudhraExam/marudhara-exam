@@ -6,6 +6,7 @@ import {
 } from './firebase.js';
 
 import {
+  db,
   collection,
   addDoc,
   getDocs,
@@ -18,7 +19,7 @@ import {
   writeBatch,
   serverTimestamp,
   orderBy
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from './firebase.js';
 
 // ── Constants ────────────────────────────────────────────────
 const RESULTS_COL       = 'results';
