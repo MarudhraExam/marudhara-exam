@@ -760,10 +760,11 @@ tbody td { padding: 10px 14px; color: var(--text); vertical-align: middle; }
 .site-header nav a.active { background: rgba(255,255,255,.16); color: #fff; text-decoration: none; }
 
 /* ── Search page wrapper ──────────────────────────────────── */
-.page-wrapper {
-  max-width: 1060px;
+..page-wrapper {
+  width: 98%;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 28px 18px 56px;
+  padding: 28px 24px 56px;
 }
 
 /* ── Footer ───────────────────────────────────────────────── */
