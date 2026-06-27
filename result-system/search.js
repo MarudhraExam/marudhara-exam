@@ -85,9 +85,6 @@ if (roll) {
     alert("Please enter Roll Number, Name, Father Name or Mother Name.");
     return;
 }
-
-const querySnapshot = await getDocs(q);
-
         const querySnapshot = await getDocs(q);
         renderMatchesList(querySnapshot);
 
