@@ -42,7 +42,6 @@ const db = getFirestore(app);
 
 // Export instances and modular query handlers to structural scripts
 window.db = db;
-alert("firebase.js loaded");
 export {
     db,
     collection,
