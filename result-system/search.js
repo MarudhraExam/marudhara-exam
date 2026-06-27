@@ -241,6 +241,32 @@ if (!rollValue && (fatherValue || motherValue)) {
     }
 
     // Render results
+    if (!rollValue) {
+
+  const filtered = [];
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data();
+
+    const fatherOk =
+      !fatherValue ||
+      String(d.searchFather || "").startsWith(fatherValue);
+
+    const motherOk =
+      !motherValue ||
+      String(d.searchMother || "").startsWith(motherValue);
+
+    if (fatherOk && motherOk) {
+      filtered.push(docSnap);
+    }
+  });
+
+  snap = {
+    empty: filtered.length === 0,
+    size: filtered.length,
+    forEach: cb => filtered.forEach(cb)
+  };
+}
     renderResults(snap);
 
   } catch (err) {
