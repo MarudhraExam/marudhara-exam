@@ -230,7 +230,13 @@ const showResult = async (studentId) => {
         document.getElementById('marksheet-date').textContent = new Date().toLocaleDateString();
 
         modalContainer.classList.remove('hidden');
+console.log(modalContainer);
+console.log(modalContainer.className);
 
+modalContainer.style.display = "block";
+modalContainer.style.visibility = "visible";
+modalContainer.style.opacity = "1";
+modalContainer.style.zIndex = "99999";
     } catch (error) {
         console.error("Error showing result:", error);
         alert("An error occurred while fetching the detailed result.");
