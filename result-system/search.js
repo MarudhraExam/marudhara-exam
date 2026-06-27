@@ -287,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchForm.addEventListener('reset', resetSearch);
 
     // Handle 'View Result' button clicks using event delegation
+    console.log(resultsTableBody);
     resultsTableBody.addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('view-result-btn')) {
             const studentId = e.target.dataset.id;
