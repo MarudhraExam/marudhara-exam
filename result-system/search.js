@@ -209,7 +209,32 @@ if (!rollValue && !nameValue) {
   snap = await getDocs(q);
 
 }
+if (!rollValue && (fatherValue || motherValue)) {
 
+  const filteredDocs = [];
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data();
+
+    const fatherMatch =
+      !fatherValue ||
+      (d.searchFather || "").startsWith(fatherValue);
+
+    const motherMatch =
+      !motherValue ||
+      (d.searchMother || "").startsWith(motherValue);
+
+    if (fatherMatch && motherMatch) {
+      filteredDocs.push(docSnap);
+    }
+  });
+
+  snap = {
+    empty: filteredDocs.length === 0,
+    size: filteredDocs.length,
+    forEach: (cb) => filteredDocs.forEach(cb)
+  };
+}
     if (snap.empty) {
       showSearchAlert('No results found. Please check your search value and try again.', 'warning');
       return;
