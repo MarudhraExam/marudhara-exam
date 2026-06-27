@@ -3,104 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Marudhara Exam Result Portal</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Marudhara Exam - Admin Management Dashboard</title>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Google Fonts for Professional Appearance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS (XLSX) CDN to process multiple Excel sheets in the browser -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-    <header>
-        <h1>Marudhara Exam Result Portal</h1>
-        <nav>
-            <a href="index.html">Student Search Portal</a>
-            <a href="admin.html" class="active">Admin Dashboard</a>
-        </nav>
+    <!-- Header Section -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-wrapper">
+                <svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Marudhara Exam Logo">
+                    <circle cx="50" cy="50" r="45" stroke="#1e3a8a" stroke-width="8" fill="#f8fafc"/>
+                    <path d="M50 20 L25 45 H35 V75 H65 V45 H75 Z" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2" stroke-linejoin="round"/>
+                    <circle cx="50" cy="52" r="6" fill="#f59e0b"/>
+                </svg>
+                <div class="header-text">
+                    <h1>Marudhara Exam Admin</h1>
+                    <p class="subtitle">Result Management Control Panel</p>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="portal-home-link">← Return to Search Portal</a>
+            </nav>
+        </div>
     </header>
 
-    <div class="container">
-        <main>
-            <div class="card">
-                <h2 id="form-action-title">Import New Exam Result</h2>
-                <form id="exam-form">
-                    <input type="hidden" id="exam-id">
+    <!-- Admin Body Container -->
+    <main class="portal-container">
+        
+        <!-- Grid layout for Form actions and global configurations -->
+        <div class="admin-grid">
+            
+            <!-- Section A: Upload / Creation Area -->
+            <section class="search-card admin-form-card">
+                <h2 class="card-title">Import New Exam Result Set</h2>
+                <form id="uploadForm" novalidate>
+                    <!-- Exam Name Input -->
                     <div class="form-group">
-                        <label for="exam-name">Exam Name</label>
-                        <input type="text" id="exam-name" required placeholder="e.g., Rajasthan Patwari 2024">
+                        <label for="newExamName" class="required-label">Exam Name</label>
+                        <input type="text" id="newExamName" placeholder="e.g., LDC Grade-II & Junior Assistant Exam 2026" required autocomplete="off">
                     </div>
+
+                    <!-- File Picker Input -->
                     <div class="form-group">
-                        <label for="excel-file">Choose Excel File (.xlsx, .xls, .csv)</label>
-                        <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" required>
-                    </div>
-                    <button type="submit" id="submit-btn" class="btn btn-primary">Import Excel Result</button>
-                    <button type="button" id="cancel-btn" class="btn" style="display:none;">Cancel Edit</button>
-                </form>
-                <div id="progress-wrapper" class="progress-wrapper">
-                    <label id="progress-label">Import Progress:</label>
-                    <div style="display: flex; align-items: center;">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-fill"></div>
+                        <label for="excelFile" class="required-label">Select Excel Result File (.xlsx, .xls)</label>
+                        <div class="file-dropzone-wrapper">
+                            <input type="file" id="excelFile" accept=".xlsx, .xls" required>
+                            <div class="dropzone-prompt">
+                                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"></path>
+                                </svg>
+                                <span>Choose a file or drag & drop</span>
+                                <p class="file-specs">Strictly supports multi-sheet format files. Header in Sheet 1.</p>
+                            </div>
                         </div>
-                        <span id="progress-percent">0%</span>
+                        <div id="fileSelectedDisplay" class="selected-file-badge hidden"></div>
                     </div>
-                    <p id="progress-log">Starting import...</p>
-                </div>
-            </div>
 
-            <div class="card">
-                <h2>Manage Examinations</h2>
-                <div class="table-responsive">
-                    <table id="exams-table">
-                        <thead>
-                            <tr>
-                                <th>Exam Name</th>
-                                <th>File Name</th>
-                                <th>Created Date</th>
-                                <th>Students Count</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="exams-list">
-                            <!-- Exam rows will be inserted here dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Replace Excel Modal -->
-    <div id="replace-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Replace Excel File</h2>
-                <span id="close-replace-modal" class="close">&times;</span>
-            </div>
-            <form id="replace-form">
-                <input type="hidden" id="replace-exam-id">
-                <div class="form-group">
-                    <label for="replace-excel-file">New Excel File</label>
-                    <input type="file" id="replace-excel-file" accept=".xlsx, .xls, .csv" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Replace</button>
-            </form>
-            <div id="replace-progress-wrapper" class="progress-wrapper">
-                <label id="replace-progress-label">Replace Progress:</label>
-                 <div style="display: flex; align-items: center;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="replace-progress-fill"></div>
+                    <!-- Form Submissions Actions -->
+                    <div class="form-actions-admin">
+                        <button type="submit" id="uploadBtn" class="btn btn-primary btn-full">
+                            <span>Process & Import Records</span>
+                        </button>
                     </div>
-                    <span id="replace-progress-percent">0%</span>
+                </form>
+            </section>
+
+            <!-- Section B: Live Progress Dashboard panel (Displays conditionally during processing) -->
+            <section id="uploadProgressContainer" class="search-card progress-panel hidden">
+                <h2 class="card-title text-navy">Execution & Synchronization Monitor</h2>
+                
+                <div class="progress-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status:</span>
+                        <strong id="progressStatusText" class="detail-value text-blue">Initializing parser engine...</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Records Processed:</span>
+                        <strong id="processedCountText" class="detail-value">0 / 0</strong>
+                    </div>
                 </div>
-                <p id="replace-progress-log">Starting replacement...</p>
+
+                <!-- Horizontal Progress Tracker -->
+                <div class="progress-bar-track">
+                    <div id="progressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+                <div class="percentage-display">
+                    <span id="progressPercent">0%</span> Complete
+                </div>
+
+                <!-- Safe Block Overlay Warning -->
+                <div class="operation-warning-box">
+                    <span class="warning-badge">Do Not Close Browser Window</span>
+                    <p>Writing records directly to Firestore via batched chunks. Aborting now will result in fragmented or partial database collections.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Section C: Active / Configured Exams Table list -->
+        <section class="results-section active-exams-box">
+            <h3 class="results-heading">Active Result Datasets</h3>
+            <div class="table-responsive">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Source File Name</th>
+                            <th>Records Count</th>
+                            <th>Import Date</th>
+                            <th class="text-center">Operations Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examsTableBody">
+                        <!-- Instantiated Dynamically via Admin JS controller -->
+                        <tr>
+                            <td colspan="5" class="table-placeholder-row">Loading active collections from Firestore...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Form: Edit Exam Name -->
+    <div id="editNameModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editNameModalTitle">
+        <div class="modal-container modal-small">
+            <header class="modal-header-simple">
+                <h3 id="editNameModalTitle">Modify Examination Title</h3>
+                <button type="button" class="btn-icon-close" id="cancelEditBtn">✕</button>
+            </header>
+            <div class="modal-body-simple">
+                <p class="modal-desc">This cascade operation updates both the primary index table and every individual candidate's result record reference.</p>
+                <form id="editNameForm" novalidate>
+                    <input type="hidden" id="editExamId">
+                    <div class="form-group">
+                        <label for="editExamNameInput" class="required-label">Updated Exam Name</label>
+                        <input type="text" id="editExamNameInput" required autocomplete="off">
+                    </div>
+                    <div class="modal-simple-actions">
+                        <button type="button" class="btn btn-secondary" id="closeEditModalBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveExamNameBtn">Cascade Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>Marudhara Exam</p>
-        <a href="http://www.marudharaexam.in" target="_blank">www.marudharaexam.in</a>
-    </footer>
+    <!-- Modal Form: Replace Excel Spreadsheet Data -->
+    <div id="replaceExcelModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="replaceExcelModalTitle">
+        <div class="modal-container modal-small">
+            <header class="modal-header-simple">
+                <h3 id="replaceExcelModalTitle">Replace Exam Dataset</h3>
+                <button type="button" class="btn-icon-close" id="cancelReplaceBtn">✕</button>
+            </header>
+            <div class="modal-body-simple">
+                <p class="modal-desc text-danger-alert"><strong>Warning:</strong> Proceeding deletes every existing candidate reference of this exam before writing the fresh worksheet import.</p>
+                <form id="replaceExcelForm" novalidate>
+                    <input type="hidden" id="replaceExamId">
+                    <input type="hidden" id="replaceExamNameVal">
+                    
+                    <div class="form-group">
+                        <label for="replaceExcelInput" class="required-label">Select Fresh Spreadsheet (.xlsx, .xls)</label>
+                        <div class="file-dropzone-wrapper">
+                            <input type="file" id="replaceExcelInput" accept=".xlsx, .xls" required>
+                            <div class="dropzone-prompt">
+                                <span>Choose replacement file</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-simple-actions">
+                        <button type="button" class="btn btn-secondary" id="closeReplaceModalBtn">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="confirmReplaceBtn">Proceed Cascade Replace</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script type="module" src="import.js"></script>
+    <!-- Script Entrypoint using ES Modules -->
+    <script type="module" src="js/admin.js"></script>
 </body>
 </html>
