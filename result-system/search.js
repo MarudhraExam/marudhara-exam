@@ -114,7 +114,7 @@ function renderMatchesList(snapshot) {
             <td><strong>${student.rollNo}</strong></td>
             <td>${student.name}</td>
             <td>${student.fatherName}</td>
-            <td><span style="font-weight: 500; color: ${(student.resultStatus || "Selected").toLowerCase() === 'pass' ? 'var(--success-color)' : 'var(--error-color)'}">${student.resultStatus}</span></td>
+            <td><span style="font-weight: 500; color: ${(student.resultStatus || "Selected").toLowerCase() === 'pass' ? 'var(--success-color)' : 'var(--error-color)'}">${student.resultStatus || "Selected"}</span></td>
             <td style="text-align: center;">
                 <button class="secondary-btn" style="padding: 0.35rem 0.7rem; font-size: 0.85rem;" id="btn-${doc.id}">View Certificate</button>
             </td>
