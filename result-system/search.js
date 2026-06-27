@@ -2,17 +2,14 @@
 // ES6 Module — imports from existing firebase.js
 
 import {
-  db
-} from './firebase.js';
-
-import {
+  db,
   collection,
   getDocs,
   query,
   where,
   orderBy,
   limit
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from './firebase.js';
 
 // ── Constants ────────────────────────────────────────────────
 const RESULTS_COL  = 'results';
