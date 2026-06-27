@@ -378,10 +378,21 @@ downloadPngBtn.addEventListener('click', async () => {
 // ── Search button & Enter key ────────────────────────────────
 searchBtn.addEventListener('click', doSearch);
 
-searchInput.addEventListener('keydown', e => {
+rollInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearch();
 });
 
+nameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+fatherInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+motherInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
 // Reset results when exam changes
 examSelect.addEventListener('change', () => {
   resultsSection.classList.remove('visible');
