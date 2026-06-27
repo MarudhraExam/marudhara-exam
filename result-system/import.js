@@ -323,56 +323,103 @@ const updateExam = async (examId, newExamName) => {
 const readExcel = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
+
         reader.onload = (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                const workbook = XLSX.read(data, { type: "array" });
+
                 const students = [];
 
-                workbook.SheetNames.forEach((worksheetName) => {
-                    const worksheet = workbook.Sheets[worksheetName];
-                    // header: 1 produces an array of arrays
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                // ===== FIRST SHEET HEADER =====
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const firstData = XLSX.utils.sheet_to_json(firstSheet, {
+                    header: 1,
+                    defval: ""
+                });
 
-                    // Skip header row (index 0) on every worksheet
-                    for (let i = 1; i < json.length; i++) {
-                        const row = json[i];
-                        const isEmptyRow = !row || row.every(cell => String(cell || '').trim() === '');
-                        if (isEmptyRow) continue;
+                const headers = firstData[0].map(h => String(h).trim().toUpperCase());
 
-                        const rollNo = String(row[3] || '').trim();
-                        const name = String(row[4] || '').trim();
-                        const fatherName = String(row[5] || '').trim();
-                        const motherName = String(row[6] || '').trim();
+                const col = {};
+
+                headers.forEach((h, i) => {
+                    col[h] = i;
+                });
+
+                // ===== ALL SHEETS =====
+                workbook.SheetNames.forEach((sheetName, sheetIndex) => {
+
+                    const ws = workbook.Sheets[sheetName];
+
+                    const rows = XLSX.utils.sheet_to_json(ws, {
+                        header: 1,
+                        defval: ""
+                    });
+
+                    // First sheet -> header skip
+                    // Other sheets -> data starts from row 0
+                    const startRow = sheetIndex === 0 ? 1 : 0;
+
+                    for (let i = startRow; i < rows.length; i++) {
+
+                        const row = rows[i];
+
+                        if (!row || row.every(c => String(c).trim() === "")) continue;
+
+                        const rollNo = String(row[col["ROLL_NO"]] || "").trim();
+                        const name = String(row[col["CAND_NAME"]] || "").trim();
+                        const fatherName = String(row[col["FATHER_NAME"]] || "").trim();
+                        const motherName = String(row[col["MOTHER_NAME"]] || "").trim();
 
                         students.push({
-                            rank: String(row[1] || '').trim(),
-                            applicationNo: String(row[2] || '').trim(),
-                            rollNo: rollNo,
-                            name: name,
-                            fatherName: fatherName,
-                            motherName: motherName,
-                            dob: String(row[7] || '').trim(),
-                            gender: String(row[8] || '').trim(),
-                            category: String(row[9] || '').trim(),
-                            horizontalCategory: String(row[10] || '').trim(),
-                            femaleCategory: String(row[11] || '').trim(),
-                            tsp: String(row[12] || '').trim(),
-                            netMarks: String(row[13] || '').trim(),
-                            selectionCategory: String(row[14] || '').trim(),
+
+                            rank: String(row[col["RANK"]] || "").trim(),
+
+                            applicationNo: String(row[col["APPLICATION"]] || "").trim(),
+
+                            rollNo,
+
+                            name,
+
+                            fatherName,
+
+                            motherName,
+
+                            dob: String(row[col["DOB"]] || "").trim(),
+
+                            gender: String(row[col["GENDER"]] || "").trim(),
+
+                            category: String(row[col["CAT"]] || "").trim(),
+
+                            horizontalCategory: String(row[col["HCAT"]] || "").trim(),
+
+                            femaleCategory: String(row[col["FCAT"]] || "").trim(),
+
+                            tsp: String(row[col["TSP"]] || "").trim(),
+
+                            netMarks: String(row[col["NET"]] || "").trim(),
+
+                            selectionCategory: String(row[col["SEL_CAT"]] || row[col["SEL_CAT."]] || "").trim(),
+
                             searchRoll: rollNo.toLowerCase(),
+
                             searchName: name.toLowerCase(),
+
                             searchFather: fatherName.toLowerCase(),
-                            searchMother: motherName.toLowerCase(),
+
+                            searchMother: motherName.toLowerCase()
                         });
                     }
+
                 });
+
                 resolve(students);
-            } catch (error) {
-                reject(new Error("Failed to read or parse Excel file. " + error.message));
+
+            } catch (err) {
+                reject(err);
             }
         };
-        reader.onerror = (error) => reject(new Error("File reading error: " + error));
+
         reader.readAsArrayBuffer(file);
     });
 };
