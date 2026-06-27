@@ -1,10 +1,3 @@
-/**
- * @file Excel Import System for Marudhara Exam Result Portal
- * @description Handles creating, reading, updating, and deleting exam results from Excel files using Firestore.
- * @version 1.0.0
- * @author Gemini
- */
-
 import {
     getFirestore,
     collection,
