@@ -42,12 +42,7 @@ const replaceProgressPercent = document.getElementById('replace-progress-percent
 const replaceProgressFill = document.getElementById('replace-progress-fill');
 const replaceProgressLog = document.getElementById('replace-progress-log');
 
-
-<<<<<<< HEAD
 // --- Firestore Initialization ---
-=======
-const db = getFirestore();
->>>>>>> 90331f67fd09c299c9927d31735d6d3f03bfecfb
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const BATCH_SIZE = 400;
