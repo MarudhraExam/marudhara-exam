@@ -36,7 +36,6 @@ th{background:#002B5B;color:#fff}
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {getFirestore,collection,addDoc,getDocs,deleteDoc,doc} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
@@ -52,7 +51,6 @@ const db=getFirestore(app);
 
 async function readPdf(file){
  const ab=await file.arrayBuffer();
- const pdf=await pdfjsLib.getDocument({data:ab}).promise;
  let txt="";
  for(let i=1;i<=pdf.numPages;i++){
    const p=await pdf.getPage(i);
