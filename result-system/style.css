@@ -1,24 +1,38 @@
 /* ==========================================================================
-   MARUDHARA EXAM - BRAND INTEGRATED DESIGN SYSTEM
+   MARUDHARA EXAM - UNIFIED BRAND LAYOUT STYLES
    ========================================================================== */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --primary: #103f91;          /* Signature Deep Navy Blue from live site */
-    --accent: #f97316;           /* Live Site Saffron Orange Accent */
-    --text-dark: #1e293b;        /* Slate Dark Gray */
-    --text-muted: #64748b;       /* Muted Gray */
-    --bg-light: #f8fafc;         /* Light Gray Page Background */
-    --border-color: #e2e8f0;     /* Soft Divider Line */
-    --card-bg: #ffffff;
-    --success: #10b981;          /* Safe Operational Green */
-    --danger: #ef4444;           /* Alert Red */
+    /* Main Theme Colors */
+    --primary: #103f91;          /* Brand Royal Blue */
+    --accent: #f97316;           /* Rajasthani Saffron / Orange Accent */
+    --accent-light: #fff7ed;     /* Soft Amber alert color */
+    --text-dark: #1e293b;        /* Charcoal body text */
+    --text-muted: #64748b;       /* Slate muted text */
+    --bg-main: #f1f5f9;          /* Light Slate screen background */
+    --card-bg: #ffffff;          /* White containers */
+    --border-color: #cbd5e1;     /* Standard thin separator line */
+    --border-light: #e2e8f0;     
+    --success: #10b981;          /* Success green */
+    --danger: #ef4444;           /* Alert / Deletion red */
+    --danger-light: #fef2f2;
+    
+    /* Typography Rules */
     --font-heading: 'Poppins', sans-serif;
     --font-body: 'Inter', sans-serif;
-    --max-width: 1200px;
+    
+    /* Animation Defaults */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px -1px rgba(16, 63, 145, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
 }
 
-/* Core Resets */
+/* Global HTML Resets */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -27,9 +41,12 @@
 
 body {
     font-family: var(--font-body);
-    background-color: var(--bg-light);
+    background-color: var(--bg-main);
     color: var(--text-dark);
     line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -38,19 +55,19 @@ body {
 }
 
 /* ==========================================================================
-   LIVE WEBSITE MATCHING HEADER
+   PORTAL HEADER DESIGN (Exactly matching www.marudharaexam.in)
    ========================================================================== */
 .site-header {
     background-color: #ffffff;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 2px solid var(--border-light);
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-sm);
 }
 
-.header-container {
-    max-width: var(--max-width);
+.header-inner {
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0.75rem 1.5rem;
     display: flex;
@@ -58,80 +75,90 @@ body {
     align-items: center;
 }
 
-.brand-wrapper {
+.brand-anchor {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.85rem;
     text-decoration: none;
 }
 
-.brand-logo {
+.logo-image {
     height: 48px;
     width: auto;
+    object-fit: contain;
 }
 
-.brand-text h1 {
+.brand-meta h1 {
     font-family: var(--font-heading);
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--primary);
+    line-height: 1.2;
 }
 
-.brand-text p {
+.brand-meta p {
     font-size: 0.75rem;
     color: var(--accent);
     font-weight: 600;
     letter-spacing: 0.05em;
 }
 
-/* Live Navigation Menu Row */
-.header-nav {
+/* Dynamic Responsive Navigation Menu Row */
+.header-menu {
     display: none;
     gap: 1.25rem;
+    align-items: center;
 }
 
 @media (min-width: 1024px) {
-    .header-nav {
+    .header-menu {
         display: flex;
-        align-items: center;
     }
 }
 
-.nav-item {
+.menu-item {
     font-family: var(--font-heading);
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-dark);
     text-decoration: none;
-    transition: color 0.2s;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
 }
 
-.nav-item:hover, .nav-item.active {
+.menu-item:hover, .menu-item.active {
     color: var(--primary);
 }
 
-/* Mobile Toggle Hamburger menu style */
-.mobile-nav-toggle {
+.menu-item.active {
+    background-color: rgba(16, 63, 145, 0.06);
+    color: var(--primary);
+}
+
+/* Mobile Navigation Hamburger button style */
+.mobile-hamburger {
     background: none;
     border: none;
     color: var(--primary);
     cursor: pointer;
     display: block;
+    padding: 0.25rem;
 }
 
 @media (min-width: 1024px) {
-    .mobile-nav-toggle {
+    .mobile-hamburger {
         display: none;
     }
 }
 
-.mobile-nav-toggle svg {
+.mobile-hamburger svg {
     width: 28px;
     height: 28px;
 }
 
-/* Mobile Drawer Styles */
-.mobile-drawer {
+/* Mobile Drawer overlays */
+.mobile-drawer-wrapper {
     position: fixed;
     top: 68px;
     left: -100%;
@@ -139,121 +166,122 @@ body {
     height: calc(100vh - 68px);
     background-color: #ffffff;
     z-index: 99;
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    transition: left 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.mobile-drawer.open {
+.mobile-drawer-wrapper.drawer-visible {
     left: 0;
 }
 
 /* ==========================================================================
-   BANNER/HERO SUBHEADER
+   PAGE HERO SUBHEADER BANNER
    ========================================================================== */
-.page-subheader {
-    background: linear-gradient(135deg, var(--primary) 0%, #08214d 100%);
+.hero-subheader {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d285c 100%);
     color: #ffffff;
     padding: 2.5rem 1.5rem;
     text-align: center;
     border-bottom: 4px solid var(--accent);
 }
 
-.subheader-container {
-    max-width: var(--max-width);
+.hero-subheader-container {
+    max-width: 1200px;
     margin: 0 auto;
 }
 
-.page-subheader h2 {
+.hero-subheader h2 {
     font-family: var(--font-heading);
-    font-size: 1.75rem;
+    font-size: 1.65rem;
     font-weight: 700;
-    letter-spacing: -0.01em;
 }
 
-.page-subheader p {
-    font-size: 0.9rem;
-    color: #dbeafe;
+.hero-subheader p {
+    font-size: 0.85rem;
+    color: #cbd5e1;
     margin-top: 0.25rem;
 }
 
 /* ==========================================================================
-   CENTRAL CONTENT AREA
+   CENTRAL CONTENT CONTAINERS
    ========================================================================== */
-.main-wrapper {
-    max-width: var(--max-width);
-    margin: 2.5rem auto;
+.workspace-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 2rem auto;
     padding: 0 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
+    flex-grow: 1;
 }
 
-/* Content cards block style */
-.content-block-card {
+/* Card layout wrapper rules */
+.content-card-box {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(16, 63, 145, 0.03);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
 }
 
-.card-title-header {
+.card-heading-header {
     background-color: #f8fafc;
-    border-bottom: 1.5px solid var(--border-color);
-    padding: 1rem 1.5rem;
+    border-bottom: 1.5px solid var(--border-light);
+    padding: 1.15rem 1.5rem;
 }
 
-.card-title-header h3 {
+.card-heading-header h3 {
     font-family: var(--font-heading);
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--primary);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.65rem;
 }
 
-.card-body {
-    padding: 1.5rem;
+.card-body-frame {
+    padding: 1.75rem;
 }
 
 /* ==========================================================================
-   RECONSTRUCTED FORMS & INPUTS
+   FORM INPUT CONTROLS (Professional Fields styling)
    ========================================================================== */
-.input-group {
-    margin-bottom: 1.25rem;
+.form-input-group {
+    margin-bottom: 1.5rem;
 }
 
-.input-group label {
+.form-input-group label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.825rem;
     font-weight: 600;
     color: var(--text-dark);
     margin-bottom: 0.4rem;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
+    letter-spacing: 0.05em;
 }
 
-.required-star::after {
+.field-required::after {
     content: " *";
     color: var(--danger);
 }
 
 input[type="text"], select {
     width: 100%;
-    padding: 0.65rem 0.85rem;
+    padding: 0.7rem 0.95rem;
     font-family: var(--font-body);
     font-size: 0.9rem;
     color: var(--text-dark);
     background-color: #f8fafc;
     border: 1.5px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     outline: none;
-    transition: all 0.2s;
+    transition: var(--transition);
 }
 
 input[type="text"]:focus, select:focus {
@@ -262,24 +290,25 @@ input[type="text"]:focus, select:focus {
     box-shadow: 0 0 0 3px rgba(16, 63, 145, 0.08);
 }
 
-/* Drag-Drop / Upload Selector */
-.file-picker-box {
+/* Interactive custom Excel dropzone and select target box */
+.dropzone-picker-box {
     position: relative;
     border: 2px dashed var(--border-color);
     background-color: #f8fafc;
-    border-radius: 6px;
-    padding: 1.75rem 1rem;
+    border-radius: var(--radius-sm);
+    padding: 2rem 1.5rem;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: var(--transition);
+    overflow: hidden;
 }
 
-.file-picker-box:hover {
+.dropzone-picker-box:hover {
     border-color: var(--primary);
-    background-color: #eff6ff;
+    background-color: #f0f7ff;
 }
 
-.file-picker-box input[type="file"] {
+.dropzone-picker-box input[type="file"] {
     position: absolute;
     top: 0;
     left: 0;
@@ -287,24 +316,40 @@ input[type="text"]:focus, select:focus {
     height: 100%;
     opacity: 0;
     cursor: pointer;
+    z-index: 2;
 }
 
-.picker-prompt {
+.dropzone-prompter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    pointer-events: none;
+}
+
+.dropzone-prompter svg {
+    width: 38px;
+    height: 38px;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+
+.dropzone-prompter span {
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
-.picker-prompt strong {
+.dropzone-prompter span strong {
     color: var(--primary);
 }
 
-/* File Selected Badge */
-.selected-file-badge {
-    margin-top: 0.75rem;
+/* Selection identifier badge */
+.selection-filename-badge {
+    margin-top: 0.85rem;
     background-color: var(--accent-light);
     border: 1px solid rgba(249, 115, 22, 0.2);
-    border-radius: 4px;
-    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.85rem;
     font-size: 0.8rem;
     color: #c2410c;
     font-weight: 600;
@@ -312,52 +357,53 @@ input[type="text"]:focus, select:focus {
 }
 
 /* ==========================================================================
-   BUTTON STYLE DEFINITIONS (Rounded, Hover Interactive)
+   BUTTON STYLE RULES (Matching Standard buttons)
    ========================================================================== */
-.btn-action {
+.action-button-core {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.65rem 1.5rem;
+    padding: 0.7rem 1.5rem;
     font-family: var(--font-heading);
     font-size: 0.85rem;
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: var(--transition);
+    width: 100%;
 }
 
-.btn-primary {
+.btn-theme-primary {
     background-color: var(--primary);
     color: #ffffff;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: #0d306b;
+.btn-theme-primary:hover:not(:disabled) {
+    background-color: #0b2b64;
 }
 
-.btn-secondary {
+.btn-theme-secondary {
     background-color: #f1f5f9;
     color: #475569;
     border: 1px solid var(--border-color);
 }
 
-.btn-secondary:hover:not(:disabled) {
+.btn-theme-secondary:hover:not(:disabled) {
     background-color: #e2e8f0;
 }
 
-.btn-danger {
+.btn-theme-critical {
     background-color: var(--danger);
     color: #ffffff;
 }
 
-.btn-danger:hover:not(:disabled) {
+.btn-theme-critical:hover:not(:disabled) {
     background-color: #dc2626;
 }
 
-.btn-action:disabled {
+.action-button-core:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background-color: #cbd5e1 !important;
@@ -365,133 +411,140 @@ input[type="text"]:focus, select:focus {
 }
 
 /* ==========================================================================
-   INTERIOR DATA TABLES
+   DASHBOARD / INTERIOR EXAMS TABLES
    ========================================================================== */
-.table-scroll {
+.responsive-table-scroll {
     width: 100%;
     overflow-x: auto;
 }
 
-.admin-data-table {
+.results-catalogue-table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
     font-size: 0.85rem;
 }
 
-.admin-data-table th {
+.results-catalogue-table th {
     background-color: #f8fafc;
     color: var(--primary);
     font-family: var(--font-heading);
     font-weight: 700;
-    padding: 0.85rem 1rem;
-    border-bottom: 1.5px solid var(--border-color);
+    padding: 0.95rem 1.15rem;
+    border-bottom: 2px solid var(--border-light);
     white-space: nowrap;
 }
 
-.admin-data-table td {
-    padding: 0.85rem 1rem;
+.results-catalogue-table td {
+    padding: 0.95rem 1.15rem;
     border-bottom: 1px solid #f1f5f9;
     color: var(--text-dark);
 }
 
-.admin-data-table tbody tr:hover {
-    background-color: #fafcfd;
+.results-catalogue-table tbody tr:hover {
+    background-color: #fafbfd;
 }
 
-.admin-data-table tr:last-child td {
+.results-catalogue-table tr:last-child td {
     border-bottom: none;
 }
 
-/* Action button links inside cells */
-.row-actions-group {
+/* Row elements action links styling */
+.operations-btn-tray {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.45rem;
     justify-content: flex-end;
 }
 
-.btn-row-action {
+.mini-row-trigger {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.35rem 0.65rem;
+    padding: 0.4rem 0.75rem;
     font-family: var(--font-heading);
     font-size: 0.75rem;
     font-weight: 600;
     border: 1px solid var(--border-color);
     background-color: #ffffff;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: var(--transition);
     text-decoration: none;
 }
 
-.btn-row-action-blue {
+.mini-row-trigger-blue {
     color: var(--primary);
-    border-color: rgba(16, 63, 145, 0.2);
+    border-color: rgba(16, 63, 145, 0.25);
 }
 
-.btn-row-action-blue:hover {
+.mini-row-trigger-blue:hover {
     background-color: #eff6ff;
 }
 
-.btn-row-action-orange {
+.mini-row-trigger-orange {
     color: var(--accent);
-    border-color: rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.25);
 }
 
-.btn-row-action-orange:hover {
+.mini-row-trigger-orange:hover {
     background-color: var(--accent-light);
 }
 
-.btn-row-action-red {
+.mini-row-trigger-red {
     color: var(--danger);
-    border-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.25);
 }
 
-.btn-row-action-red:hover {
+.mini-row-trigger-red:hover {
     background-color: var(--danger-light);
 }
 
-.table-placeholder {
+.placeholder-row-view {
     text-align: center;
-    padding: 2.5rem !important;
+    padding: 3rem !important;
     color: var(--text-muted);
     font-style: italic;
+    background-color: #fafafc;
 }
 
 /* ==========================================================================
-   PROGRESS INDICATOR PANELS
+   DYNAMIC SYNCHRONIZATION LOADERS & PROGRESS BARS
    ========================================================================== */
-.progress-panel-wrapper {
+.sync-progress-box {
     background-color: #fafafc;
     border: 1.5px solid var(--primary);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     padding: 1.25rem;
     margin-top: 1.5rem;
+    animation: slideDownIn 0.3s ease;
 }
 
-.progress-header-row {
+@keyframes slideDownIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.progress-labels-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
 }
 
-.progress-status-lbl {
+.sync-status-indicator {
     font-family: var(--font-heading);
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--primary);
 }
 
-.progress-count-lbl {
+.sync-metric-counter {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-muted);
 }
 
-.progress-tube-track {
+.sync-bar-track {
     width: 100%;
     height: 8px;
     background-color: #e2e8f0;
@@ -499,14 +552,14 @@ input[type="text"]:focus, select:focus {
     overflow: hidden;
 }
 
-.progress-tube-fill {
+.sync-bar-fill {
     height: 100%;
     background-color: var(--accent);
     width: 0%;
     transition: width 0.2s ease-out;
 }
 
-.progress-percent-lbl {
+.sync-percentage-numeric {
     text-align: right;
     font-family: var(--font-heading);
     font-size: 1rem;
@@ -516,15 +569,15 @@ input[type="text"]:focus, select:focus {
 }
 
 /* ==========================================================================
-   MODAL DIALOG OVERLAYS
+   MODAL DIALOG POPUPS (Glassmorphic backdrops)
    ========================================================================== */
-.modal-overlay-backdrop {
+.modal-window-wrapper {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(15, 23, 42, 0.5);
+    background-color: rgba(15, 23, 42, 0.45);
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -532,71 +585,82 @@ input[type="text"]:focus, select:focus {
     overflow-y: auto;
     padding: 2rem 1rem;
     z-index: 1000;
+    animation: modalFadeIn 0.2s ease;
 }
 
-.modal-dialog-box {
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content-panel {
     background-color: #ffffff;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
     width: 100%;
     max-width: 480px;
     overflow: hidden;
 }
 
-.modal-dialog-header {
+.modal-content-header {
     background-color: #f8fafc;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-light);
     padding: 1rem 1.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.modal-dialog-header h4 {
+.modal-content-header h4 {
     font-family: var(--font-heading);
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--primary);
 }
 
-.modal-close-icon {
+.modal-close-trigger {
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 1.15rem;
+    font-size: 1.25rem;
+    line-height: 1;
 }
 
-.modal-dialog-body {
-    padding: 1.25rem;
+.modal-content-body {
+    padding: 1.5rem;
 }
 
-.modal-help-note {
-    font-size: 0.775rem;
+.modal-desc-note {
+    font-size: 0.8rem;
     color: var(--text-muted);
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
-.modal-btn-tray {
+.modal-buttons-action-tray {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
     margin-top: 1.5rem;
 }
 
+.btn-inline-narrow {
+    width: auto !important;
+}
+
 /* ==========================================================================
-   LIVE WEBSITE MATCHING FOOTER
+   OFFICIAL MARUDHARA WEBPAGE FOOTER
    ========================================================================== */
 .site-footer {
     background-color: #ffffff;
-    border-top: 2px solid var(--border-color);
+    border-top: 2px solid var(--border-light);
     padding: 3rem 1.5rem;
     margin-top: auto;
 }
 
-.footer-container {
-    max-width: var(--max-width);
+.footer-inner-grid {
+    max-width: 1200px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr;
@@ -604,12 +668,12 @@ input[type="text"]:focus, select:focus {
 }
 
 @media (min-width: 768px) {
-    .footer-container {
+    .footer-inner-grid {
         grid-template-columns: repeat(3, 1fr);
     }
 }
 
-.footer-section h3 {
+.footer-section-column h3 {
     font-family: var(--font-heading);
     font-size: 1.1rem;
     font-weight: 700;
@@ -619,21 +683,23 @@ input[type="text"]:focus, select:focus {
     padding-left: 0.5rem;
 }
 
-.footer-section p {
+.footer-section-column p {
     font-size: 0.85rem;
     color: var(--text-dark);
     margin-bottom: 0.5rem;
 }
 
-.footer-section strong {
+.footer-section-column strong {
     font-weight: 600;
 }
 
-.footer-section a {
+.footer-section-column a {
     color: var(--primary);
     text-decoration: none;
+    transition: color 0.15s;
 }
 
-.footer-section a:hover {
+.footer-section-column a:hover {
+    color: var(--accent);
     text-decoration: underline;
 }
