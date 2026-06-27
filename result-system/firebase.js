@@ -41,6 +41,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Export instances and modular query handlers to structural scripts
+window.db = db;
 export {
     db,
     collection,
