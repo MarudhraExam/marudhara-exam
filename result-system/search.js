@@ -52,14 +52,41 @@ searchForm.addEventListener("submit", async (e) => {
     }
 
     try {
-        let q = query(
-            collection(db, "resultStudents"),
-            where("examId", "==", examId)
-        );
+       let q;
 
-        if (roll) {
-            q = query(q, where("rollNo", "==", roll));
-        }
+if (roll) {
+    q = query(
+        collection(db, "resultStudents"),
+        where("examId", "==", examId),
+        where("rollNo", "==", roll)
+    );
+} else if (name) {
+    q = query(
+        collection(db, "resultStudents"),
+        where("examId", "==", examId),
+        where("searchName", ">=", name),
+        where("searchName", "<=", name + "\uf8ff")
+    );
+} else if (father) {
+    q = query(
+        collection(db, "resultStudents"),
+        where("examId", "==", examId),
+        where("searchFather", ">=", father),
+        where("searchFather", "<=", father + "\uf8ff")
+    );
+} else if (mother) {
+    q = query(
+        collection(db, "resultStudents"),
+        where("examId", "==", examId),
+        where("searchMother", ">=", mother),
+        where("searchMother", "<=", mother + "\uf8ff")
+    );
+} else {
+    alert("Please enter Roll Number, Name, Father Name or Mother Name.");
+    return;
+}
+
+const querySnapshot = await getDocs(q);
         if (name) {
             q = query(q, where("searchName", ">=", name), where("searchName", "<=", name + "\uf8ff"));
         }
