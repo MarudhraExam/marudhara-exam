@@ -174,9 +174,6 @@ if (!rollValue && !nameValue) {
   return;
 }
 
-  // Search value is always lowercased (matches stored search fields)
-  const searchValue = rawValue.toLowerCase();
-
   searchBtn.disabled = true;
   searchBtn.textContent = 'Searching…';
 
