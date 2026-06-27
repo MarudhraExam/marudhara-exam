@@ -165,11 +165,15 @@ const motherValue = motherInput.value.trim().toLowerCase();
     examSelect.focus();
     return;
   }
-  if (!rawValue) {
-    showSearchAlert('Please enter a search value.', 'danger');
-    searchInput.focus();
-    return;
-  }
+// Roll Number OR Candidate Name required
+if (!rollValue && !nameValue) {
+  showSearchAlert(
+    'Please enter Roll Number OR Candidate Name.',
+    'danger'
+  );
+  rollInput.focus();
+  return;
+}
 
   // Search value is always lowercased (matches stored search fields)
   const searchValue = rawValue.toLowerCase();
