@@ -87,15 +87,6 @@ if (roll) {
 }
 
 const querySnapshot = await getDocs(q);
-        if (name) {
-            q = query(q, where("searchName", ">=", name), where("searchName", "<=", name + "\uf8ff"));
-        }
-        if (father) {
-            q = query(q, where("searchFather", ">=", father), where("searchFather", "<=", father + "\uf8ff"));
-        }
-        if (mother) {
-            q = query(q, where("searchMother", ">=", mother), where("searchMother", "<=", mother + "\uf8ff"));
-        }
 
         const querySnapshot = await getDocs(q);
         renderMatchesList(querySnapshot);
