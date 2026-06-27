@@ -2,10 +2,6 @@
 // ES6 Module — imports from existing firebase.js
 
 import {
-  db
-} from './firebase.js';
-
-import {
   db,
   collection,
   addDoc,
