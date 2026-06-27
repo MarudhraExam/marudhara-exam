@@ -3,44 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>मरुधरा एग्जाम - Result Import Panel</title>
-    <!-- CSS Layout Link -->
+    <title>मरुधरा एग्जाम - Result Import Portal</title>
+    <!-- CSS Connection -->
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Google Poppins / Inter Typography imports -->
+    <!-- Google Poppins / Inter Fonts imports -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SheetJS (XLSX) CDN to process multiple Excel sheets in the browser -->
+    <!-- SheetJS CDN to process multiple Excel sheets in the browser -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
     <!-- ==========================================================================
-         LIVE WEBSITE HEADER (Matching Navigation Bar of www.marudharaexam.in)
+         OFFICIAL WEBSITE NAVBAR (Header Navigation of www.marudharaexam.in)
          ========================================================================== -->
     <header class="site-header">
-        <div class="header-container">
-            <a href="index.html" class="brand-wrapper">
-                <img src="images/logo.png" alt="Marudhara Exam Logo" class="brand-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'20\' fill=\'%23103f91\'/></svg>'">
-                <div class="brand-text">
+        <div class="header-inner">
+            <a href="index.html" class="brand-anchor">
+                <!-- Fallback inline logo in case the actual asset has a different directory path -->
+                <img src="images/logo.png" alt="Marudhara Exam Logo" class="logo-image" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23103f91\'/><path d=\'M50 20 L25 45 H35 V75 H65 V45 H75 Z\' fill=\'%23ffffff\'/></svg>'">
+                <div class="brand-meta">
                     <h1>मरुधरा एग्जाम</h1>
                     <p>marudharaexam.in</p>
                 </div>
             </a>
 
-            <!-- Header Navigation links list -->
-            <nav class="header-nav">
-                <a href="index.html" class="nav-item">Home</a>
-                <a href="omr.html" class="nav-item">OMR Check</a>
-                <a href="mock-tests/index.html" class="nav-item">Mock Tests</a>
-                <a href="results.html" class="nav-item">Result</a>
-                <a href="vacancy.html" class="nav-item">Vacancy Updates</a>
-                <a href="student-corner.html" class="nav-item">Student Corner</a>
-                <a href="#" class="nav-item active">Admin Portal</a>
+            <!-- Header Desktop Navigation links list -->
+            <nav class="header-menu">
+                <a href="index.html" class="menu-item">Home</a>
+                <a href="omr.html" class="menu-item">OMR Check</a>
+                <a href="mock-tests/index.html" class="menu-item">Mock Tests</a>
+                <a href="results.html" class="menu-item">Result</a>
+                <a href="vacancy.html" class="menu-item">Vacancy Updates</a>
+                <a href="student-corner.html" class="menu-item">Student Corner</a>
+                <a href="#" class="menu-item active">Admin Portal</a>
             </nav>
 
-            <!-- Mobile drawer navigation trigger icon -->
-            <button class="mobile-nav-toggle" id="drawerTrigger">
+            <!-- Mobile Navigation Drawer trigger button icon -->
+            <button class="mobile-hamburger" id="navDrawerBtn" aria-label="Toggle Navigation">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -48,35 +49,35 @@
         </div>
     </header>
 
-    <!-- Mobile Navigation Drawer Frame -->
-    <div class="mobile-drawer" id="mobileDrawer">
-        <a href="index.html" class="nav-item">Home</a>
-        <a href="omr.html" class="nav-item">OMR Check</a>
-        <a href="mock-tests/index.html" class="nav-item">Mock Tests</a>
-        <a href="results.html" class="nav-item">Result</a>
-        <a href="vacancy.html" class="nav-item">Vacancy Updates</a>
-        <a href="student-corner.html" class="nav-item">Student Corner</a>
-        <a href="#" class="nav-item active">Admin Portal</a>
+    <!-- Mobile Drawer Container -->
+    <div class="mobile-drawer-wrapper" id="mobileDrawerMenu">
+        <a href="index.html" class="menu-item">Home</a>
+        <a href="omr.html" class="menu-item">OMR Check</a>
+        <a href="mock-tests/index.html" class="menu-item">Mock Tests</a>
+        <a href="results.html" class="menu-item">Result</a>
+        <a href="vacancy.html" class="menu-item">Vacancy Updates</a>
+        <a href="student-corner.html" class="menu-item">Student Corner</a>
+        <a href="#" class="menu-item active">Admin Portal</a>
     </div>
 
     <!-- ==========================================================================
-         PAGE BANNER (Matching live sub-heading banners of www.marudharaexam.in)
+         OFFICIAL SUBBANNER HEADER (Matching live sub-heading banners of your site)
          ========================================================================== -->
-    <section class="page-subheader">
-        <div class="subheader-container">
-            <h2>Result Management Panel</h2>
-            <p>Database synchronization and Excel imports console</p>
+    <section class="hero-subheader">
+        <div class="hero-subheader-container">
+            <h2>Result Administration Console</h2>
+            <p>Import and manage dynamic multiple-sheet candidate results datasets</p>
         </div>
     </section>
 
     <!-- ==========================================================================
-         CENTRAL CONTENT FRAMEWORK (Form + Table sections only)
+         MAIN DATA CONTAINER (Two essential cards: Import Card and Datasets Table)
          ========================================================================== -->
-    <main class="main-wrapper">
+    <main class="workspace-container">
 
-        <!-- 1. IMPORT EXAM CONTROL BLOCK -->
-        <section class="content-block-card">
-            <div class="card-title-header">
+        <!-- Section 1: IMPORT RESULTS COMPONENT -->
+        <section class="content-card-box">
+            <div class="card-heading-header">
                 <h3>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="width:20px; height:20px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12" />
@@ -84,46 +85,49 @@
                     Import Examination Dataset
                 </h3>
             </div>
-            <div class="card-body">
+            <div class="card-body-frame">
                 <form id="uploadForm" novalidate>
-                    <div class="input-group">
-                        <label for="newExamName" class="required-star">Exam Name</label>
-                        <input type="text" id="newExamName" placeholder="e.g., LDC Grade-II Exam 2026" required autocomplete="off">
+                    <div class="form-input-group">
+                        <label for="newExamName" class="field-required">Exam Name</label>
+                        <input type="text" id="newExamName" placeholder="e.g., RSSB Junior Assistant Exam 2026" required autocomplete="off">
                     </div>
 
-                    <div class="input-group">
-                        <label for="excelFile" class="required-star">Choose Excel File</label>
-                        <div class="file-picker-box">
+                    <div class="form-input-group">
+                        <label for="excelFile" class="field-required">Choose Spreadsheet</label>
+                        <div class="dropzone-picker-box">
                             <input type="file" id="excelFile" accept=".xlsx, .xls" required>
-                            <div class="picker-prompt">
-                                <span>Click here to <strong>Choose File</strong> or drag spreadsheet (.xlsx, .xls)</span>
+                            <div class="dropzone-prompter">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Click to <strong>Choose Spreadsheet</strong> or Drag and Drop here</span>
                             </div>
                         </div>
-                        <div id="fileSelectedDisplay" class="selected-file-badge hidden"></div>
+                        <div id="fileSelectedDisplay" class="selection-filename-badge hidden"></div>
                     </div>
 
-                    <button type="submit" id="uploadBtn" class="btn-action btn-primary">
-                        Import Result Dataset
+                    <button type="submit" id="uploadBtn" class="action-button-core btn-theme-primary">
+                        Import Dataset
                     </button>
                 </form>
 
-                <!-- Live progress panel wrapper (Revealed dynamically during commits) -->
-                <div id="uploadProgressContainer" class="progress-panel-wrapper hidden">
-                    <div class="progress-header-row">
-                        <span id="progressStatusText" class="progress-status-lbl">Initializing synchronization engines...</span>
-                        <span id="processedCountText" class="progress-count-lbl">0 / 0</span>
+                <!-- Dynamic synchronization progress details panel -->
+                <div id="uploadProgressContainer" class="sync-progress-box hidden">
+                    <div class="progress-labels-row">
+                        <span id="progressStatusText" class="sync-status-indicator">Initializing operations sync processes...</span>
+                        <span id="processedCountText" class="sync-metric-counter">0 / 0</span>
                     </div>
-                    <div class="progress-tube-track">
-                        <div id="progressBar" class="progress-tube-fill" style="width: 0%;"></div>
+                    <div class="sync-bar-track">
+                        <div id="progressBar" class="sync-bar-fill" style="width: 0%;"></div>
                     </div>
-                    <div id="progressPercent" class="progress-percent-lbl">0%</div>
+                    <div id="progressPercent" class="sync-percentage-numeric">0%</div>
                 </div>
             </div>
         </section>
 
-        <!-- 2. UPLOADED EXAMS DATA LIST BLOCK -->
-        <section class="content-block-card">
-            <div class="card-title-header">
+        <!-- Section 2: CONFIGURATION DATA TABLE -->
+        <section class="content-card-box">
+            <div class="card-heading-header">
                 <h3>
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="width:20px; height:20px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -131,9 +135,9 @@
                     Uploaded Result Datasets
                 </h3>
             </div>
-            <div class="card-body" style="padding: 0;">
-                <div class="table-scroll">
-                    <table class="admin-data-table">
+            <div class="card-body-frame" style="padding: 0;">
+                <div class="responsive-table-scroll">
+                    <table class="results-catalogue-table">
                         <thead>
                             <tr>
                                 <th>Exam Name</th>
@@ -144,7 +148,7 @@
                         </thead>
                         <tbody id="examsTableBody">
                             <tr>
-                                <td colspan="4" class="table-placeholder">Retrieving records from database...</td>
+                                <td colspan="4" class="placeholder-row-view">Retrieving information parameters from database...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -155,58 +159,58 @@
     </main>
 
     <!-- ==========================================================================
-         MODALS DIALOG SYSTEMS
+         MODALS SYSTEM COMPONENTS
          ========================================================================== -->
 
-    <!-- Edit Exam Title Modal -->
-    <div id="editNameModal" class="modal-overlay-backdrop hidden" role="dialog" aria-modal="true">
-        <div class="modal-dialog-box">
-            <header class="modal-dialog-header">
-                <h4>Rename Examination Title</h4>
-                <button type="button" class="modal-close-icon" id="cancelEditBtn">✕</button>
+    <!-- Rename / Edit Exam Title Modal Overlay dialog -->
+    <div id="editNameModal" class="modal-window-wrapper hidden" role="dialog" aria-modal="true">
+        <div class="modal-content-panel">
+            <header class="modal-content-header">
+                <h4>Rename Examination Dataset</h4>
+                <button type="button" class="modal-close-trigger" id="cancelEditBtn">✕</button>
             </header>
-            <div class="modal-dialog-body">
-                <p class="modal-help-note">Modifying this title updates database descriptors on all matching student profiles.</p>
+            <div class="modal-content-body">
+                <p class="modal-desc-note">Modifying this value updates dataset tags on all associated candidate profiles.</p>
                 <form id="editNameForm" novalidate>
                     <input type="hidden" id="editExamId">
-                    <div class="input-group">
-                        <label for="editExamNameInput" class="required-star">Updated Exam Name</label>
+                    <div class="form-input-group">
+                        <label for="editExamNameInput" class="field-required">Updated Exam Name</label>
                         <input type="text" id="editExamNameInput" required autocomplete="off">
                     </div>
-                    <div class="modal-btn-tray">
-                        <button type="button" class="btn-action btn-secondary" id="closeEditModalBtn">Cancel</button>
-                        <button type="submit" class="btn-action btn-primary" id="saveExamNameBtn">Save Changes</button>
+                    <div class="modal-buttons-action-tray">
+                        <button type="button" class="action-button-core btn-theme-secondary btn-inline-narrow" id="closeEditModalBtn">Cancel</button>
+                        <button type="submit" class="action-button-core btn-theme-primary btn-inline-narrow" id="saveExamNameBtn">Save Title</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Replace Excel Modal -->
-    <div id="replaceExcelModal" class="modal-overlay-backdrop hidden" role="dialog" aria-modal="true">
-        <div class="modal-dialog-box">
-            <header class="modal-dialog-header">
-                <h4>Replace Dataset Spreadsheet</h4>
-                <button type="button" class="modal-close-icon" id="cancelReplaceBtn">✕</button>
+    <!-- Replace Excel Sheet Modal Overlay dialog -->
+    <div id="replaceExcelModal" class="modal-window-wrapper hidden" role="dialog" aria-modal="true">
+        <div class="modal-content-panel">
+            <header class="modal-content-header">
+                <h4>Replace Exam Dataset</h4>
+                <button type="button" class="modal-close-trigger" id="cancelReplaceBtn">✕</button>
             </header>
-            <div class="modal-dialog-body">
-                <p class="modal-help-note" style="color: var(--danger); font-weight:600;">Warning: Proceeding drops existing records before importing new spreadsheet contents.</p>
+            <div class="modal-content-body">
+                <p class="modal-desc-note" style="color: var(--danger); font-weight:600;">Warning: Proceeding drops every existing student record before processing new sheet contents.</p>
                 <form id="replaceExcelForm" novalidate>
                     <input type="hidden" id="replaceExamId">
                     <input type="hidden" id="replaceExamNameVal">
                     
-                    <div class="input-group">
-                        <label for="replaceExcelInput" class="required-star">Choose Replacement File</label>
-                        <div class="file-picker-box" style="padding: 1.25rem 0.5rem;">
+                    <div class="form-input-group">
+                        <label for="replaceExcelInput" class="field-required">Choose Replacement Worksheet</label>
+                        <div class="dropzone-picker-box" style="padding: 1.25rem 0.5rem;">
                             <input type="file" id="replaceExcelInput" accept=".xlsx, .xls" required>
-                            <div class="picker-prompt" style="font-size:0.8rem;">
+                            <div class="dropzone-prompter" style="font-size:0.8rem;">
                                 <span>Click here to select replacement spreadsheet</span>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-btn-tray">
-                        <button type="button" class="btn-action btn-secondary" id="closeReplaceModalBtn">Cancel</button>
-                        <button type="submit" class="btn-action btn-danger" id="confirmReplaceBtn">Proceed Replace</button>
+                    <div class="modal-buttons-action-tray">
+                        <button type="button" class="action-button-core btn-theme-secondary btn-inline-narrow" id="closeReplaceModalBtn">Cancel</button>
+                        <button type="submit" class="action-button-core btn-theme-critical btn-inline-narrow" id="confirmReplaceBtn">Proceed Replace</button>
                     </div>
                 </form>
             </div>
@@ -214,24 +218,24 @@
     </div>
 
     <!-- ==========================================================================
-         LIVE WEBSITE FOOTER (Matching www.marudharaexam.in)
+         OFFICIAL PORTAL FOOTER (Exactly matching www.marudharaexam.in)
          ========================================================================== -->
     <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-section">
+        <div class="footer-inner-grid">
+            <div class="footer-section-column">
                 <h3>📘 मरुधरा एग्जाम</h3>
                 <p>आपकी सफलता का साथी</p>
                 <p>🌐 <a href="index.html">marudharaexam.in</a></p>
-                <p style="margin-top:1rem; font-size:0.75rem; color: var(--text-muted);">&copy; 2026 Marudhara Exam | All Rights Reserved</p>
+                <p style="margin-top:1.25rem; font-size:0.75rem; color: var(--text-muted);">&copy; 2026 Marudhara Exam | All Rights Reserved</p>
             </div>
-            <div class="footer-section">
+            <div class="footer-section-column">
                 <h3>📞 संपर्क करें</h3>
                 <p><strong>नाम :</strong> Chetan Chauhan</p>
                 <p><strong>वेबसाइट :</strong> मरुधरा एग्जाम</p>
                 <p><strong>ईमेल :</strong> <a href="mailto:jmdseller2025@gmail.com">jmdseller2025@gmail.com</a></p>
                 <p><strong>स्थान :</strong> राजस्थान, भारत</p>
             </div>
-            <div class="footer-section">
+            <div class="footer-section-column">
                 <h3>👥 Visitor Statistics</h3>
                 <p>Total Visitors : <strong id="totalVisitors">Loading...</strong></p>
                 <p>Today Visitors : <strong id="todayVisitors">Loading...</strong></p>
@@ -239,18 +243,18 @@
         </div>
     </footer>
 
-    <!-- Core Controller logic modules -->
+    <!-- Core admin controller script interface -->
     <script type="module" src="js/admin.js"></script>
 
-    <!-- Header responsive triggers & compatibility trackers -->
+    <!-- Header navigation responsive drawers script hooks -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const drawerTrigger = document.getElementById("drawerTrigger");
-            const mobileDrawer = document.getElementById("mobileDrawer");
+            const drawerBtn = document.getElementById("navDrawerBtn");
+            const drawerMenu = document.getElementById("mobileDrawerMenu");
 
-            if (drawerTrigger && mobileDrawer) {
-                drawerTrigger.addEventListener("click", () => {
-                    mobileDrawer.classList.toggle("open");
+            if (drawerBtn && drawerMenu) {
+                drawerBtn.addEventListener("click", () => {
+                    drawerMenu.classList.toggle("drawer-visible");
                 });
             }
         });
