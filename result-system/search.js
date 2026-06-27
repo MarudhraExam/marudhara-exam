@@ -184,27 +184,31 @@ if (!rollValue && !nameValue) {
   try {
     let snap;
 
-    if (field === 'searchRoll') {
-      // Exact match on roll number
-      const q = query(
-        collection(db, STUDENTS_COL),
-        where('examId',    '==', examId),
-        where('searchRoll','==', searchValue),
-        limit(MAX_RESULTS)
-      );
-      snap = await getDocs(q);
-    } else {
-      // Prefix search using >= and <= range on lowercase name fields
-      const q = query(
-        collection(db, STUDENTS_COL),
-        where('examId', '==', examId),
-        where(field,    '>=', searchValue),
-        where(field,    '<=', searchValue + '\uf8ff'),
-        orderBy(field),
-        limit(MAX_RESULTS)
-      );
-      snap = await getDocs(q);
-    }
+  if (rollValue) {
+
+  const q = query(
+    collection(db, STUDENTS_COL),
+    where("examId", "==", examId),
+    where("searchRoll", "==", rollValue),
+    limit(MAX_RESULTS)
+  );
+
+  snap = await getDocs(q);
+
+} else {
+
+  const q = query(
+    collection(db, STUDENTS_COL),
+    where("examId", "==", examId),
+    where("searchName", ">=", nameValue),
+    where("searchName", "<=", nameValue + "\uf8ff"),
+    orderBy("searchName"),
+    limit(MAX_RESULTS)
+  );
+
+  snap = await getDocs(q);
+
+}
 
     if (snap.empty) {
       showSearchAlert('No results found. Please check your search value and try again.', 'warning');
