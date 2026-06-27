@@ -338,8 +338,15 @@ const readExcel = (file) => {
                     defval: ""
                 });
 
-                const headers = firstData[0].map(h => String(h).trim().toUpperCase());
-
+const headers = firstData[0].map(h =>
+    String(h)
+        .trim()
+        .toUpperCase()
+        .replace(/\r/g, "")
+        .replace(/\n/g, "")
+        .replace(/\s+/g, "")
+        .replace(/_/g, "")
+);
                 const col = {};
 
                 headers.forEach((h, i) => {
