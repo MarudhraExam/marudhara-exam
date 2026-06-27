@@ -42,6 +42,7 @@ const db = getFirestore(app);
 
 // Export instances and modular query handlers to structural scripts
 window.db = db;
+console.log("DB =", db);
 export {
     db,
     collection,
