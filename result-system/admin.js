@@ -15,7 +15,7 @@ import {
   writeBatch,
   serverTimestamp,
   orderBy
-} from './firebase.js';
+} from "./firebase.js";
 
 // ── Constants ────────────────────────────────────────────────
 const RESULTS_COL       = 'results';
