@@ -38,6 +38,7 @@ const closeButton = document.getElementById('close-report-btn');
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const SEARCH_LIMIT = 50; // Limit the number of search results
+const examNameCache = new Map();
 
 
 // --- Core Functions ---
@@ -137,7 +138,7 @@ const searchStudents = async (q) => {
     try {
         // You can add a loading spinner here
         const querySnapshot = await getDocs(q);
-        renderResults(querySnapshot);
+        await renderResults(querySnapshot);
     } catch (error) {
         console.error("Error searching students:", error);
         alert("An error occurred during the search. Please check your details and try again.");
@@ -147,21 +148,37 @@ const searchStudents = async (q) => {
     }
 };
 
+const getExamNameById = async (examId) => {
+    if (!examId) return '';
+    if (examNameCache.has(examId)) return examNameCache.get(examId);
+
+    const examDoc = await getDoc(doc(db, 'results', examId));
+    const examName = examDoc.exists() ? (examDoc.data().examName || '') : '';
+    examNameCache.set(examId, examName);
+    return examName;
+};
+
+const getStudentExamName = async (student) => {
+    return student.examName || await getExamNameById(student.examId) || 'EXAMINATION RESULT';
+};
+
 
 /**
  * Renders the search results in the HTML table.
  * @param {QuerySnapshot} snapshot - The snapshot returned from the Firestore query.
  */
-const renderResults = (snapshot) => {
+const renderResults = async (snapshot) => {
     if (snapshot.empty) {
         noResultsMessage.classList.remove('hidden');
         return;
     }
 
-    snapshot.forEach(doc => {
-        const student = doc.data();
+    for (const studentDoc of snapshot.docs) {
+        const student = studentDoc.data();
+        const examName = await getStudentExamName(student);
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td>${examName}</td>
             <td>${student.rank || 'N/A'}</td>
             <td>${student.rollNo}</td>
             <td>${student.name}</td>
@@ -169,11 +186,11 @@ const renderResults = (snapshot) => {
             <td>${student.category || 'N/A'}</td>
             <td>${student.netMarks || 'N/A'}</td>
             <td>
-                <button class="btn view-result-btn" data-id="${doc.id}">View Result</button>
+                <button class="btn view-result-btn" data-id="${studentDoc.id}">View Result</button>
             </td>
         `;
         resultsTableBody.appendChild(row);
-    });
+    }
 };
 
 /**
@@ -191,6 +208,7 @@ const showResult = async (studentId) => {
         }
 
         const student = studentDoc.data();
+        const examName = await getStudentExamName(student);
         
         // Populate all fields in the marksheet
         Object.keys(student).forEach(key => {
@@ -201,7 +219,7 @@ const showResult = async (studentId) => {
         });
         
         // Populate exam name and date
-        document.getElementById('marksheet-exam-name').textContent = student.examName || 'EXAMINATION RESULT';
+        document.getElementById('marksheet-exam-name').textContent = examName;
         document.getElementById('marksheet-date').textContent = new Date().toLocaleDateString();
 
         modalContainer.classList.remove('hidden');

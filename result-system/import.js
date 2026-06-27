@@ -380,14 +380,16 @@ const batchImportStudents = async (students, examId, examName, progressUI) => {
     let batch = writeBatch(db);
     let batchCount = 0;
     const totalStudents = students.length;
+    const normalizedExamId = String(examId || '').trim();
+    const normalizedExamName = String(examName || '').trim();
 
     for (let i = 0; i < totalStudents; i++) {
         const student = students[i];
         const studentRef = doc(collection(db, 'resultStudents'));
         batch.set(studentRef, {
             ...student,
-            examId: examId,
-            examName: examName,
+            examId: normalizedExamId,
+            examName: normalizedExamName,
             createdAt: serverTimestamp()
         });
         batchCount++;
