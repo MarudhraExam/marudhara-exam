@@ -34,7 +34,10 @@ const closeButton = document.getElementById('close-report-btn');
 
 
 // --- Firestore Initialization ---
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5748c96 (new569)
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const SEARCH_LIMIT = 50; // Limit the number of search results
@@ -51,11 +54,13 @@ const loadExams = async () => {
     try {
         const q = query(resultsCollection, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-            examSelect.disabled = true;
-            examSelect.innerHTML = '<option>No exams available</option>';
-            return;
+
+        const defaultOption = examSelect.querySelector('option[value=""]');
+        examSelect.innerHTML = '';
+        if (defaultOption) {
+            examSelect.appendChild(defaultOption);
         }
+
         querySnapshot.forEach((doc) => {
             const exam = doc.data();
             const option = document.createElement('option');
@@ -64,8 +69,7 @@ const loadExams = async () => {
             examSelect.appendChild(option);
         });
     } catch (error) {
-        console.error("Error loading exams:", error);
-        alert("An error occurred while loading the list of exams. Please try refreshing the page.");
+        console.error(error);
     }
 };
 
