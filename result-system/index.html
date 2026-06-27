@@ -1,239 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marudhara Exam - Result Search Portal</title>
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Google Fonts for Professional Appearance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- html2canvas CDN for PNG Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYgYiGc759719dA3eYd0f9+Y17b0M6Q86C60S80B16z/U/bWv9M3D9xW9B917SjN8LwBvE53f7zN5k29w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Result Search — Marudhara Exam</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- html2canvas for PNG download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-    <!-- Header Section -->
-    <header class="main-header">
-        <div class="header-container">
-            <div class="logo-wrapper">
-                <!-- SVG Vector Logo representing a scalable, professional seal -->
-                <svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Marudhara Exam Logo">
-                    <circle cx="50" cy="50" r="45" stroke="#1e3a8a" stroke-width="8" fill="#f8fafc"/>
-                    <path d="M50 20 L25 45 H35 V75 H65 V45 H75 Z" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2" stroke-linejoin="round"/>
-                    <circle cx="50" cy="52" r="6" fill="#f59e0b"/>
-                </svg>
-                <div class="header-text">
-                    <h1>Marudhara Exam</h1>
-                    <p class="subtitle">www.marudharaexam.in</p>
-                </div>
-            </div>
-            <nav class="nav-links">
-                <a href="admin.html" class="admin-portal-link">Admin Portal</a>
-            </nav>
-        </div>
-    </header>
+  <!-- ── Site Header ─────────────────────────────────────── -->
+  <header class="site-header">
+    <a href="search.html" class="brand">
+      Marudhara Exam
+      <span>Result Search</span>
+    </a>
+    <nav>
+      <a href="search.html" class="active">Student Search</a>
+      <a href="admin.html">Admin Panel</a>
+    </nav>
+  </header>
 
-    <!-- Main Content Container -->
-    <main class="portal-container">
-        <!-- Search Controls Box -->
-        <section class="search-card">
-            <h2 class="card-title">Search Exam Result</h2>
-            <form id="searchForm" novalidate>
-                <!-- Select Exam Dropdown -->
-                <div class="form-group">
-                    <label for="examSelect" class="required-label">Select Examination</label>
-                    <select id="examSelect" required>
-                        <option value="" disabled selected>-- Choose an Exam --</option>
-                    </select>
-                </div>
+  <!-- ── Page Wrapper ────────────────────────────────────── -->
+  <div class="page-wrapper">
 
-                <!-- Choose Search Criteria -->
-                <div class="form-group">
-                    <label class="required-label">Search By</label>
-                    <div class="radio-group">
-                        <label class="radio-label">
-                            <input type="radio" name="searchType" value="rollNo" checked>
-                            <span>Roll Number</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="searchType" value="name">
-                            <span>Candidate Name</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="searchType" value="fatherName">
-                            <span>Father's Name</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="searchType" value="motherName">
-                            <span>Mother's Name</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Search Query Value Input -->
-                <div class="form-group">
-                    <label for="searchInput" class="required-label">Enter Search Value</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="searchInput" placeholder="Enter roll number or full name..." required autocomplete="off">
-                    </div>
-                </div>
-
-                <!-- Form Submissions Actions -->
-                <div class="form-actions">
-                    <button type="submit" id="searchBtn" class="btn btn-primary">
-                        <span>Search Result</span>
-                    </button>
-                    <button type="button" id="resetBtn" class="btn btn-secondary">Clear</button>
-                </div>
-            </form>
-        </section>
-
-        <!-- Loading Spinner overlay / skeleton loader -->
-        <div id="loadingSpinner" class="loader-container hidden" aria-hidden="true">
-            <div class="spinner"></div>
-            <p>Processing request, please wait...</p>
-        </div>
-
-        <!-- Search Results Section -->
-        <section id="resultsSection" class="results-section hidden">
-            <h3 class="results-heading">Matching Results</h3>
-            <div class="table-responsive">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Exam Name</th>
-                            <th>Rank</th>
-                            <th>Roll Number</th>
-                            <th>Candidate Name</th>
-                            <th>Father's Name</th>
-                            <th>Category</th>
-                            <th>NET Marks</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultsTableBody">
-                        <!-- Instantiated Dynamically via Vanilla JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- No Records Found Alert Placeholder -->
-        <div id="noResultsMessage" class="no-records-card hidden">
-            <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <p>No records found matching your query criteria. Please check the information entered and try again.</p>
-        </div>
-    </main>
-
-    <!-- Modal for Showing Result Card Sheet -->
-    <div id="resultModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalExamName">
-        <div class="modal-container">
-            <!-- Download and Navigation Actions Outside Container -->
-            <div class="modal-actions-top">
-                <button type="button" id="downloadPngBtn" class="btn btn-download">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download PNG
-                </button>
-                <button type="button" id="closeModalBtn" class="btn btn-close-modal">✕ Close</button>
-            </div>
-
-            <!-- Result Sheet Wrapper designed for high precision capturing -->
-            <div id="markSheetCapture" class="marksheet-wrapper">
-                <!-- Logo & Heading Header -->
-                <header class="marksheet-header">
-                    <div class="marksheet-logo-box">
-                        <svg width="64" height="64" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="50" cy="50" r="45" stroke="#1e3a8a" stroke-width="8" fill="#f8fafc"/>
-                            <path d="M50 20 L25 45 H35 V75 H65 V45 H75 Z" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2" stroke-linejoin="round"/>
-                            <circle cx="50" cy="52" r="6" fill="#f59e0b"/>
-                        </svg>
-                    </div>
-                    <div class="marksheet-title-box">
-                        <h2>Marudhara Exam</h2>
-                        <p class="marksheet-domain">www.marudharaexam.in</p>
-                        <div class="divider-line"></div>
-                        <h3 id="modalExamName" class="marksheet-exam-title">Exam Name Placeholder</h3>
-                    </div>
-                </header>
-
-                <!-- Detailed Candidate Profile Table Grid -->
-                <div class="marksheet-body">
-                    <table class="marksheet-data-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row">Rank</th>
-                                <td id="modalRank" class="highlight-val"></td>
-                                <th scope="row">Roll Number</th>
-                                <td id="modalRollNo" class="highlight-val"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Candidate Name</th>
-                                <td id="modalCandName" colspan="3" class="uppercase-val"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Father's Name</th>
-                                <td id="modalFatherName" colspan="3" class="uppercase-val"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Mother's Name</th>
-                                <td id="modalMotherName" colspan="3" class="uppercase-val"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Application Number</th>
-                                <td id="modalAppNo"></td>
-                                <th scope="row">Date of Birth</th>
-                                <td id="modalDob"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Gender</th>
-                                <td id="modalGender"></td>
-                                <th scope="row">Category</th>
-                                <td id="modalCategory"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Horizontal Category</th>
-                                <td id="modalHCategory"></td>
-                                <th scope="row">Female Category</th>
-                                <td id="modalFCategory"></td>
-                            </tr>
-                            <tr>
-                                <th scope="row">TSP Category Area</th>
-                                <td id="modalTsp"></td>
-                                <th scope="row">Selection Category</th>
-                                <td id="modalSelCategory"></td>
-                            </tr>
-                            <tr class="marks-summary-row">
-                                <th scope="row" colspan="2" class="marks-label">NET Marks Obtained</th>
-                                <td id="modalNetMarks" colspan="2" class="marks-value"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Footer elements inside PNG Capture scope -->
-                <footer class="marksheet-footer">
-                    <div class="footer-sign-off">
-                        <p class="stamp-text">Computer Generated Result Document</p>
-                        <p class="official-url">www.marudharaexam.in</p>
-                    </div>
-                    <div class="timestamp-stamp" id="modalGenerationTime"></div>
-                </footer>
-            </div>
-        </div>
+    <!-- Hero -->
+    <div class="search-hero">
+      <h1>Marudhara Exam Result Search</h1>
+      <p>Select your exam and search by Roll Number, Name, Father Name, or Mother Name.</p>
     </div>
 
-    <!-- Script Entrypoint using ES Modules -->
-    <script type="module" src="js/search.js"></script>
+    <!-- Search Box -->
+    <div class="search-box-area">
+
+      <div id="exam-load-alert" class="alert alert-info hidden">
+        Loading available exams…
+      </div>
+
+      <div class="search-controls">
+
+        <div class="form-group" style="margin-bottom:0">
+          <label for="exam-select">Select Exam</label>
+          <select id="exam-select" class="form-control">
+            <option value="">— Select Exam —</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0">
+          <label for="search-field">Search By</label>
+          <select id="search-field" class="form-control">
+            <option value="searchRoll">Roll Number</option>
+            <option value="searchName">Candidate Name</option>
+            <option value="searchFather">Father Name</option>
+            <option value="searchMother">Mother Name</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0">
+          <label for="search-input">Search</label>
+          <input
+            type="text"
+            id="search-input"
+            class="form-control"
+            placeholder="Enter value to search…"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="form-group" style="margin-bottom:0">
+          <label style="visibility:hidden">Go</label>
+          <button class="btn btn-primary btn-full" id="search-btn">Search</button>
+        </div>
+
+      </div>
+
+      <!-- Search status -->
+      <div id="search-alert" class="alert hidden" style="margin-top:14px;margin-bottom:0"></div>
+
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="results-section">
+
+      <div class="results-count" id="results-count"></div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Exam Name</th>
+              <th>Rank</th>
+              <th>Roll Number</th>
+              <th>Candidate Name</th>
+              <th>Father Name</th>
+              <th>Category</th>
+              <th>NET Marks</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div><!-- /page-wrapper -->
+
+  <!-- ── Site Footer ─────────────────────────────────────── -->
+  <footer class="site-footer">
+    &copy; Marudhara Exam &mdash;
+    <a href="https://www.marudharaexam.in" target="_blank">www.marudharaexam.in</a>
+  </footer>
+
+  <!-- ── Toast ───────────────────────────────────────────── -->
+  <div id="toast-container"></div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- MODAL: Result Card                                     -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="result-modal" role="dialog" aria-modal="true" aria-labelledby="result-modal-title">
+    <div class="modal" style="max-width:620px">
+
+      <div class="modal-header">
+        <h2 id="result-modal-title">Result Card</h2>
+        <button class="modal-close" id="result-modal-close" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:20px">
+
+        <!-- This div is captured by html2canvas -->
+        <div id="result-card">
+
+          <!-- Card Header -->
+          <div class="result-card-header">
+            <div class="result-card-logo">
+              Marudhara<span>Exam</span>
+            </div>
+            <div class="result-card-exam" id="rc-exam-name"></div>
+            <div style="display:flex;justify-content:center">
+              <div class="result-card-rank">
+                <span class="rank-num" id="rc-rank">—</span>
+                <span class="rank-label">Rank</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fields Grid -->
+          <div class="result-fields">
+
+            <div class="result-field highlight">
+              <div class="rf-label">Roll Number</div>
+              <div class="rf-value" id="rc-roll"></div>
+            </div>
+
+            <div class="result-field highlight">
+              <div class="rf-label">Application No</div>
+              <div class="rf-value" id="rc-app"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Candidate Name</div>
+              <div class="rf-value" id="rc-name"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Father Name</div>
+              <div class="rf-value" id="rc-father"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Mother Name</div>
+              <div class="rf-value" id="rc-mother"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Date of Birth</div>
+              <div class="rf-value" id="rc-dob"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Gender</div>
+              <div class="rf-value" id="rc-gender"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Category</div>
+              <div class="rf-value" id="rc-category"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Horizontal Category</div>
+              <div class="rf-value" id="rc-hcat"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">Female Category</div>
+              <div class="rf-value" id="rc-fcat"></div>
+            </div>
+
+            <div class="result-field">
+              <div class="rf-label">TSP</div>
+              <div class="rf-value" id="rc-tsp"></div>
+            </div>
+
+            <div class="result-field highlight">
+              <div class="rf-label">NET Marks</div>
+              <div class="rf-value" id="rc-net"></div>
+            </div>
+
+            <div class="result-field" style="grid-column: span 2">
+              <div class="rf-label">Selection Category</div>
+              <div class="rf-value" id="rc-selcat"></div>
+            </div>
+
+          </div>
+
+          <!-- Card Footer -->
+          <div class="result-card-footer">
+            www.marudharaexam.in
+          </div>
+
+        </div><!-- /#result-card -->
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="result-modal-close-btn">Close</button>
+        <button class="btn btn-primary" id="download-png-btn">Download as PNG</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Search JS (module) ───────────────────────────────── -->
+  <script type="module" src="search.js"></script>
+
 </body>
 </html>
