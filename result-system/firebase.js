@@ -1,5 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+
 import {
   getFirestore,
   collection,
@@ -18,6 +20,7 @@ import {
   writeBatch,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
   authDomain: "marudhara-exam.firebaseapp.com",
