@@ -33,7 +33,7 @@ const closeButton = document.getElementById('close-report-btn');
 
 
 // --- Firestore Initialization ---
-const db = getFirestore();
+
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const SEARCH_LIMIT = 50; // Limit the number of search results
