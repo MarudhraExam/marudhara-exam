@@ -22,7 +22,6 @@ const rollInput   = document.getElementById('roll-input');
 const nameInput   = document.getElementById('name-input');
 const fatherInput = document.getElementById('father-input');
 const motherInput = document.getElementById('mother-input');
-const searchInput     = document.getElementById('search-input');
 const searchBtn       = document.getElementById('search-btn');
 const searchAlert     = document.getElementById('search-alert');
 const examLoadAlert   = document.getElementById('exam-load-alert');
