@@ -347,4 +347,5 @@ searchField.addEventListener('change', () => {
 });
 
 // ── Init ─────────────────────────────────────────────────────
+alert("search.js loaded");
 loadExams();
