@@ -345,7 +345,8 @@ const readExcel = (file) => {
                 headers.forEach((h, i) => {
                     col[h] = i;
                 });
-
+console.log(headers);
+console.log(col);
                 // ===== ALL SHEETS =====
                 workbook.SheetNames.forEach((sheetName, sheetIndex) => {
 
