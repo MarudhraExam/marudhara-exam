@@ -18,7 +18,10 @@ const MAX_RESULTS  = 100;
 
 // ── DOM References ───────────────────────────────────────────
 const examSelect      = document.getElementById('exam-select');
-const searchField     = document.getElementById('search-field');
+const rollInput   = document.getElementById('roll-input');
+const nameInput   = document.getElementById('name-input');
+const fatherInput = document.getElementById('father-input');
+const motherInput = document.getElementById('mother-input');
 const searchInput     = document.getElementById('search-input');
 const searchBtn       = document.getElementById('search-btn');
 const searchAlert     = document.getElementById('search-alert');
