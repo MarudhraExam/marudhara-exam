@@ -327,49 +327,46 @@ const readExcel = (file) => {
             try {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const worksheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[worksheetName];
-                // header: 1 produces an array of arrays
-                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
                 const students = [];
-                const rollNumbers = new Set();
-                
-                // Skip header row (index 0)
-                for (let i = 1; i < json.length; i++) {
-                    const row = json[i];
-                    // Basic validation: check if roll number exists
-                    const rollNo = row[3] ? String(row[3]).trim() : '';
-                    if (!rollNo) continue; // Ignore blank rows
 
-                    if (rollNumbers.has(rollNo)) continue; // Ignore duplicate Roll Numbers
-                    rollNumbers.add(rollNo);
-                    
-                    const name = String(row[4] || '').trim();
-                    const fatherName = String(row[5] || '').trim();
-                    const motherName = String(row[6] || '').trim();
+                workbook.SheetNames.forEach((worksheetName) => {
+                    const worksheet = workbook.Sheets[worksheetName];
+                    // header: 1 produces an array of arrays
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-                    students.push({
-                        rank: String(row[1] || '').trim(),
-                        applicationNo: String(row[2] || '').trim(),
-                        rollNo: rollNo,
-                        name: name,
-                        fatherName: fatherName,
-                        motherName: motherName,
-                        dob: String(row[7] || '').trim(),
-                        gender: String(row[8] || '').trim(),
-                        category: String(row[9] || '').trim(),
-                        horizontalCategory: String(row[10] || '').trim(),
-                        femaleCategory: String(row[11] || '').trim(),
-                        tsp: String(row[12] || '').trim(),
-                        netMarks: String(row[13] || '').trim(),
-                        selectionCategory: String(row[14] || '').trim(),
-                        searchRoll: rollNo.toLowerCase(),
-                        searchName: name.toLowerCase(),
-                        searchFather: fatherName.toLowerCase(),
-                        searchMother: motherName.toLowerCase(),
-                    });
-                }
+                    // Skip header row (index 0) on every worksheet
+                    for (let i = 1; i < json.length; i++) {
+                        const row = json[i];
+                        const isEmptyRow = !row || row.every(cell => String(cell || '').trim() === '');
+                        if (isEmptyRow) continue;
+
+                        const rollNo = String(row[3] || '').trim();
+                        const name = String(row[4] || '').trim();
+                        const fatherName = String(row[5] || '').trim();
+                        const motherName = String(row[6] || '').trim();
+
+                        students.push({
+                            rank: String(row[1] || '').trim(),
+                            applicationNo: String(row[2] || '').trim(),
+                            rollNo: rollNo,
+                            name: name,
+                            fatherName: fatherName,
+                            motherName: motherName,
+                            dob: String(row[7] || '').trim(),
+                            gender: String(row[8] || '').trim(),
+                            category: String(row[9] || '').trim(),
+                            horizontalCategory: String(row[10] || '').trim(),
+                            femaleCategory: String(row[11] || '').trim(),
+                            tsp: String(row[12] || '').trim(),
+                            netMarks: String(row[13] || '').trim(),
+                            selectionCategory: String(row[14] || '').trim(),
+                            searchRoll: rollNo.toLowerCase(),
+                            searchName: name.toLowerCase(),
+                            searchFather: fatherName.toLowerCase(),
+                            searchMother: motherName.toLowerCase(),
+                        });
+                    }
+                });
                 resolve(students);
             } catch (error) {
                 reject(new Error("Failed to read or parse Excel file. " + error.message));
