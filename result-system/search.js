@@ -17,42 +17,6 @@ const marksheetOuterContainer = document.getElementById("marksheet-outer-contain
 const downloadBtn = document.getElementById("download-btn");
 const closeReportBtn = document.getElementById("close-report-btn");
 
-// --- Data Cleaning and Transformation Functions ---
-
-/**
- * Corrects gender values.
- * @param {string} rawGender - The raw gender string from the database.
- * @returns {string} The cleaned gender value ('Male', 'Female', 'Other', or 'N/A').
- */
-function cleanGender(rawGender) {
-    if (typeof rawGender !== 'string') return "N/A";
-    const gender = rawGender.trim().toUpperCase();
-    if (gender === 'M' || gender === 'MALE') return 'Male';
-    if (gender === 'F' || gender === 'FEMALE') return 'Female';
-    if (gender) return rawGender; // Return original if not empty but unrecognized
-    return "N/A";
-}
-
-/**
- * Ensures category fields are displayed correctly.
- * @param {string} category - The category string from the database.
- * @returns {string} The cleaned category or 'N/A'.
- */
-function cleanCategory(category) {
-    return category ? category.trim().toUpperCase() : "N/A";
-}
-
-/**
- * Parses and formats NET marks.
- * @param {any} netMarks - The raw NET marks value.
- * @returns {number|string} The numeric value of NET marks or 'N/A'.
- */
-function cleanNetMarks(netMarks) {
-    if (netMarks === null || netMarks === undefined) return "N/A";
-    const num = parseFloat(netMarks);
-    return isNaN(num) ? "N/A" : num;
-}
-
 
 // --- Core Application Logic ---
 
@@ -84,7 +48,6 @@ async function handleSearch(event) {
     event.preventDefault();
     const selectedExamId = examSelector.value;
 
-    // --- Input Validation ---
     if (!selectedExamId) {
         alert("Please select an examination before searching.");
         return;
@@ -104,39 +67,43 @@ async function handleSearch(event) {
 
     // --- Query Construction ---
     const queries = [];
-    const baseQuery = collection(db, "resultStudents");
+    const baseCollection = collection(db, "resultStudents");
 
-    // Create a query for each filled input field
     if (searchCriteria.rollNo) {
-        queries.push(query(baseQuery, where("examId", "==", selectedExamId), where("rollNo", "==", searchCriteria.rollNo)));
+        queries.push(query(baseCollection, where("examId", "==", selectedExamId), where("rollNo", "==", searchCriteria.rollNo)));
     }
     if (searchCriteria.name) {
-        queries.push(query(baseQuery, where("examId", "==", selectedExamId), where("searchName", "==", searchCriteria.name)));
+        queries.push(query(baseCollection, where("examId", "==", selectedExamId), where("searchName", "==", searchCriteria.name)));
     }
     if (searchCriteria.fatherName) {
-        queries.push(query(baseQuery, where("examId", "==", selectedExamId), where("searchFather", "==", searchCriteria.fatherName)));
+        queries.push(query(baseCollection, where("examId", "==", selectedExamId), where("searchFather", "==", searchCriteria.fatherName)));
     }
     if (searchCriteria.motherName) {
-        queries.push(query(baseQuery, where("examId", "==", selectedExamId), where("searchMother", "==", searchCriteria.motherName)));
+        queries.push(query(baseCollection, where("examId", "==", selectedExamId), where("searchMother", "==", searchCriteria.motherName)));
     }
 
+    if (queries.length === 0) {
+        alert("Please enter a value for the search.");
+        return;
+    }
+    
     // --- Query Execution and Result Merging ---
     try {
         const querySnapshots = await Promise.all(queries.map(q => getDocs(q)));
         const uniqueResults = new Map();
 
-        querySnapshots.forEach(snapshot => {
+        for (const snapshot of querySnapshots) {
             snapshot.forEach(docSnapshot => {
                 if (!uniqueResults.has(docSnapshot.id)) {
-                    uniqueResults.set(docSnapshot.id, docSnapshot.data());
+                    uniqueResults.set(docSnapshot.id, { id: docSnapshot.id, ...docSnapshot.data() });
                 }
             });
-        });
+        }
 
         renderResultsTable(Array.from(uniqueResults.values()));
     } catch (error) {
         console.error("Search query failed:", error);
-        alert("An error occurred during the search. Please check the console for more details.");
+        alert("An error occurred during the search. This may be due to a missing Firestore index. Check the console for details.");
     }
 }
 
@@ -173,16 +140,15 @@ function renderResultsTable(results) {
     const tableBody = document.getElementById("results-tbody");
     results.forEach(studentData => {
         const row = document.createElement("tr");
-        const netMarks = cleanNetMarks(studentData.net);
-
+        
         row.innerHTML = `
-            <td><strong>${studentData.rollNo}</strong></td>
-            <td>${studentData.name}</td>
-            <td>${studentData.fatherName}</td>
-            <td>${cleanCategory(studentData.category)}</td>
-            <td><strong>${netMarks}</strong></td>
+            <td><strong>${studentData.rollNo || 'N/A'}</strong></td>
+            <td>${studentData.name || 'N/A'}</td>
+            <td>${studentData.fatherName || 'N/A'}</td>
+            <td>${studentData.category || 'N/A'}</td>
+            <td><strong>${studentData.net || 'N/A'}</strong></td>
             <td style="text-align: center;">
-                <button class="secondary-btn" style="padding: 0.35rem 0.7rem; font-size: 0.85rem;">View Result</button>
+                <button class="secondary-btn" data-studentid="${studentData.id}" style="padding: 0.35rem 0.7rem; font-size: 0.85rem;">View Result</button>
             </td>
         `;
 
@@ -196,20 +162,10 @@ function renderResultsTable(results) {
 
 /**
  * Displays the detailed marksheet for a selected student.
- * @param {Object} studentData - The data object for the student.
+ * @param {Object} studentData - The data object for the student from Firestore.
  */
 async function displayMarksheet(studentData) {
-    let examTitle = studentData.examName || "Examination Report";
-
-    try {
-        const examDoc = await getDoc(doc(db, "results", studentData.examId));
-        if (examDoc.exists()) {
-            examTitle = examDoc.data().examName;
-        }
-    } catch (error) {
-        console.error("Error fetching exam name:", error);
-        // Non-critical error, proceed with the default title
-    }
+    const examTitle = studentData.examName || "Examination Report"; // Already includes exam name
 
     const marksheetElement = document.getElementById("marksheet-capture-target");
     const currentDate = new Date().toLocaleDateString('en-GB', {
@@ -217,18 +173,18 @@ async function displayMarksheet(studentData) {
         month: 'long',
         day: 'numeric'
     });
-
-    // Apply data cleaning functions
-    const cleanedData = {
+    
+    // Data is now trusted to be clean from Firestore
+    const displayData = {
         rollNo: studentData.rollNo || "N/A",
         name: studentData.name || "N/A",
         fatherName: studentData.fatherName || "N/A",
         motherName: studentData.motherName || "N/A",
         dob: studentData.dob || "N/A",
-        gender: cleanGender(studentData.gender),
-        category: cleanCategory(studentData.category),
-        selectionCategory: cleanCategory(studentData.selectionCategory),
-        net: cleanNetMarks(studentData.net)
+        gender: studentData.gender || "N/A",
+        category: studentData.category || "N/A",
+        selectionCategory: studentData.selectionCategory || "N/A",
+        net: studentData.net || "N/A",
     };
 
     marksheetElement.innerHTML = `
@@ -239,15 +195,15 @@ async function displayMarksheet(studentData) {
         </div>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
             <tbody>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold; width: 40%;">Roll Number</td><td style="padding: 10px;">${cleanedData.rollNo}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Candidate Name</td><td style="padding: 10px; text-transform: uppercase;">${cleanedData.name}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Father's Name</td><td style="padding: 10px; text-transform: uppercase;">${cleanedData.fatherName}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Mother's Name</td><td style="padding: 10px; text-transform: uppercase;">${cleanedData.motherName}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Date of Birth</td><td style="padding: 10px;">${cleanedData.dob}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Gender</td><td style="padding: 10px;">${cleanedData.gender}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Category</td><td style="padding: 10px;">${cleanedData.category}</td></tr>
-                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Selection Category</td><td style="padding: 10px;">${cleanedData.selectionCategory}</td></tr>
-                <tr style="border-bottom: 2px solid #333; background-color: #f9f9f9;"><td style="padding: 12px; font-weight: bold; color: #1a237e; font-size: 1.1rem;">NET Marks</td><td style="padding: 12px; font-weight: bold; color: #1a237e; font-size: 1.1rem;">${cleanedData.net}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold; width: 40%;">Roll Number</td><td style="padding: 10px;">${displayData.rollNo}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Candidate Name</td><td style="padding: 10px; text-transform: uppercase;">${displayData.name}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Father's Name</td><td style="padding: 10px; text-transform: uppercase;">${displayData.fatherName}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Mother's Name</td><td style="padding: 10px; text-transform: uppercase;">${displayData.motherName}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Date of Birth</td><td style="padding: 10px;">${displayData.dob}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Gender</td><td style="padding: 10px;">${displayData.gender}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Category</td><td style="padding: 10px;">${displayData.category}</td></tr>
+                <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 10px; font-weight: bold;">Selection Category</td><td style="padding: 10px;">${displayData.selectionCategory}</td></tr>
+                <tr style="border-bottom: 2px solid #333; background-color: #f9f9f9;"><td style="padding: 12px; font-weight: bold; color: #1a237e; font-size: 1.1rem;">NET Marks</td><td style="padding: 12px; font-weight: bold; color: #1a237e; font-size: 1.1rem;">${displayData.net}</td></tr>
             </tbody>
         </table>
         <div class="marksheet-footer" style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -273,15 +229,17 @@ async function displayMarksheet(studentData) {
  */
 function downloadMarksheet() {
     const target = document.getElementById("marksheet-capture-target");
+    if (!target) return;
+
     html2canvas(target, {
-        scale: 2.5, // Increase scale for better resolution
+        scale: 2.5, // Use a higher scale for better resolution
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff"
     }).then(canvas => {
         const link = document.createElement("a");
         link.href = canvas.toDataURL("image/png");
-        link.download = `Result-Marksheet.png`;
+        link.download = `Marudhara-Result-Marksheet.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -292,7 +250,7 @@ function downloadMarksheet() {
 }
 
 
-// --- Event Listeners ---
+// --- Event Listener Initialization ---
 document.addEventListener("DOMContentLoaded", loadExams);
 searchForm.addEventListener("submit", handleSearch);
 closeReportBtn.addEventListener("click", () => marksheetOuterContainer.style.display = "none");
