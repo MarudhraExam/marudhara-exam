@@ -1,1 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Search - Marudhara Exam Result Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+    <header>
+        <div class="container">
+            <h1>Marudhara Exam Result Portal</h1>
+            <nav>
+                <a href="index.html" class="active">Student Search</a>
+                <a href="admin.html">Admin Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Rajasthan Government Result Search Portal</h2>
+            <p>Search your examination result using Roll Number or Candidate Details.</p>
+        </section>
+
+        <section class="card">
+            <form id="search-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="search-exam">Select Examination</label>
+                        <select id="search-exam" required>
+                            <option value="" disabled selected>-- Please select an exam --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-roll">Roll Number</label>
+                        <input type="text" id="search-roll" placeholder="Enter your roll number">
+                    </div>
+                    <div class="form-group">
+                        <label for="search-name">Candidate Name</label>
+                        <input type="text" id="search-name" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="search-father">Father's Name</label>
+                        <input type="text" id="search-father" placeholder="Enter your father's name">
+                    </div>
+                     <div class="form-group">
+                        <label for="search-mother">Mother's Name</label>
+                        <input type="text" id="search-mother" placeholder="Enter your mother's name">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Search Result</button>
+                    <button type="reset" class="btn">Reset</button>
+                </div>
+                 <p class="form-note">Note: Exam selection is mandatory. At least one other search field is required.</p>
+            </form>
+        </section>
+
+        <section id="results-list-section" class="hidden">
+            <h3>Search Results</h3>
+            <div id="results-table-container" class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Roll Number</th>
+                            <th>Candidate Name</th>
+                            <th>Father's Name</th>
+                            <th>Category</th>
+                            <th>NET Marks</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Search results will be populated here by search.js -->
+                    </tbody>
+                </table>
+                 <p id="no-results-message" class="hidden">No matching results found.</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="marksheet-outer-container" class="modal hidden">
+        <div id="marksheet-capture-target" class="modal-content">
+            <div class="marksheet-header">
+                <img src="../images/logo.png" alt="Govt. Logo" class="logo">
+                <h2>GOVERNMENT OF RAJASTHAN</h2>
+                <h3 id="marksheet-exam-name">EXAMINATION RESULT</h3>
+            </div>
+            <div class="marksheet-body">
+                <div class="details-grid">
+                    <div class="detail-item"><span class="detail-label">Rank</span><span id="marksheet-rank" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Application No.</span><span id="marksheet-applicationNo" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Roll Number</span><span id="marksheet-rollNo" class="detail-value"></span></div>
+
+                    <div class="detail-item"><span class="detail-label">Candidate's Name</span><span id="marksheet-name" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Father's Name</span><span id="marksheet-fatherName" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Mother's Name</span><span id="marksheet-motherName" class="detail-value"></span></div>
+                    
+                    <div class="detail-item"><span class="detail-label">Date of Birth</span><span id="marksheet-dob" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Gender</span><span id="marksheet-gender" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Category</span><span id="marksheet-category" class="detail-value"></span></div>
+
+                    <div class="detail-item"><span class="detail-label">Horizontal Category</span><span id="marksheet-horizontalCategory" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">Female Category</span><span id="marksheet-femaleCategory" class="detail-value"></span></div>
+                    <div class="detail-item"><span class="detail-label">TSP</span><span id="marksheet-tsp" class="detail-value"></span></div>
+                </div>
+                 <div class="marks-section">
+                    <div class="detail-item wide"><span class="detail-label">Selection Category</span><span id="marksheet-selectionCategory" class="detail-value"></span></div>
+                    <div class="detail-item wide score"><span class="detail-label">NET Marks</span><span id="marksheet-netMarks" class="detail-value"></span></div>
+                </div>
+            </div>
+            <div class="marksheet-footer">
+                <p>This is a computer-generated marksheet and does not require a signature.</p>
+                <p>Date: <span id="marksheet-date"></span></p>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button id="download-btn" class="btn btn-primary">Download PNG</button>
+            <button id="close-report-btn" class="btn">Close</button>
+        </div>
+    </div>
+
+
+    <footer>
+        <div class="container">
+            <p>&copy; Marudhara Exam</p>
+            <a href="http://www.marudharaexam.in" target="_blank">www.marudharaexam.in</a>
+        </div>
+    </footer>
+
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="search.js"></script>
+
+</body>
+</html>
