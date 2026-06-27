@@ -288,12 +288,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle 'View Result' button clicks using event delegation
     console.log(resultsTableBody);
-    resultsTableBody.addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('view-result-btn')) {
-            const studentId = e.target.dataset.id;
-            showResult(studentId);
-        }
-    });
+   resultsTableBody.addEventListener('click', (e) => {
+
+    console.log("Clicked:", e.target);
+
+    if (e.target && e.target.classList.contains('view-result-btn')) {
+
+        console.log("Button clicked");
+
+        const studentId = e.target.dataset.id;
+
+        console.log("Student ID:", studentId);
+
+        showResult(studentId);
+    }
+
+});
 
     // Handle modal buttons
     downloadButton.addEventListener('click', downloadPNG);
