@@ -1,4 +1,3 @@
-console.log("SEARCH JS VERSION 999");
 import {
     db,
     collection,
@@ -35,8 +34,6 @@ const closeButton = document.getElementById('close-report-btn');
 
 // --- Firestore Initialization ---
 
-=======
->>>>>>> 5748c96 (new569)
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const SEARCH_LIMIT = 50; // Limit the number of search results
