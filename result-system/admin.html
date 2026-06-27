@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel - Marudhara Exam Result Portal</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="header-banner">
@@ -39,14 +39,14 @@
                 <input type="text" id="exam-name" placeholder="e.g. Senior Secondary Examination 2025" required>
               </div>
 
-              <div class="form-group" id="pdf-file-group">
-                <label for="pdf-file">Select Result PDF</label>
-                <input type="file" id="pdf-file" accept=".pdf">
-                <p class="field-help">Upload text-based PDF containing tabular candidate results.</p>
+              <div class="form-group" id="excel-file-group">
+                <label for="excel-file">Choose Excel File</label>
+                <input type="file" id="excel-file" accept=".xlsx, .xls, .csv">
+                <p class="field-help">Upload an Excel file (.xlsx, .xls, .csv) with the required columns.</p>
               </div>
 
               <div class="button-group">
-                <button type="submit" id="submit-btn" class="btn btn-primary">Process and Import</button>
+                <button type="submit" id="submit-btn" class="btn btn-primary">Import Excel Result</button>
                 <button type="button" id="cancel-btn" class="btn btn-secondary" style="display: none;">Cancel</button>
               </div>
             </form>
@@ -76,7 +76,7 @@
               <thead>
                 <tr>
                   <th>Exam Name</th>
-                  <th>Source PDF</th>
+                  <th>Source File</th>
                   <th>Created At</th>
                   <th class="text-center">Actions</th>
                 </tr>
@@ -98,19 +98,19 @@
     <p>Official URL: <a href="http://www.marudharaexam.in" target="_blank">www.marudharaexam.in</a></p>
   </div>
 
-  <!-- Replace PDF Modal -->
+  <!-- Replace Excel Modal -->
   <div class="modal-overlay" id="replace-modal" style="display: none;">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>Replace Exam PDF Content</h3>
+        <h3>Replace Exam Excel File</h3>
       </div>
       <div class="modal-body">
-        <p>Replacing the PDF will delete all existing student records for the selected exam, parse the new PDF, and import the new dataset.</p>
+        <p>Replacing the file will delete all existing student records for this exam and import the new dataset from the selected Excel file.</p>
         <form id="replace-form">
           <input type="hidden" id="replace-exam-id" value="">
           <div class="form-group">
-            <label for="replace-pdf-file">Select New Result PDF</label>
-            <input type="file" id="replace-pdf-file" accept=".pdf" required>
+            <label for="replace-excel-file">Select New Excel File</label>
+            <input type="file" id="replace-excel-file" accept=".xlsx, .xls, .csv" required>
           </div>
           <div class="button-group text-right">
             <button type="button" class="btn btn-secondary" id="close-replace-modal">Cancel</button>
