@@ -235,6 +235,9 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
+
+  width: 100%;
+  max-width: 100%;
 }
 
 .card + .card { margin-top: 20px; }
