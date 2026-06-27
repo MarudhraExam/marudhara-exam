@@ -1,263 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>मरुधरा एग्जाम - Result Import Portal</title>
-    <!-- CSS Connection -->
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Google Poppins / Inter Fonts imports -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SheetJS CDN to process multiple Excel sheets in the browser -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Marudhara Exam</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
-    <!-- ==========================================================================
-         OFFICIAL WEBSITE NAVBAR (Header Navigation of www.marudharaexam.in)
-         ========================================================================== -->
-    <header class="site-header">
-        <div class="header-inner">
-            <a href="index.html" class="brand-anchor">
-                <!-- Fallback inline logo in case the actual asset has a different directory path -->
-                <img src="images/logo.png" alt="Marudhara Exam Logo" class="logo-image" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%23103f91\'/><path d=\'M50 20 L25 45 H35 V75 H65 V45 H75 Z\' fill=\'%23ffffff\'/></svg>'">
-                <div class="brand-meta">
-                    <h1>मरुधरा एग्जाम</h1>
-                    <p>marudharaexam.in</p>
-                </div>
-            </a>
+<div class="admin-layout">
 
-            <!-- Header Desktop Navigation links list -->
-            <nav class="header-menu">
-                <a href="index.html" class="menu-item">Home</a>
-                <a href="omr.html" class="menu-item">OMR Check</a>
-                <a href="mock-tests/index.html" class="menu-item">Mock Tests</a>
-                <a href="results.html" class="menu-item">Result</a>
-                <a href="vacancy.html" class="menu-item">Vacancy Updates</a>
-                <a href="student-corner.html" class="menu-item">Student Corner</a>
-                <a href="#" class="menu-item active">Admin Portal</a>
-            </nav>
-
-            <!-- Mobile Navigation Drawer trigger button icon -->
-            <button class="mobile-hamburger" id="navDrawerBtn" aria-label="Toggle Navigation">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
-        </div>
-    </header>
-
-    <!-- Mobile Drawer Container -->
-    <div class="mobile-drawer-wrapper" id="mobileDrawerMenu">
-        <a href="index.html" class="menu-item">Home</a>
-        <a href="omr.html" class="menu-item">OMR Check</a>
-        <a href="mock-tests/index.html" class="menu-item">Mock Tests</a>
-        <a href="results.html" class="menu-item">Result</a>
-        <a href="vacancy.html" class="menu-item">Vacancy Updates</a>
-        <a href="student-corner.html" class="menu-item">Student Corner</a>
-        <a href="#" class="menu-item active">Admin Portal</a>
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-name">Marudhara Exam</span>
+      <span class="brand-sub">Result System</span>
     </div>
 
-    <!-- ==========================================================================
-         OFFICIAL SUBBANNER HEADER (Matching live sub-heading banners of your site)
-         ========================================================================== -->
-    <section class="hero-subheader">
-        <div class="hero-subheader-container">
-            <h2>Result Administration Console</h2>
-            <p>Import and manage dynamic multiple-sheet candidate results datasets</p>
-        </div>
-    </section>
+    <div class="sidebar-section-label">Menu</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="admin.html" class="active">
+          <span class="nav-dot"></span>
+          Dashboard
+        </a>
+      </li>
+      <li>
+        <a href="search.html">
+          <span class="nav-dot"></span>
+          Student Search
+        </a>
+      </li>
+    </ul>
 
-    <!-- ==========================================================================
-         MAIN DATA CONTAINER (Two essential cards: Import Card and Datasets Table)
-         ========================================================================== -->
-    <main class="workspace-container">
+    <div class="sidebar-section-label">Manage</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="admin.html" class="active">
+          <span class="nav-dot"></span>
+          Import Results
+        </a>
+      </li>
+      <li>
+        <a href="admin.html">
+          <span class="nav-dot"></span>
+          Manage Exams
+        </a>
+      </li>
+    </ul>
+  </aside>
 
-        <!-- Section 1: IMPORT RESULTS COMPONENT -->
-        <section class="content-card-box">
-            <div class="card-heading-header">
-                <h3>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="width:20px; height:20px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    Import Examination Dataset
-                </h3>
-            </div>
-            <div class="card-body-frame">
-                <form id="uploadForm" novalidate>
-                    <div class="form-input-group">
-                        <label for="newExamName" class="field-required">Exam Name</label>
-                        <input type="text" id="newExamName" placeholder="e.g., RSSB Junior Assistant Exam 2026" required autocomplete="off">
-                    </div>
+  <!-- ── Main Area ────────────────────────────────────────── -->
+  <div class="main-area">
 
-                    <div class="form-input-group">
-                        <label for="excelFile" class="field-required">Choose Spreadsheet</label>
-                        <div class="dropzone-picker-box">
-                            <input type="file" id="excelFile" accept=".xlsx, .xls" required>
-                            <div class="dropzone-prompter">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Click to <strong>Choose Spreadsheet</strong> or Drag and Drop here</span>
-                            </div>
-                        </div>
-                        <div id="fileSelectedDisplay" class="selection-filename-badge hidden"></div>
-                    </div>
-
-                    <button type="submit" id="uploadBtn" class="action-button-core btn-theme-primary">
-                        Import Dataset
-                    </button>
-                </form>
-
-                <!-- Dynamic synchronization progress details panel -->
-                <div id="uploadProgressContainer" class="sync-progress-box hidden">
-                    <div class="progress-labels-row">
-                        <span id="progressStatusText" class="sync-status-indicator">Initializing operations sync processes...</span>
-                        <span id="processedCountText" class="sync-metric-counter">0 / 0</span>
-                    </div>
-                    <div class="sync-bar-track">
-                        <div id="progressBar" class="sync-bar-fill" style="width: 0%;"></div>
-                    </div>
-                    <div id="progressPercent" class="sync-percentage-numeric">0%</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Section 2: CONFIGURATION DATA TABLE -->
-        <section class="content-card-box">
-            <div class="card-heading-header">
-                <h3>
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5" style="width:20px; height:20px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    Uploaded Result Datasets
-                </h3>
-            </div>
-            <div class="card-body-frame" style="padding: 0;">
-                <div class="responsive-table-scroll">
-                    <table class="results-catalogue-table">
-                        <thead>
-                            <tr>
-                                <th>Exam Name</th>
-                                <th>Students Count</th>
-                                <th>Upload Date</th>
-                                <th style="text-align: right;">Operations Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="examsTableBody">
-                            <tr>
-                                <td colspan="4" class="placeholder-row-view">Retrieving information parameters from database...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ==========================================================================
-         MODALS SYSTEM COMPONENTS
-         ========================================================================== -->
-
-    <!-- Rename / Edit Exam Title Modal Overlay dialog -->
-    <div id="editNameModal" class="modal-window-wrapper hidden" role="dialog" aria-modal="true">
-        <div class="modal-content-panel">
-            <header class="modal-content-header">
-                <h4>Rename Examination Dataset</h4>
-                <button type="button" class="modal-close-trigger" id="cancelEditBtn">✕</button>
-            </header>
-            <div class="modal-content-body">
-                <p class="modal-desc-note">Modifying this value updates dataset tags on all associated candidate profiles.</p>
-                <form id="editNameForm" novalidate>
-                    <input type="hidden" id="editExamId">
-                    <div class="form-input-group">
-                        <label for="editExamNameInput" class="field-required">Updated Exam Name</label>
-                        <input type="text" id="editExamNameInput" required autocomplete="off">
-                    </div>
-                    <div class="modal-buttons-action-tray">
-                        <button type="button" class="action-button-core btn-theme-secondary btn-inline-narrow" id="closeEditModalBtn">Cancel</button>
-                        <button type="submit" class="action-button-core btn-theme-primary btn-inline-narrow" id="saveExamNameBtn">Save Title</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span>Home</span>
+        <span class="sep">/</span>
+        <span class="page-crumb">Admin Panel</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-site-link">www.marudharaexam.in</span>
+      </div>
     </div>
 
-    <!-- Replace Excel Sheet Modal Overlay dialog -->
-    <div id="replaceExcelModal" class="modal-window-wrapper hidden" role="dialog" aria-modal="true">
-        <div class="modal-content-panel">
-            <header class="modal-content-header">
-                <h4>Replace Exam Dataset</h4>
-                <button type="button" class="modal-close-trigger" id="cancelReplaceBtn">✕</button>
-            </header>
-            <div class="modal-content-body">
-                <p class="modal-desc-note" style="color: var(--danger); font-weight:600;">Warning: Proceeding drops every existing student record before processing new sheet contents.</p>
-                <form id="replaceExcelForm" novalidate>
-                    <input type="hidden" id="replaceExamId">
-                    <input type="hidden" id="replaceExamNameVal">
-                    
-                    <div class="form-input-group">
-                        <label for="replaceExcelInput" class="field-required">Choose Replacement Worksheet</label>
-                        <div class="dropzone-picker-box" style="padding: 1.25rem 0.5rem;">
-                            <input type="file" id="replaceExcelInput" accept=".xlsx, .xls" required>
-                            <div class="dropzone-prompter" style="font-size:0.8rem;">
-                                <span>Click here to select replacement spreadsheet</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-buttons-action-tray">
-                        <button type="button" class="action-button-core btn-theme-secondary btn-inline-narrow" id="closeReplaceModalBtn">Cancel</button>
-                        <button type="submit" class="action-button-core btn-theme-critical btn-inline-narrow" id="confirmReplaceBtn">Proceed Replace</button>
-                    </div>
-                </form>
-            </div>
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <div class="page-title">Admin Panel</div>
+          <div class="page-subtitle">Import exam results from Excel and manage uploaded exams.</div>
         </div>
+      </div>
+
+      <!-- Global Alert -->
+      <div id="global-alert" class="alert hidden" role="alert">
+        <span id="global-alert-text"></span>
+      </div>
+
+      <!-- Upload Summary -->
+      <div id="upload-summary" class="upload-summary">
+        <h3>Import Successful</h3>
+        <div class="upload-summary-grid">
+          <div class="summary-item">
+            <div class="s-label">Exam Name</div>
+            <div class="s-value" id="sum-exam-name">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">File Name</div>
+            <div class="s-value" id="sum-file-name">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">Total Students</div>
+            <div class="s-value" id="sum-count">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">Upload Date</div>
+            <div class="s-value" id="sum-date">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import Card -->
+      <div class="card">
+        <div class="card-title">Import New Exam Results</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exam-name-input">Exam Name</label>
+            <input
+              type="text"
+              id="exam-name-input"
+              class="form-control"
+              placeholder="e.g. Rajasthan Police Constable 2024"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label>Excel File (.xlsx / .xls)</label>
+            <div class="file-input-wrapper">
+              <input type="file" id="excel-file-input" accept=".xlsx,.xls" />
+              <div class="file-input-display" id="file-display">
+                <span id="file-display-text">Click to choose Excel file</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="import-progress-wrap" class="hidden">
+          <div class="progress-wrap">
+            <div class="progress-bar" id="import-progress-bar"></div>
+          </div>
+          <div class="progress-label" id="import-progress-label">Preparing…</div>
+        </div>
+
+        <div class="mt-4">
+          <button class="btn btn-primary" id="import-btn">Import Results</button>
+        </div>
+      </div>
+
+      <!-- Exams Table Card -->
+      <div class="card mt-6">
+        <div class="card-title">Uploaded Exams</div>
+
+        <div id="exams-loading" class="loading-overlay">
+          <div class="spinner spinner-dark"></div>
+          Loading exams…
+        </div>
+
+        <div id="exams-table-wrap" class="table-wrapper hidden">
+          <table id="exams-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Exam Name</th>
+                <th>Students</th>
+                <th>Upload Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="exams-tbody">
+              <tr class="empty-row"><td colspan="5">No exams uploaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-area -->
+</div><!-- /admin-layout -->
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- MODAL: Delete -->
+<div class="modal-backdrop" id="delete-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>Delete Exam</h2>
+      <button class="modal-close" data-close="delete-modal">&times;</button>
     </div>
+    <div class="modal-body confirm-modal-body">
+      <div class="confirm-icon">&#x26A0;</div>
+      <h3>Are you sure?</h3>
+      <p id="delete-confirm-text">
+        This will permanently delete the exam and all associated student records.
+        This action cannot be undone.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="delete-modal">Cancel</button>
+      <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
 
-    <!-- ==========================================================================
-         OFFICIAL PORTAL FOOTER (Exactly matching www.marudharaexam.in)
-         ========================================================================== -->
-    <footer class="site-footer">
-        <div class="footer-inner-grid">
-            <div class="footer-section-column">
-                <h3>📘 मरुधरा एग्जाम</h3>
-                <p>आपकी सफलता का साथी</p>
-                <p>🌐 <a href="index.html">marudharaexam.in</a></p>
-                <p style="margin-top:1.25rem; font-size:0.75rem; color: var(--text-muted);">&copy; 2026 Marudhara Exam | All Rights Reserved</p>
-            </div>
-            <div class="footer-section-column">
-                <h3>📞 संपर्क करें</h3>
-                <p><strong>नाम :</strong> Chetan Chauhan</p>
-                <p><strong>वेबसाइट :</strong> मरुधरा एग्जाम</p>
-                <p><strong>ईमेल :</strong> <a href="mailto:jmdseller2025@gmail.com">jmdseller2025@gmail.com</a></p>
-                <p><strong>स्थान :</strong> राजस्थान, भारत</p>
-            </div>
-            <div class="footer-section-column">
-                <h3>👥 Visitor Statistics</h3>
-                <p>Total Visitors : <strong id="totalVisitors">Loading...</strong></p>
-                <p>Today Visitors : <strong id="todayVisitors">Loading...</strong></p>
-            </div>
+<!-- MODAL: Rename -->
+<div class="modal-backdrop" id="rename-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2>Rename Exam</h2>
+      <button class="modal-close" data-close="rename-modal">&times;</button>
+    </div>
+    <div class="modal-body rename-modal-body">
+      <div class="form-group">
+        <label for="rename-input">New Exam Name</label>
+        <input
+          type="text"
+          id="rename-input"
+          class="form-control"
+          placeholder="Enter new exam name"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="rename-modal">Cancel</button>
+      <button class="btn btn-primary" id="rename-confirm-btn">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Replace Excel -->
+<div class="modal-backdrop" id="replace-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h2>Replace Excel</h2>
+      <button class="modal-close" data-close="replace-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning">
+        All previous student records for this exam will be deleted and replaced.
+      </div>
+      <div class="form-group">
+        <label>Replacing results for</label>
+        <div
+          class="form-control"
+          id="replace-exam-name-display"
+          style="background:var(--bg);cursor:default;font-weight:600"
+        ></div>
+      </div>
+      <div class="form-group">
+        <label>New Excel File (.xlsx / .xls)</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="replace-file-input" accept=".xlsx,.xls" />
+          <div class="file-input-display" id="replace-file-display">
+            <span id="replace-file-display-text">Click to choose Excel file</span>
+          </div>
         </div>
-    </footer>
+      </div>
+      <div id="replace-progress-wrap" class="hidden">
+        <div class="progress-wrap">
+          <div class="progress-bar" id="replace-progress-bar"></div>
+        </div>
+        <div class="progress-label" id="replace-progress-label">Preparing…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="replace-modal">Cancel</button>
+      <button class="btn btn-accent" id="replace-confirm-btn">Replace</button>
+    </div>
+  </div>
+</div>
 
-    <!-- Core admin controller script interface -->
-    <script type="module" src="js/admin.js"></script>
-
-    <!-- Header navigation responsive drawers script hooks -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const drawerBtn = document.getElementById("navDrawerBtn");
-            const drawerMenu = document.getElementById("mobileDrawerMenu");
-
-            if (drawerBtn && drawerMenu) {
-                drawerBtn.addEventListener("click", () => {
-                    drawerMenu.classList.toggle("drawer-visible");
-                });
-            }
-        });
-    </script>
+<script type="module" src="admin.js"></script>
 </body>
 </html>
