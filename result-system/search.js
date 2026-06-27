@@ -1,306 +1,353 @@
-/**
- * Marudhara Exam - Student Search Portal Controller
- * Facilitates fast query execution, dynamic rendering, and PNG generation.
- */
+// search.js — Marudhara Exam Result Search System
+// ES6 Module — imports from existing firebase.js
 
 import {
-    db,
-    collection,
-    getDocs,
-    query,
-    where,
-    orderBy
-} from "./firebase-config.js";
+  db
+} from './firebase.js';
 
-// DOM Elements
-const examSelect = document.getElementById("examSelect");
-const searchForm = document.getElementById("searchForm");
-const searchInput = document.getElementById("searchInput");
-const loadingSpinner = document.getElementById("loadingSpinner");
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const resultsSection = document.getElementById("resultsSection");
-const resultsTableBody = document.getElementById("resultsTableBody");
-const noResultsMessage = document.getElementById("noResultsMessage");
+// ── Constants ────────────────────────────────────────────────
+const RESULTS_COL  = 'results';
+const STUDENTS_COL = 'resultStudents';
+const MAX_RESULTS  = 100;
 
-// Modals elements
-const resultModal = document.getElementById("resultModal");
-const closeModalBtn = document.getElementById("closeModalBtn");
-const downloadPngBtn = document.getElementById("downloadPngBtn");
-const markSheetCapture = document.getElementById("markSheetCapture");
-const resetBtn = document.getElementById("resetBtn");
+// ── DOM References ───────────────────────────────────────────
+const examSelect      = document.getElementById('exam-select');
+const searchField     = document.getElementById('search-field');
+const searchInput     = document.getElementById('search-input');
+const searchBtn       = document.getElementById('search-btn');
+const searchAlert     = document.getElementById('search-alert');
+const examLoadAlert   = document.getElementById('exam-load-alert');
+const resultsSection  = document.getElementById('results-section');
+const resultsTbody    = document.getElementById('results-tbody');
+const resultsCount    = document.getElementById('results-count');
 
-// Modals Specific Data Elements
-const modalExamName = document.getElementById("modalExamName");
-const modalRank = document.getElementById("modalRank");
-const modalRollNo = document.getElementById("modalRollNo");
-const modalCandName = document.getElementById("modalCandName");
-const modalFatherName = document.getElementById("modalFatherName");
-const modalMotherName = document.getElementById("modalMotherName");
-const modalAppNo = document.getElementById("modalAppNo");
-const modalDob = document.getElementById("modalDob");
-const modalGender = document.getElementById("modalGender");
-const modalCategory = document.getElementById("modalCategory");
-const modalHCategory = document.getElementById("modalHCategory");
-const modalFCategory = document.getElementById("modalFCategory");
-const modalTsp = document.getElementById("modalTsp");
-const modalSelCategory = document.getElementById("modalSelCategory");
-const modalNetMarks = document.getElementById("modalNetMarks");
-const modalGenerationTime = document.getElementById("modalGenerationTime");
+// Result card modal
+const resultModal         = document.getElementById('result-modal');
+const resultModalClose    = document.getElementById('result-modal-close');
+const resultModalCloseBtn = document.getElementById('result-modal-close-btn');
+const downloadPngBtn      = document.getElementById('download-png-btn');
 
-// Local cache for retrieved query records
-let currentActiveStudent = null;
+// Result card fields
+const rcExamName  = document.getElementById('rc-exam-name');
+const rcRank      = document.getElementById('rc-rank');
+const rcRoll      = document.getElementById('rc-roll');
+const rcApp       = document.getElementById('rc-app');
+const rcName      = document.getElementById('rc-name');
+const rcFather    = document.getElementById('rc-father');
+const rcMother    = document.getElementById('rc-mother');
+const rcDob       = document.getElementById('rc-dob');
+const rcGender    = document.getElementById('rc-gender');
+const rcCategory  = document.getElementById('rc-category');
+const rcHcat      = document.getElementById('rc-hcat');
+const rcFcat      = document.getElementById('rc-fcat');
+const rcTsp       = document.getElementById('rc-tsp');
+const rcNet       = document.getElementById('rc-net');
+const rcSelcat    = document.getElementById('rc-selcat');
 
-// Initial Setup
-document.addEventListener("DOMContentLoaded", populateExamsDropdown);
-
-/**
- * Retrieves the available active datasets to populate selection dropdown.
- */
-async function populateExamsDropdown() {
-    try {
-        const resultsRef = collection(db, "results");
-        const q = query(resultsRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-
-        examSelect.innerHTML = '<option value="" disabled selected>-- Choose an Exam --</option>';
-
-        snapshot.docs.forEach(docSnap => {
-            const data = docSnap.data();
-            const option = document.createElement("option");
-            option.value = docSnap.id;
-            option.textContent = data.examName;
-            examSelect.appendChild(option);
-        });
-    } catch (err) {
-        console.error("Failed to populate dropdown list:", err);
-        alert("Unable to fetch examination list. Please reload the page.");
-    }
+// ── Utility: Toast ───────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 250);
+  }, 3500);
 }
 
-/**
- * Handle Search Form Submissions.
- */
-searchForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    const selectedExamId = examSelect.value;
-    const searchTypeElement = document.querySelector('input[name="searchType"]:checked');
-    const queryTextRaw = searchInput.value;
+// ── Utility: Search Alert ────────────────────────────────────
+function showSearchAlert(message, type = 'info') {
+  searchAlert.className = `alert alert-${type}`;
+  searchAlert.textContent = message;
+  searchAlert.classList.remove('hidden');
+}
 
-    if (!selectedExamId) {
-        alert("Please select an Examination from the dropdown.");
-        return;
-    }
-    if (!searchTypeElement) {
-        alert("Please select a search criteria category.");
-        return;
-    }
-    if (!queryTextRaw || !queryTextRaw.trim()) {
-        alert("Please enter a valid search value.");
-        return;
-    }
+function hideSearchAlert() {
+  searchAlert.classList.add('hidden');
+}
 
-    const queryType = searchTypeElement.value;
-    const queryText = queryTextRaw.trim().toLowerCase();
+// ── Utility: Modal ───────────────────────────────────────────
+function openModal(modalEl) {
+  modalEl.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-    // Map internal key references based on user selection
-    const searchFieldsMap = {
-        rollNo: "searchRoll",
-        name: "searchName",
-        fatherName: "searchFather",
-        motherName: "searchMother"
-    };
+function closeModal(modalEl) {
+  modalEl.classList.remove('open');
+  document.body.style.overflow = '';
+}
 
-    const targetField = searchFieldsMap[queryType];
-
-    try {
-        setLoadingState(true);
-        clearResultsArea();
-
-        // Target individual student records using compound indexing range parameters
-        const studentRef = collection(db, "resultStudents");
-        const studentQuery = query(
-            studentRef,
-            where("examId", "==", selectedExamId),
-            where(targetField, ">=", queryText),
-            where(targetField, "<=", queryText + "\uf8ff")
-        );
-
-        const querySnapshot = await getDocs(studentQuery);
-
-        if (querySnapshot.empty) {
-            noResultsMessage.classList.remove("hidden");
-            resultsSection.classList.add("hidden");
-            return;
-        }
-
-        // Render matching candidate records
-        renderResultsTable(querySnapshot.docs);
-
-    } catch (err) {
-        console.error("Search execution failed:", err);
-        alert("A system query index restriction occurred. If this is a new setup, ensure composite indexes match the target schema query criteria.");
-    } finally {
-        setLoadingState(false);
-    }
+resultModalClose.addEventListener('click', () => closeModal(resultModal));
+resultModalCloseBtn.addEventListener('click', () => closeModal(resultModal));
+resultModal.addEventListener('click', e => {
+  if (e.target === resultModal) closeModal(resultModal);
 });
 
-/**
- * Render matched candidates to table.
- */
-function renderResultsTable(documentsList) {
-    resultsTableBody.innerHTML = "";
-
-    documentsList.forEach(docSnap => {
-        const data = docSnap.data();
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>${data.examName}</td>
-            <td><strong>${data.rank || "N/A"}</strong></td>
-            <td>${data.rollNo}</td>
-            <td class="uppercase-val">${data.name}</td>
-            <td class="uppercase-val">${data.fatherName}</td>
-            <td>${data.category}</td>
-            <td><strong>${data.netMarks}</strong></td>
-            <td>
-                <button type="button" class="btn-view-result" data-id="${docSnap.id}">View Result</button>
-            </td>
-        `;
-
-        // Action trigger activation
-        tr.querySelector(".btn-view-result").addEventListener("click", () => {
-            displayResultModal(data);
-        });
-
-        resultsTableBody.appendChild(tr);
-    });
-
-    resultsSection.classList.remove("hidden");
-    noResultsMessage.classList.add("hidden");
+// ── Utility: Safe value display ──────────────────────────────
+function disp(val) {
+  if (val === null || val === undefined || String(val).trim() === '') return '—';
+  return String(val).trim();
 }
 
-/**
- * Prepares the structural elements and fires modal activations.
- */
-function displayResultModal(studentData) {
-    currentActiveStudent = studentData;
-
-    // Populate element data targets
-    modalExamName.textContent = studentData.examName;
-    modalRank.textContent = studentData.rank || "N/A";
-    modalRollNo.textContent = studentData.rollNo || "N/A";
-    modalCandName.textContent = studentData.name || "N/A";
-    modalFatherName.textContent = studentData.fatherName || "N/A";
-    modalMotherName.textContent = studentData.motherName || "N/A";
-    modalAppNo.textContent = studentData.applicationNo || "N/A";
-    modalDob.textContent = studentData.dob || "N/A";
-    modalGender.textContent = studentData.gender || "N/A";
-    modalCategory.textContent = studentData.category || "N/A";
-    modalHCategory.textContent = studentData.horizontalCategory || "N/A";
-    modalFCategory.textContent = studentData.femaleCategory || "N/A";
-    modalTsp.textContent = studentData.tsp || "N/A";
-    modalSelCategory.textContent = studentData.selectionCategory || "N/A";
-    modalNetMarks.textContent = studentData.netMarks || "N/A";
-
-    // Format stamp parameters
-    const dateNow = new Date();
-    const stampFormatted = dateNow.toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
-    });
-    modalGenerationTime.textContent = `Generated: ${stampFormatted}`;
-
-    // Reveal container
-    resultModal.classList.remove("hidden");
+// ── Utility: Escape HTML ─────────────────────────────────────
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-/**
- * Renders the modal capture targeting sharp high scale outputs.
- */
-downloadPngBtn.addEventListener("click", () => {
-    if (!currentActiveStudent) return;
+// ── Load Exams into Dropdown ─────────────────────────────────
+async function loadExams() {
+  examLoadAlert.classList.remove('hidden');
+  examSelect.disabled = true;
 
-    const originalButtonText = downloadPngBtn.innerHTML;
-    downloadPngBtn.disabled = true;
-    downloadPngBtn.innerHTML = "Generating Canvas...";
+  try {
+    const q    = query(collection(db, RESULTS_COL), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
 
-    // Configure options parameters for html2canvas
-    const captureOptions = {
-        scale: 2, // High resolution output density
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: -window.scrollY // Compensates visual shifts
-    };
+    // Clear existing options except placeholder
+    examSelect.innerHTML = '<option value="">— Select Exam —</option>';
 
-    html2canvas(markSheetCapture, captureOptions).then(canvas => {
-        try {
-            const fileStream = canvas.toDataURL("image/png");
-            const downloadAnchor = document.createElement("a");
-            const slugFileName = `Result_${currentActiveStudent.rollNo}.png`;
-
-            downloadAnchor.href = fileStream;
-            downloadAnchor.download = slugFileName;
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            document.body.removeChild(downloadAnchor);
-        } catch (err) {
-            console.error("Canvas export breakdown:", err);
-            alert("Local rendering system failed to construct image stream.");
-        } finally {
-            downloadPngBtn.disabled = false;
-            downloadPngBtn.innerHTML = originalButtonText;
-        }
-    }).catch(err => {
-        console.error("Capture aborted:", err);
-        alert("Image compilation timed out.");
-        downloadPngBtn.disabled = false;
-        downloadPngBtn.innerHTML = originalButtonText;
+    snap.forEach(docSnap => {
+      const d      = docSnap.data();
+      const option = document.createElement('option');
+      option.value       = docSnap.id;
+      option.textContent = d.examName;
+      option.setAttribute('data-name', d.examName);
+      examSelect.appendChild(option);
     });
-});
 
-/**
- * Handle form and display clears.
- */
-resetBtn.addEventListener("click", () => {
-    searchForm.reset();
-    clearResultsArea();
-});
-
-function clearResultsArea() {
-    resultsTableBody.innerHTML = "";
-    resultsSection.classList.add("hidden");
-    noResultsMessage.classList.add("hidden");
-    currentActiveStudent = null;
-}
-
-function setLoadingState(isLoading) {
-    if (isLoading) {
-        loadingSpinner.classList.remove("hidden");
-        searchForm.querySelectorAll("button, input, select").forEach(el => el.disabled = true);
+    if (snap.empty) {
+      examLoadAlert.className = 'alert alert-warning';
+      examLoadAlert.textContent = 'No exams available. Please ask the admin to upload results.';
+      examLoadAlert.classList.remove('hidden');
     } else {
-        loadingSpinner.classList.add("hidden");
-        searchForm.querySelectorAll("button, input, select").forEach(el => el.disabled = false);
+      examLoadAlert.classList.add('hidden');
     }
+
+  } catch (err) {
+    examLoadAlert.className = 'alert alert-danger';
+    examLoadAlert.textContent = 'Failed to load exams: ' + err.message;
+    examLoadAlert.classList.remove('hidden');
+  } finally {
+    examSelect.disabled = false;
+  }
 }
 
-// Modal Toggle helpers
-function closeModal() {
-    resultModal.classList.add("hidden");
-    currentActiveStudent = null;
+// ── Search ───────────────────────────────────────────────────
+async function doSearch() {
+  hideSearchAlert();
+  resultsSection.classList.remove('visible');
+
+  const examId    = examSelect.value.trim();
+  const field     = searchField.value;
+  const rawValue  = searchInput.value.trim();
+
+  // Validation
+  if (!examId) {
+    showSearchAlert('Please select an exam first.', 'danger');
+    examSelect.focus();
+    return;
+  }
+  if (!rawValue) {
+    showSearchAlert('Please enter a search value.', 'danger');
+    searchInput.focus();
+    return;
+  }
+
+  // Search value is always lowercased (matches stored search fields)
+  const searchValue = rawValue.toLowerCase();
+
+  searchBtn.disabled = true;
+  searchBtn.textContent = 'Searching…';
+
+  try {
+    let snap;
+
+    if (field === 'searchRoll') {
+      // Exact match on roll number
+      const q = query(
+        collection(db, STUDENTS_COL),
+        where('examId',    '==', examId),
+        where('searchRoll','==', searchValue),
+        limit(MAX_RESULTS)
+      );
+      snap = await getDocs(q);
+    } else {
+      // Prefix search using >= and <= range on lowercase name fields
+      const q = query(
+        collection(db, STUDENTS_COL),
+        where('examId', '==', examId),
+        where(field,    '>=', searchValue),
+        where(field,    '<=', searchValue + '\uf8ff'),
+        orderBy(field),
+        limit(MAX_RESULTS)
+      );
+      snap = await getDocs(q);
+    }
+
+    if (snap.empty) {
+      showSearchAlert('No results found. Please check your search value and try again.', 'warning');
+      return;
+    }
+
+    // Render results
+    renderResults(snap);
+
+  } catch (err) {
+    // Firestore composite index error — friendly message
+    if (err.code === 'failed-precondition' || (err.message && err.message.includes('index'))) {
+      showSearchAlert(
+        'A Firestore index is required for this search. Please check the browser console for the index creation link, click it, wait a minute, then try again.',
+        'danger'
+      );
+      console.error('Firestore index error:', err);
+    } else {
+      showSearchAlert('Search failed: ' + err.message, 'danger');
+    }
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = 'Search';
+  }
 }
 
-closeModalBtn.addEventListener("click", closeModal);
+// ── Render Results Table ─────────────────────────────────────
+function renderResults(snap) {
+  const count = snap.size;
+  resultsCount.innerHTML = `Showing <strong>${count}</strong> result${count !== 1 ? 's' : ''}`;
 
-// Close overlay when clicking outer area frame
-resultModal.addEventListener("click", (e) => {
-    if (e.target === resultModal) {
-        closeModal();
-    }
+  let html = '';
+  let idx  = 1;
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data();
+    html += `
+      <tr>
+        <td>${idx++}</td>
+        <td>${escHtml(disp(d.examName))}</td>
+        <td><span class="rank-badge">${escHtml(disp(d.rank))}</span></td>
+        <td>${escHtml(disp(d.rollNo))}</td>
+        <td><strong>${escHtml(disp(d.name))}</strong></td>
+        <td>${escHtml(disp(d.fatherName))}</td>
+        <td>${escHtml(disp(d.category))}</td>
+        <td>${escHtml(disp(d.netMarks))}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-primary"
+            onclick='viewResult(${JSON.stringify(JSON.stringify(d))})'
+          >View Result</button>
+        </td>
+      </tr>`;
+  });
+
+  resultsTbody.innerHTML = html;
+  resultsSection.classList.add('visible');
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── View Result Card ─────────────────────────────────────────
+window.viewResult = function(jsonStr) {
+  const d = JSON.parse(jsonStr);
+
+  rcExamName.textContent = disp(d.examName);
+  rcRank.textContent     = disp(d.rank);
+  rcRoll.textContent     = disp(d.rollNo);
+  rcApp.textContent      = disp(d.applicationNo);
+  rcName.textContent     = disp(d.name);
+  rcFather.textContent   = disp(d.fatherName);
+  rcMother.textContent   = disp(d.motherName);
+  rcDob.textContent      = disp(d.dob);
+  rcGender.textContent   = disp(d.gender);
+  rcCategory.textContent = disp(d.category);
+  rcHcat.textContent     = disp(d.horizontalCategory);
+  rcFcat.textContent     = disp(d.femaleCategory);
+  rcTsp.textContent      = disp(d.tsp);
+  rcNet.textContent      = disp(d.netMarks);
+  rcSelcat.textContent   = disp(d.selectionCategory);
+
+  openModal(resultModal);
+};
+
+// ── Download PNG ─────────────────────────────────────────────
+downloadPngBtn.addEventListener('click', async () => {
+  const card = document.getElementById('result-card');
+
+  downloadPngBtn.disabled = true;
+  downloadPngBtn.textContent = 'Generating…';
+
+  try {
+    const canvas = await html2canvas(card, {
+      scale:           2,          // high resolution
+      useCORS:         true,
+      backgroundColor: '#ffffff',
+      logging:         false,
+      windowWidth:     card.scrollWidth  + 40,
+      windowHeight:    card.scrollHeight + 40
+    });
+
+    // Build filename from candidate name + roll number
+    const name = rcName.textContent.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    const roll = rcRoll.textContent.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+    const filename = `Result_${name}_${roll}.png`;
+
+    // Trigger download
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast('Result card downloaded!', 'success');
+  } catch (err) {
+    showToast('PNG generation failed: ' + err.message, 'danger');
+  } finally {
+    downloadPngBtn.disabled = false;
+    downloadPngBtn.textContent = 'Download as PNG';
+  }
 });
+
+// ── Search button & Enter key ────────────────────────────────
+searchBtn.addEventListener('click', doSearch);
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// Reset results when exam changes
+examSelect.addEventListener('change', () => {
+  resultsSection.classList.remove('visible');
+  resultsTbody.innerHTML = '';
+  hideSearchAlert();
+  searchInput.value = '';
+});
+
+// Reset results when search field changes
+searchField.addEventListener('change', () => {
+  resultsSection.classList.remove('visible');
+  resultsTbody.innerHTML = '';
+  hideSearchAlert();
+  searchInput.value = '';
+  // Update placeholder
+  const placeholders = {
+    searchRoll:   'Enter roll number…',
+    searchName:   'Enter candidate name…',
+    searchFather: 'Enter father name…',
+    searchMother: 'Enter mother name…'
+  };
+  searchInput.placeholder = placeholders[searchField.value] || 'Enter value to search…';
+});
+
+// ── Init ─────────────────────────────────────────────────────
+loadExams();
