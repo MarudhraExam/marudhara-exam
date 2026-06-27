@@ -154,7 +154,10 @@ async function doSearch() {
 
   const examId    = examSelect.value.trim();
   const field     = searchField.value;
-  const rawValue  = searchInput.value.trim();
+  const rollValue   = rollInput.value.trim().toLowerCase();
+const nameValue   = nameInput.value.trim().toLowerCase();
+const fatherValue = fatherInput.value.trim().toLowerCase();
+const motherValue = motherInput.value.trim().toLowerCase();
 
   // Validation
   if (!examId) {
