@@ -1,10 +1,3 @@
-/**
- * @file Student result search functionality for Marudhara Exam Portal.
- * @description Handles loading exams, searching student records in Firestore, and displaying results.
- * @version 1.0.0
- * @author Gemini
- */
-
 import {
     getFirestore,
     collection,
