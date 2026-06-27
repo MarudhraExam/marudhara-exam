@@ -153,7 +153,6 @@ async function doSearch() {
   resultsSection.classList.remove('visible');
 
   const examId    = examSelect.value.trim();
-  const field     = searchField.value;
   const rollValue   = rollInput.value.trim().toLowerCase();
 const nameValue   = nameInput.value.trim().toLowerCase();
 const fatherValue = fatherInput.value.trim().toLowerCase();
