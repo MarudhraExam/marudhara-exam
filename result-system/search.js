@@ -1,5 +1,5 @@
 import {
-    getFirestore,
+    db,
     collection,
     getDocs,
     getDoc,
@@ -10,8 +10,7 @@ import {
     limit,
     startAt,
     endAt
-} from './firebase.js';
-
+} from "./firebase.js";
 // This assumes html2canvas is loaded globally, e.g., via a script tag in index.html, as per instructions.
 // If it were a module, it would be: import html2canvas from 'html2canvas';
 
