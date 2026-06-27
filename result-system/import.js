@@ -1,1 +1,630 @@
+/**
+ * @file Excel Import System for Marudhara Exam Result Portal
+ * @description Handles creating, reading, updating, and deleting exam results from Excel files using Firestore.
+ * @version 1.0.0
+ * @author Gemini
+ */
 
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    doc,
+    deleteDoc,
+    updateDoc,
+    writeBatch,
+    query,
+    where,
+    serverTimestamp,
+    orderBy,
+    limit,
+    getDoc
+} from './firebase.js';
+
+// --- DOM Element References ---
+const examForm = document.getElementById('exam-form');
+const examIdInput = document.getElementById('exam-id');
+const examNameInput = document.getElementById('exam-name');
+const excelFileInput = document.getElementById('excel-file');
+const submitBtn = document.getElementById('submit-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+const formActionTitle = document.getElementById('form-action-title');
+
+const progressWrapper = document.getElementById('progress-wrapper');
+const progressLabel = document.getElementById('progress-label');
+const progressPercent = document.getElementById('progress-percent');
+const progressFill = document.getElementById('progress-fill');
+const progressLog = document.getElementById('progress-log');
+
+const examsList = document.getElementById('exams-list');
+
+const replaceModal = document.getElementById('replace-modal');
+const replaceForm = document.getElementById('replace-form');
+const replaceExamIdInput = document.getElementById('replace-exam-id');
+const replaceExcelFileInput = document.getElementById('replace-excel-file');
+const closeReplaceModalBtn = document.getElementById('close-replace-modal');
+
+const replaceProgressWrapper = document.getElementById('replace-progress-wrapper');
+const replaceProgressLabel = document.getElementById('replace-progress-label');
+const replaceProgressPercent = document.getElementById('replace-progress-percent');
+const replaceProgressFill = document.getElementById('replace-progress-fill');
+const replaceProgressLog = document.getElementById('replace-progress-log');
+
+
+// --- Firestore Initialization ---
+const db = getFirestore();
+const resultsCollection = collection(db, 'results');
+const studentsCollection = collection(db, 'resultStudents');
+const BATCH_SIZE = 400;
+
+// --- Main Event Listeners ---
+
+/**
+ * Handles the main form submission for creating or updating an exam.
+ * @param {Event} e - The form submission event.
+ */
+const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const examId = examIdInput.value;
+    const examName = examNameInput.value.trim();
+    const file = excelFileInput.files[0];
+
+    if (!examName) {
+        showError("Exam Name is required.");
+        return;
+    }
+
+    submitBtn.disabled = true;
+
+    if (examId) {
+        // Update existing exam name
+        await updateExam(examId, examName);
+    } else {
+        // Create new exam
+        if (!file) {
+            showError("An Excel file is required to create a new exam.");
+            submitBtn.disabled = false;
+            return;
+        }
+        await createExam(examName, file);
+    }
+
+    resetForm();
+    await fetchExams();
+};
+
+/**
+ * Handles clicks on the exams list for actions like edit, delete, replace.
+ * @param {Event} e - The click event.
+ */
+const handleExamsListClick = async (e) => {
+    const target = e.target.closest('button');
+    if (!target) return;
+
+    const examId = target.dataset.id;
+    const examName = target.dataset.name;
+
+    if (target.classList.contains('edit-btn')) {
+        setupEditForm(examId, examName);
+    } else if (target.classList.contains('delete-btn')) {
+        if (confirm(`Are you sure you want to delete the exam "${examName}" and all its student records? This action cannot be undone.`)) {
+            await deleteExam(examId, examName);
+            await fetchExams();
+        }
+    } else if (target.classList.contains('replace-btn')) {
+        setupReplaceModal(examId, examName);
+    }
+};
+
+/**
+ * Handles the replace form submission.
+ * @param {Event} e - The form submission event.
+ */
+const handleReplaceFormSubmit = async (e) => {
+    e.preventDefault();
+    const examId = replaceExamIdInput.value;
+    const file = replaceExcelFileInput.files[0];
+
+    if (!file) {
+        showError("Please select a new Excel file to replace the old one.", true);
+        return;
+    }
+
+    document.querySelector('#replace-form button[type="submit"]').disabled = true;
+    await replaceExam(examId, file);
+    closeReplaceModal();
+    await fetchExams();
+};
+
+
+// --- Core Functions ---
+
+/**
+ * Fetches all exams from Firestore and renders them in the table.
+ */
+const fetchExams = async () => {
+    try {
+        const q = query(resultsCollection, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        examsList.innerHTML = ''; // Clear existing list
+        if (snapshot.empty) {
+            examsList.innerHTML = '<tr><td colspan="5">No exams found.</td></tr>';
+            return;
+        }
+        snapshot.forEach(doc => {
+            const exam = doc.data();
+            const examId = doc.id;
+            const createdAt = exam.createdAt?.toDate().toLocaleDateString() || 'N/A';
+            const row = `
+                <tr>
+                    <td>${exam.examName}</td>
+                    <td>${exam.fileName}</td>
+                    <td>${createdAt}</td>
+                    <td>${exam.studentsCount}</td>
+                    <td>
+                        <button class="btn replace-btn" data-id="${examId}" data-name="${exam.examName}">Replace Excel</button>
+                        <button class="btn edit-btn" data-id="${examId}" data-name="${exam.examName}">Edit Name</button>
+                        <button class="btn btn-danger delete-btn" data-id="${examId}" data-name="${exam.examName}">Delete</button>
+                    </td>
+                </tr>
+            `;
+            examsList.innerHTML += row;
+        });
+    } catch (error) {
+        showError("Error fetching exams: " + error.message);
+        console.error("Error fetching exams: ", error);
+    }
+};
+
+/**
+ * Creates a new exam: reads the Excel file, creates the main exam doc, and batch imports students.
+ * @param {string} examName - The name of the exam.
+ * @param {File} file - The Excel file.
+ */
+const createExam = async (examName, file) => {
+    resetProgress({ wrapper: progressWrapper, fill: progressFill, percent: progressPercent, log: progressLog });
+    progressLabel.textContent = "Reading Excel file...";
+    progressWrapper.style.display = 'block';
+
+    try {
+        const students = await readExcel(file);
+        if (students.length === 0) {
+            showError("No valid student data found in the Excel file. Check for blank rows or incorrect format.");
+            resetForm();
+            return;
+        }
+
+        progressLog.textContent = `Found ${students.length} student records. Creating exam document...`;
+        
+        // 1. Create Exam Document
+        const examDocRef = await addDoc(resultsCollection, {
+            examName: examName,
+            fileName: file.name,
+            studentsCount: students.length,
+            createdAt: serverTimestamp()
+        });
+
+        const examId = examDocRef.id;
+        progressLog.textContent = "Exam document created. Starting student import...";
+        
+        // 2. Batch Import Students
+        await batchImportStudents(students, examId, examName, {
+            wrapper: progressWrapper,
+            fill: progressFill,
+            percent: progressPercent,
+            log: progressLog
+        });
+        
+        showSuccess(`Successfully imported exam "${examName}" with ${students.length} students.`);
+
+    } catch (error) {
+        showError(`Error during exam creation: ${error.message}`);
+        console.error(error);
+        // Cleanup if exam doc was created but import failed
+        const q = query(resultsCollection, where("examName", "==", examName), where("fileName", "==", file.name));
+        const snapshot = await getDocs(q);
+        if(!snapshot.empty) {
+            snapshot.forEach(doc => deleteDoc(doc.ref));
+            progressLog.textContent += "
+Rolled back exam creation due to an error.";
+        }
+    } finally {
+        setTimeout(() => resetProgress({ wrapper: progressWrapper, fill: progressFill, percent: progressPercent, log: progressLog }), 5000);
+        resetForm();
+    }
+};
+
+/**
+ * Replaces the Excel file for an existing exam.
+ * @param {string} examId - The ID of the exam to replace.
+ * @param {File} newFile - The new Excel file.
+ */
+const replaceExam = async (examId, newFile) => {
+    const progressUI = {
+        wrapper: replaceProgressWrapper,
+        fill: replaceProgressFill,
+        percent: replaceProgressPercent,
+        log: replaceProgressLog
+    };
+    resetProgress(progressUI);
+    replaceProgressLabel.textContent = "Starting replacement process...";
+    progressUI.wrapper.style.display = 'block';
+
+    try {
+        const examDocRef = doc(db, "results", examId);
+        const examDoc = await getDoc(examDocRef);
+        if (!examDoc.exists()) {
+            throw new Error("Exam to replace not found.");
+        }
+        
+        // 1. Delete previous student records
+        progressUI.log.textContent = "Deleting old student records...";
+        await deleteStudentsByExamId(examId, progressUI);
+
+        // 2. Read new Excel file
+        progressUI.log.textContent = "Reading new Excel file...";
+        const students = await readExcel(newFile);
+        if (students.length === 0) {
+            throw new Error("No valid student data found in the new Excel file.");
+        }
+        progressUI.log.textContent = `Found ${students.length} new records. Starting import...`;
+
+        // 3. Batch import new students
+        const examName = examDoc.data().examName;
+        await batchImportStudents(students, examId, examName, progressUI);
+        
+        // 4. Update the main exam document
+        await updateDoc(examDocRef, {
+            studentsCount: students.length,
+            fileName: newFile.name,
+            createdAt: serverTimestamp() // Update timestamp to reflect the change
+        });
+
+        showSuccess(`Successfully replaced Excel for exam "${examName}".`);
+
+    } catch(error) {
+        showError(`Error replacing exam: ${error.message}`, true);
+        console.error(error);
+    } finally {
+        setTimeout(() => {
+             resetProgress(progressUI);
+             document.querySelector('#replace-form button[type="submit"]').disabled = false;
+        }, 5000);
+    }
+};
+
+/**
+ * Deletes an exam document and all associated student records.
+ * @param {string} examId - The ID of the exam to delete.
+ * @param {string} examName - The name of the exam, for logging.
+ */
+const deleteExam = async (examId, examName) => {
+    try {
+        // 1. Delete all student documents for this exam
+        await deleteStudentsByExamId(examId);
+
+        // 2. Delete the main exam document
+        await deleteDoc(doc(db, "results", examId));
+
+        showSuccess(`Successfully deleted exam "${examName}".`);
+    } catch (error) {
+        showError(`Error deleting exam: ${error.message}`);
+        console.error(error);
+    }
+};
+
+/**
+ * Updates an exam's name in the main doc and all associated student docs.
+ * @param {string} examId - The ID of the exam to update.
+ * @param {string} newExamName - The new name for the exam.
+ */
+const updateExam = async (examId, newExamName) => {
+    progressLabel.textContent = "Updating exam name...";
+    progressWrapper.style.display = 'block';
+    
+    try {
+        // 1. Update the main exam document
+        const examDocRef = doc(db, "results", examId);
+        await updateDoc(examDocRef, { examName: newExamName });
+        progressLog.textContent = "Main exam document updated.";
+
+        // 2. Update all associated student documents
+        progressLog.textContent += "
+Updating student records...";
+        const q = query(studentsCollection, where("examId", "==", examId));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            progressLog.textContent += "
+No student records to update.";
+            showSuccess("Exam name updated successfully (no students were associated).");
+            return;
+        }
+
+        let processedCount = 0;
+        const total = snapshot.docs.length;
+        let batch = writeBatch(db);
+        let batchCount = 0;
+
+        for (const studentDoc of snapshot.docs) {
+            batch.update(studentDoc.ref, { examName: newExamName });
+            batchCount++;
+            processedCount++;
+
+            if (batchCount === BATCH_SIZE || processedCount === total) {
+                await batch.commit();
+                updateProgress(processedCount, total, {
+                    fill: progressFill,
+                    percent: progressPercent,
+                    log: progressLog
+                }, "Updating student records...");
+                batch = writeBatch(db);
+                batchCount = 0;
+            }
+        }
+
+        showSuccess(`Successfully updated exam name to "${newExamName}".`);
+    } catch (error) {
+        showError(`Error updating exam name: ${error.message}`);
+        console.error(error);
+    } finally {
+        setTimeout(() => resetProgress({ wrapper: progressWrapper, fill: progressFill, percent: progressPercent, log: progressLog }), 5000);
+        resetForm();
+    }
+};
+
+// --- Helper & Utility Functions ---
+
+/**
+ * Reads an Excel file and returns an array of student objects.
+ * @param {File} file - The Excel file to process.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of student data.
+ */
+const readExcel = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[worksheetName];
+                // header: 1 produces an array of arrays
+                const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+                const students = [];
+                const rollNumbers = new Set();
+                
+                // Skip header row (index 0)
+                for (let i = 1; i < json.length; i++) {
+                    const row = json[i];
+                    // Basic validation: check if roll number exists
+                    const rollNo = row[3] ? String(row[3]).trim() : '';
+                    if (!rollNo) continue; // Ignore blank rows
+
+                    if (rollNumbers.has(rollNo)) continue; // Ignore duplicate Roll Numbers
+                    rollNumbers.add(rollNo);
+                    
+                    const name = String(row[4] || '').trim();
+                    const fatherName = String(row[5] || '').trim();
+                    const motherName = String(row[6] || '').trim();
+
+                    students.push({
+                        rank: String(row[1] || '').trim(),
+                        applicationNo: String(row[2] || '').trim(),
+                        rollNo: rollNo,
+                        name: name,
+                        fatherName: fatherName,
+                        motherName: motherName,
+                        dob: String(row[7] || '').trim(),
+                        gender: String(row[8] || '').trim(),
+                        category: String(row[9] || '').trim(),
+                        horizontalCategory: String(row[10] || '').trim(),
+                        femaleCategory: String(row[11] || '').trim(),
+                        tsp: String(row[12] || '').trim(),
+                        netMarks: String(row[13] || '').trim(),
+                        selectionCategory: String(row[14] || '').trim(),
+                        searchRoll: rollNo.toLowerCase(),
+                        searchName: name.toLowerCase(),
+                        searchFather: fatherName.toLowerCase(),
+                        searchMother: motherName.toLowerCase(),
+                    });
+                }
+                resolve(students);
+            } catch (error) {
+                reject(new Error("Failed to read or parse Excel file. " + error.message));
+            }
+        };
+        reader.onerror = (error) => reject(new Error("File reading error: " + error));
+        reader.readAsArrayBuffer(file);
+    });
+};
+
+/**
+ * Imports an array of students into Firestore in batches.
+ * @param {Array<Object>} students - Array of student objects.
+ * @param {string} examId - The ID of the parent exam document.
+ * @param {string} examName - The name of the parent exam.
+ * @param {Object} progressUI - DOM elements for updating progress.
+ */
+const batchImportStudents = async (students, examId, examName, progressUI) => {
+    let batch = writeBatch(db);
+    let batchCount = 0;
+    const totalStudents = students.length;
+
+    for (let i = 0; i < totalStudents; i++) {
+        const student = students[i];
+        const studentRef = doc(collection(db, 'resultStudents'));
+        batch.set(studentRef, {
+            ...student,
+            examId: examId,
+            examName: examName,
+            createdAt: serverTimestamp()
+        });
+        batchCount++;
+
+        if (batchCount === BATCH_SIZE || i === totalStudents - 1) {
+            await batch.commit();
+            updateProgress(i + 1, totalStudents, progressUI, "Uploading student data...");
+            // Reset for the next batch
+            batch = writeBatch(db);
+            batchCount = 0;
+        }
+    }
+};
+
+/**
+ * Deletes all student records associated with a given examId, in batches.
+ * @param {string} examId - The ID of the exam.
+ * @param {Object} [progressUI] - Optional DOM elements for updating progress.
+ */
+const deleteStudentsByExamId = async (examId, progressUI) => {
+    let shouldContinue = true;
+    let deletedCount = 0;
+    
+    while(shouldContinue) {
+        const q = query(studentsCollection, where("examId", "==", examId), limit(BATCH_SIZE));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            shouldContinue = false;
+            break;
+        }
+        
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        
+        deletedCount += snapshot.size;
+        if(progressUI) {
+             progressUI.log.textContent = `Deleted ${deletedCount} old student records...`;
+        }
+    }
+};
+
+/**
+ * Resets the main form to its initial state.
+ */
+const resetForm = () => {
+    examForm.reset();
+    examIdInput.value = '';
+    formActionTitle.textContent = 'Import New Exam Result';
+    submitBtn.textContent = 'Import Excel Result';
+    submitBtn.disabled = false;
+    cancelBtn.style.display = 'none';
+    excelFileInput.disabled = false;
+    excelFileInput.required = true;
+};
+
+/**
+ * Sets up the main form for editing an exam's name.
+ * @param {string} examId - The ID of the exam to edit.
+ * @param {string} examName - The current name of the exam.
+ */
+const setupEditForm = (examId, examName) => {
+    examIdInput.value = examId;
+    examNameInput.value = examName;
+    formActionTitle.textContent = 'Edit Exam Name';
+    submitBtn.textContent = 'Update Name';
+    excelFileInput.disabled = true;
+    excelFileInput.required = false;
+    cancelBtn.style.display = 'inline-block';
+    window.scrollTo(0, 0);
+};
+
+/**
+ * Sets up and shows the replace modal.
+ * @param {string} examId - The ID of the exam to replace.
+ * @param {string} examName - The current name of the exam.
+ */
+const setupReplaceModal = (examId, examName) => {
+    replaceExamIdInput.value = examId;
+    document.querySelector('#replace-modal h2').textContent = `Replace Excel for "${examName}"`;
+    replaceModal.style.display = 'block';
+};
+
+/**
+ * Closes the replace modal and resets its form.
+ */
+const closeReplaceModal = () => {
+    replaceModal.style.display = 'none';
+    replaceForm.reset();
+    resetProgress({
+        wrapper: replaceProgressWrapper,
+        fill: replaceProgressFill,
+        percent: replaceProgressPercent,
+        log: replaceProgressLog
+    });
+     document.querySelector('#replace-form button[type="submit"]').disabled = false;
+};
+
+// --- UI Feedback Functions ---
+
+/**
+ * Updates a progress bar and its associated text.
+ * @param {number} current - The current progress value.
+ * @param {number} total - The total value.
+ * @param {Object} ui - The DOM elements for the progress bar.
+ * @param {string} message - The message to display in the log.
+ */
+const updateProgress = (current, total, ui, message) => {
+    const percentage = Math.round((current / total) * 100);
+    ui.fill.style.width = percentage + '%';
+    ui.percent.textContent = percentage + '%';
+    ui.log.textContent = `${message} ${current} of ${total}`;
+};
+
+/**
+ * Resets a progress bar to its initial state.
+ * @param {Object} ui - The DOM elements for the progress bar.
+ */
+const resetProgress = (ui) => {
+    ui.wrapper.style.display = 'none';
+    ui.fill.style.width = '0%';
+    ui.percent.textContent = '0%';
+    ui.log.textContent = '';
+};
+
+/**
+ * Shows a temporary success message.
+ * @param {string} message - The message to display.
+ */
+const showSuccess = (message) => {
+    // A more robust solution would be a dedicated notification element.
+    alert(message);
+};
+
+/**
+ * Shows a temporary error message.
+ * @param {string} message - The message to display.
+ * @param {boolean} [isModal=false] - If true, shows the error in the modal context.
+ */
+const showError = (message, isModal = false) => {
+    if (isModal) {
+        replaceProgressLog.textContent = `ERROR: ${message}`;
+        replaceProgressLog.style.color = "red";
+    } else {
+        progressLog.textContent = `ERROR: ${message}`;
+        progressLog.style.color = "red";
+        progressWrapper.style.display = 'block';
+    }
+    alert(`ERROR: ${message}`);
+};
+
+// --- Initializer ---
+document.addEventListener('DOMContentLoaded', () => {
+    examForm.addEventListener('submit', handleFormSubmit);
+    examsList.addEventListener('click', handleExamsListClick);
+    cancelBtn.addEventListener('click', resetForm);
+    
+    replaceForm.addEventListener('submit', handleReplaceFormSubmit);
+    closeReplaceModalBtn.addEventListener('click', closeReplaceModal);
+    window.addEventListener('click', (e) => {
+        if (e.target === replaceModal) {
+            closeReplaceModal();
+        }
+    });
+
+    fetchExams();
+});
