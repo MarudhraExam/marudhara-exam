@@ -199,8 +199,15 @@ const renderResults = async (snapshot) => {
  */
 const showResult = async (studentId) => {
     try {
-        const studentDocRef = doc(db, 'resultStudents', studentId);
+
+        console.log("showResult started");
+        console.log(studentId);
+
+        const studentDocRef = doc(db, "resultStudents", studentId);
         const studentDoc = await getDoc(studentDocRef);
+
+        console.log(studentDoc.exists());
+        console.log(studentDoc.data());
 
         if (!studentDoc.exists()) {
             alert("Could not find the detailed result for this student.");
