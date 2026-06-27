@@ -85,9 +85,6 @@ if (roll) {
     alert("Please enter Roll Number, Name, Father Name or Mother Name.");
     return;
 }
-        const querySnapshot = await getDocs(q);
-        renderMatchesList(querySnapshot);
-
     } catch (error) {
         console.error("Query Execution Fault: ", error);
         alert("The search query could not be completed. Make sure you have created the required composite indexes in Firestore if combining multiple search fields.");
