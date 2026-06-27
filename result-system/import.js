@@ -1,10 +1,3 @@
-/**
- * @file Excel Import System for Marudhara Exam Result Portal
- * @description Handles creating, reading, updating, and deleting exam results from Excel files using Firestore.
- * @version 1.0.0
- * @author Gemini
- */
-
 import {
     db,
     collection,
@@ -21,8 +14,6 @@ import {
     limit,
     getDoc
 } from './firebase.js';
-
-// --- DOM Element References ---
 const examForm = document.getElementById('exam-form');
 const examIdInput = document.getElementById('exam-id');
 const examNameInput = document.getElementById('exam-name');
@@ -52,17 +43,15 @@ const replaceProgressFill = document.getElementById('replace-progress-fill');
 const replaceProgressLog = document.getElementById('replace-progress-log');
 
 
+<<<<<<< HEAD
 // --- Firestore Initialization ---
+=======
+const db = getFirestore();
+>>>>>>> 90331f67fd09c299c9927d31735d6d3f03bfecfb
 const resultsCollection = collection(db, 'results');
 const studentsCollection = collection(db, 'resultStudents');
 const BATCH_SIZE = 400;
 
-// --- Main Event Listeners ---
-
-/**
- * Handles the main form submission for creating or updating an exam.
- * @param {Event} e - The form submission event.
- */
 const handleFormSubmit = async (e) => {
     e.preventDefault();
     const examId = examIdInput.value;
@@ -93,10 +82,6 @@ const handleFormSubmit = async (e) => {
     await fetchExams();
 };
 
-/**
- * Handles clicks on the exams list for actions like edit, delete, replace.
- * @param {Event} e - The click event.
- */
 const handleExamsListClick = async (e) => {
     const target = e.target.closest('button');
     if (!target) return;
@@ -116,10 +101,6 @@ const handleExamsListClick = async (e) => {
     }
 };
 
-/**
- * Handles the replace form submission.
- * @param {Event} e - The form submission event.
- */
 const handleReplaceFormSubmit = async (e) => {
     e.preventDefault();
     const examId = replaceExamIdInput.value;
@@ -136,12 +117,6 @@ const handleReplaceFormSubmit = async (e) => {
     await fetchExams();
 };
 
-
-// --- Core Functions ---
-
-/**
- * Fetches all exams from Firestore and renders them in the table.
- */
 const fetchExams = async () => {
     try {
         const q = query(resultsCollection, orderBy("createdAt", "desc"));
@@ -176,11 +151,6 @@ const fetchExams = async () => {
     }
 };
 
-/**
- * Creates a new exam: reads the Excel file, creates the main exam doc, and batch imports students.
- * @param {string} examName - The name of the exam.
- * @param {File} file - The Excel file.
- */
 const createExam = async (examName, file) => {
     resetProgress({ wrapper: progressWrapper, fill: progressFill, percent: progressPercent, log: progressLog });
     progressLabel.textContent = "Reading Excel file...";
@@ -233,11 +203,6 @@ const createExam = async (examName, file) => {
     }
 };
 
-/**
- * Replaces the Excel file for an existing exam.
- * @param {string} examId - The ID of the exam to replace.
- * @param {File} newFile - The new Excel file.
- */
 const replaceExam = async (examId, newFile) => {
     const progressUI = {
         wrapper: replaceProgressWrapper,
@@ -292,11 +257,6 @@ const replaceExam = async (examId, newFile) => {
     }
 };
 
-/**
- * Deletes an exam document and all associated student records.
- * @param {string} examId - The ID of the exam to delete.
- * @param {string} examName - The name of the exam, for logging.
- */
 const deleteExam = async (examId, examName) => {
     try {
         // 1. Delete all student documents for this exam
@@ -312,11 +272,6 @@ const deleteExam = async (examId, examName) => {
     }
 };
 
-/**
- * Updates an exam's name in the main doc and all associated student docs.
- * @param {string} examId - The ID of the exam to update.
- * @param {string} newExamName - The new name for the exam.
- */
 const updateExam = async (examId, newExamName) => {
     progressLabel.textContent = "Updating exam name...";
     progressWrapper.style.display = 'block';
@@ -370,13 +325,6 @@ const updateExam = async (examId, newExamName) => {
     }
 };
 
-// --- Helper & Utility Functions ---
-
-/**
- * Reads an Excel file and returns an array of student objects.
- * @param {File} file - The Excel file to process.
- * @returns {Promise<Array<Object>>} A promise that resolves to an array of student data.
- */
 const readExcel = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -436,14 +384,6 @@ const readExcel = (file) => {
         reader.readAsArrayBuffer(file);
     });
 };
-
-/**
- * Imports an array of students into Firestore in batches.
- * @param {Array<Object>} students - Array of student objects.
- * @param {string} examId - The ID of the parent exam document.
- * @param {string} examName - The name of the parent exam.
- * @param {Object} progressUI - DOM elements for updating progress.
- */
 const batchImportStudents = async (students, examId, examName, progressUI) => {
     let batch = writeBatch(db);
     let batchCount = 0;
@@ -470,11 +410,6 @@ const batchImportStudents = async (students, examId, examName, progressUI) => {
     }
 };
 
-/**
- * Deletes all student records associated with a given examId, in batches.
- * @param {string} examId - The ID of the exam.
- * @param {Object} [progressUI] - Optional DOM elements for updating progress.
- */
 const deleteStudentsByExamId = async (examId, progressUI) => {
     let shouldContinue = true;
     let deletedCount = 0;
@@ -499,9 +434,6 @@ const deleteStudentsByExamId = async (examId, progressUI) => {
     }
 };
 
-/**
- * Resets the main form to its initial state.
- */
 const resetForm = () => {
     examForm.reset();
     examIdInput.value = '';
@@ -513,11 +445,6 @@ const resetForm = () => {
     excelFileInput.required = true;
 };
 
-/**
- * Sets up the main form for editing an exam's name.
- * @param {string} examId - The ID of the exam to edit.
- * @param {string} examName - The current name of the exam.
- */
 const setupEditForm = (examId, examName) => {
     examIdInput.value = examId;
     examNameInput.value = examName;
@@ -529,20 +456,12 @@ const setupEditForm = (examId, examName) => {
     window.scrollTo(0, 0);
 };
 
-/**
- * Sets up and shows the replace modal.
- * @param {string} examId - The ID of the exam to replace.
- * @param {string} examName - The current name of the exam.
- */
 const setupReplaceModal = (examId, examName) => {
     replaceExamIdInput.value = examId;
     document.querySelector('#replace-modal h2').textContent = `Replace Excel for "${examName}"`;
     replaceModal.style.display = 'block';
 };
 
-/**
- * Closes the replace modal and resets its form.
- */
 const closeReplaceModal = () => {
     replaceModal.style.display = 'none';
     replaceForm.reset();
@@ -555,15 +474,7 @@ const closeReplaceModal = () => {
      document.querySelector('#replace-form button[type="submit"]').disabled = false;
 };
 
-// --- UI Feedback Functions ---
 
-/**
- * Updates a progress bar and its associated text.
- * @param {number} current - The current progress value.
- * @param {number} total - The total value.
- * @param {Object} ui - The DOM elements for the progress bar.
- * @param {string} message - The message to display in the log.
- */
 const updateProgress = (current, total, ui, message) => {
     const percentage = Math.round((current / total) * 100);
     ui.fill.style.width = percentage + '%';
@@ -571,10 +482,6 @@ const updateProgress = (current, total, ui, message) => {
     ui.log.textContent = `${message} ${current} of ${total}`;
 };
 
-/**
- * Resets a progress bar to its initial state.
- * @param {Object} ui - The DOM elements for the progress bar.
- */
 const resetProgress = (ui) => {
     ui.wrapper.style.display = 'none';
     ui.fill.style.width = '0%';
@@ -582,20 +489,11 @@ const resetProgress = (ui) => {
     ui.log.textContent = '';
 };
 
-/**
- * Shows a temporary success message.
- * @param {string} message - The message to display.
- */
 const showSuccess = (message) => {
     // A more robust solution would be a dedicated notification element.
     alert(message);
 };
 
-/**
- * Shows a temporary error message.
- * @param {string} message - The message to display.
- * @param {boolean} [isModal=false] - If true, shows the error in the modal context.
- */
 const showError = (message, isModal = false) => {
     if (isModal) {
         replaceProgressLog.textContent = `ERROR: ${message}`;
