@@ -374,40 +374,37 @@ console.log(col);
 
                         if (!row || row.every(c => String(c).trim() === "")) continue;
 
-                        const rollNo = String(row[col["ROLL_NO"]] || "").trim();
-                        const name = String(row[col["CAND_NAME"]] || "").trim();
-                        const fatherName = String(row[col["FATHER_NAME"]] || "").trim();
-                        const motherName = String(row[col["MOTHER_NAME"]] || "").trim();
+                      const rollNo = String(row[col["ROLLNO"]] || "").trim();
+                        const name = String(row[col["CANDNAME"]] || "").trim();
 
-                        students.push({
+const fatherName = String(row[col["FATHERNAME"]] || "").trim();
 
-                            rank: String(row[col["RANK"]] || "").trim(),
+const motherName = String(row[col["MOTHERNAME"]] || "").trim();
 
-                            applicationNo: String(row[col["APPLICATION"]] || "").trim(),
+rank: String(row[col["RANK"]] || "").trim(),
 
-                            rollNo,
+applicationNo: String(row[col["APPLICATION"]] || row[col["APPLICATIONNO"]] || "").trim(),
 
-                            name,
+dob: String(row[col["DOB"]] || "").trim(),
 
-                            fatherName,
+gender: String(row[col["GENDER"]] || "").trim(),
 
-                            motherName,
+category: String(row[col["CAT"]] || "").trim(),
 
-                            dob: String(row[col["DOB"]] || "").trim(),
+horizontalCategory: String(row[col["HCAT"]] || "").trim(),
 
-                            gender: String(row[col["GENDER"]] || "").trim(),
+femaleCategory: String(row[col["FCAT"]] || "").trim(),
 
-                            category: String(row[col["CAT"]] || "").trim(),
+tsp: String(row[col["TSP"]] || "").trim(),
 
-                            horizontalCategory: String(row[col["HCAT"]] || "").trim(),
+netMarks: String(row[col["NET"]] || "").trim(),
 
-                            femaleCategory: String(row[col["FCAT"]] || "").trim(),
-
-                            tsp: String(row[col["TSP"]] || "").trim(),
-
-                            netMarks: String(row[col["NET"]] || "").trim(),
-
-                            selectionCategory: String(row[col["SEL_CAT"]] || row[col["SEL_CAT."]] || "").trim(),
+selectionCategory:
+String(
+    row[col["SELCAT"]] ??
+    row[col["SELECTIONCATEGORY"]] ??
+    ""
+).trim(),
 
                             searchRoll: rollNo.toLowerCase(),
 
