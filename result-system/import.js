@@ -330,14 +330,12 @@ const updateExam = async (examId, newExamName) => {
         progressLog.textContent = "Main exam document updated.";
 
         // 2. Update all associated student documents
-        progressLog.textContent += "
-Updating student records...";
+        progressLog.innerHTML += "<br>Updating student records...";
         const q = query(studentsCollection, where("examId", "==", examId));
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-            progressLog.textContent += "
-No student records to update.";
+            progressLog.innerHTML += "<br>No student records to update.";
             showSuccess("Exam name updated successfully (no students were associated).");
             return;
         }

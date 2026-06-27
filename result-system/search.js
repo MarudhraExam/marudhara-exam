@@ -223,6 +223,11 @@ const showResult = async (studentId) => {
  * Downloads the content of the result modal as a high-quality PNG image.
  */
 const downloadPNG = () => {
+    if (typeof html2canvas === 'undefined') {
+        alert('Could not generate PNG. The html2canvas library is missing.');
+        console.error('html2canvas is not loaded.');
+        return;
+    }
     const rollNo = document.getElementById('marksheet-rollNo').textContent || 'unknown';
     const filename = `Result_${rollNo}.png`;
 

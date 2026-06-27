@@ -1,15 +1,23 @@
+/**
+ * @file Shared stylesheet for Marudhara Exam Result Portal (Admin and Student).
+ * @version 1.1.0
+ */
+
 :root {
     --primary-color: #2c3e50;
     --secondary-color: #18bc9c;
-    --background-color: #f8f9fa;
+    --primary-color-admin: #4A90E2;
+    --danger-color: #e74c3c;
+    --success-color: #2ecc71;
+    --background-color: #f4f5f7;
     --surface-color: #ffffff;
-    --text-color: #2c3e50;
+    --text-color: #333;
     --text-muted: #7f8c8d;
     --border-color: #ecf0f1;
-    --error-color: #e74c3c;
-    --success-color: #2ecc71;
+    --dark-gray: #bdc3c7;
 }
 
+/* --- General & Reset --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -21,241 +29,410 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
-}
-
-header {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 1.5rem;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-header h1 {
-    font-size: 1.8rem;
-    font-weight: 600;
-}
-
-.nav-links {
-    margin-top: 0.5rem;
-}
-
-.nav-links a {
-    color: #e2e8f0;
-    text-decoration: none;
-    margin: 0 10px;
-    font-size: 0.9rem;
-}
-
-.nav-links a:hover {
-    color: var(--secondary-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 1000px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
+main {
+    flex-grow: 1;
+}
+
+/* --- Header --- */
+header {
+    background-color: var(--surface-color);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-color-admin);
+    margin-bottom: 0.5rem;
+}
+
+header nav {
+    margin-top: 0.5rem;
+}
+
+header nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    margin-left: 20px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    font-weight: 500;
+}
+
+header nav a.active {
+    background-color: var(--primary-color-admin);
+    color: #fff;
+}
+
+header nav a:hover:not(.active) {
+    background-color: var(--border-color);
+}
+
+
+/* --- Footer --- */
+footer {
+    background-color: var(--surface-color);
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+footer a {
+    color: var(--primary-color-admin);
+    text-decoration: none;
+}
+footer a:hover {
+    text-decoration: underline;
+}
+
+
+/* --- Card --- */
 .card {
     background-color: var(--surface-color);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     padding: 2rem;
-    margin-bottom: 2rem;
-    border: 1px solid var(--border-color);
+    margin-top: 20px;
 }
 
-h2 {
+.card h2, .card h3 {
+    margin-top: 0;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    color: var(--primary-color-admin);
     font-size: 1.4rem;
     margin-bottom: 1.5rem;
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 0.5rem;
 }
 
+/* --- Forms --- */
 .form-group {
     margin-bottom: 1.25rem;
 }
 
-label {
+.form-group label {
     display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
+    font-weight: bold;
     font-size: 0.9rem;
 }
 
-input, select, textarea {
+.form-group input[type="text"],
+.form-group input[type="file"],
+.form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #cbd5e1;
+    padding: 10px;
+    border: 1px solid var(--dark-gray);
     border-radius: 4px;
+    box-sizing: border-box;
     font-size: 1rem;
-    transition: border-color 0.2s;
 }
 
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--secondary-color);
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
 }
 
-button {
-    background-color: var(--secondary-color);
-    color: white;
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+.form-note {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* --- Buttons --- */
+.btn {
+    padding: 10px 15px;
     border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 1rem;
     font-weight: 500;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-button:hover {
-    background-color: #128f76;
+.btn-primary {
+    background-color: var(--primary-color-admin);
+    color: #fff;
 }
 
-button.danger {
-    background-color: var(--error-color);
+.btn-primary:hover:not(:disabled) {
+    background-color: #357ABD;
 }
 
-button.danger:hover {
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
     background-color: #c0392b;
 }
 
-button.secondary-btn {
-    background-color: #7f8c8d;
-}
 
-button.secondary-btn:hover {
-    background-color: #95a5a6;
-}
-
-/* Flex layout utilities */
-.grid-2 {
+/* --- Admin Page Specifics --- */
+main.admin-main {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 20px;
 }
 
-@media (max-width: 768px) {
-    .grid-2 {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Progress indicator styles */
-.progress-container {
-    margin-top: 1rem;
+.progress-wrapper {
+    margin-top: 15px;
     display: none;
 }
-
+.progress-wrapper label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
 .progress-bar {
     background-color: var(--border-color);
-    border-radius: 4px;
+    border-radius: 5px;
     overflow: hidden;
+    width: 100%;
     height: 20px;
 }
 
 .progress-fill {
-    background-color: var(--secondary-color);
+    background-color: var(--success-color);
     height: 100%;
     width: 0%;
-    transition: width 0.3s ease;
+    transition: width 0.25s;
 }
 
-.progress-status {
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    color: var(--text-muted);
-}
-
-/* Table styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1.5rem;
-}
-
-th, td {
-    border: 1px solid var(--border-color);
-    padding: 0.75rem;
-    text-align: left;
-}
-
-th {
-    background-color: #f1f5f9;
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-/* Marksheet Print/Export Layout */
-.marksheet-wrapper {
-    background: #fff;
-    padding: 2rem;
-    border: 2px solid #333;
-    max-width: 800px;
-    margin: 2rem auto;
-    color: #000;
-}
-
-.marksheet-header {
-    text-align: center;
-    border-bottom: 2px double #333;
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.marksheet-header h2 {
-    border: none;
-    margin: 0;
-    padding: 0;
-    font-size: 1.6rem;
-    text-transform: uppercase;
-}
-
-.marksheet-meta {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.95rem;
-}
-
-.meta-item span {
+#progress-percent, #replace-progress-percent {
     font-weight: bold;
-}
-
-.marksheet-footer {
-    margin-top: 2.5rem;
-    display: flex;
-    justify-content: space-between;
+    margin-left: 10px;
     font-size: 0.9rem;
 }
 
-.signature-space {
-    border-top: 1px solid #333;
-    width: 180px;
+#progress-log, #replace-progress-log {
+    margin-top: 10px;
+    font-size: 0.9em;
+    max-height: 100px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    background-color: #fafafa;
+    border-radius: 4px;
+    line-height: 1.4;
+}
+
+/* --- Table --- */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+td .btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+/* --- Modal --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Student Search Page Specifics --- */
+.hero {
     text-align: center;
-    padding-top: 0.5rem;
+    padding: 2rem 1rem;
+    background-color: var(--surface-color);
+    border-radius: 8px;
+    margin-top: 20px;
+}
+.hero h2 {
+    border: none;
+    padding: 0;
+}
+.hidden {
+    display: none;
 }
 
-.action-bar {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 1rem;
+#results-table-container tbody .btn {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+#no-results-message {
+    text-align: center;
+    padding: 2rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+/* Marksheet Modal */
+#marksheet-outer-container .modal-content {
+    max-width: 800px;
+    padding: 0;
+}
+.marksheet-header {
+    text-align: center;
+    padding: 2rem;
+    border-bottom: 2px solid var(--border-color);
+}
+.marksheet-header .logo {
+    max-width: 60px;
+    margin-bottom: 1rem;
+}
+.marksheet-header h2 {
+    border: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+.marksheet-header h3 {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+.marksheet-body {
+    padding: 2rem;
+}
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+.detail-item {
+    padding: 10px;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+.detail-label {
+    display: block;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+.detail-value {
+    font-size: 1rem;
+}
+.marks-section {
+    margin-top: 2rem;
+    background: #f0f4f8;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+}
+.marks-section .detail-item.wide {
+    background: none;
+    display: inline-block;
+    margin: 0 1.5rem;
+}
+.marks-section .detail-item.score .detail-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
-/* Exam Management Table Styles */
-.exam-item {
+.marksheet-footer {
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: #f8f9fa;
+    border-top: 1px solid var(--border-color);
+}
+.modal-actions {
+    text-align: center;
+    padding: 1.5rem;
+    background: #f1f5f9;
+    border-top: 1px solid var(--border-color);
+}
+/* Admin Modal */
+.modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
     border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
 }
-
-.exam-item:last-child {
-    border-bottom: none;
+.modal-header h2 {
+    border: none;
+    margin: 0; padding: 0;
+}
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    header h1, header nav {
+        margin-bottom: 1rem;
+    }
+    header nav a {
+        margin-left: 0;
+        margin-right: 10px;
+    }
 }
