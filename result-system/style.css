@@ -1,23 +1,26 @@
-/**
- * @file Shared stylesheet for Marudhara Exam Result Portal (Admin and Student).
- * @version 1.1.0
- */
-
+/* ==========================================================================
+   CSS Resets & Variables Configuration
+   ========================================================================== */
 :root {
-    --primary-color: #2c3e50;
-    --secondary-color: #18bc9c;
-    --primary-color-admin: #4A90E2;
-    --danger-color: #e74c3c;
-    --success-color: #2ecc71;
-    --background-color: #f4f5f7;
-    --surface-color: #ffffff;
-    --text-color: #333;
-    --text-muted: #7f8c8d;
-    --border-color: #ecf0f1;
-    --dark-gray: #bdc3c7;
+    --primary: #1e3a8a;       /* Classic Deep Navy */
+    --primary-light: #3b82f6; /* Modern Blue Accent */
+    --accent: #f59e0b;        /* Professional Amber/Orange */
+    --accent-light: #fef3c7;  /* Soft Amber Alert/Highlight */
+    --text-dark: #1e293b;     /* Primary Charcoal Body text */
+    --text-muted: #64748b;    /* Secondary Muted text */
+    --bg-main: #f8fafc;       /* Clean Cool Gray Screen Background */
+    --card-bg: #ffffff;       /* Pure White Cards */
+    --border-color: #cbd5e1;  /* Structural Grid/Border Line color */
+    --border-light: #e2e8f0;  /* Subtle divider line */
+    --success: #10b981;       /* Operational Success indicator (Green) */
+    --danger: #ef4444;        /* Critical Error/Alert/Delete action (Red) */
+    --danger-light: #fee2e2;  /* Soft Danger panel */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* --- General & Reset --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -25,414 +28,873 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    font-family: var(--font-sans);
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-.container {
-    width: 100%;
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================================
+   Main Portal Header Styles
+   ========================================================================== */
+.main-header {
+    background-color: var(--card-bg);
+    border-bottom: 2px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
-}
-
-main {
-    flex-grow: 1;
-}
-
-/* --- Header --- */
-header {
-    background-color: var(--surface-color);
-    padding: 1rem 2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--primary-color-admin);
-    margin-bottom: 0.5rem;
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-header nav {
-    margin-top: 0.5rem;
+.header-text h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: -0.025em;
 }
 
-header nav a {
-    color: var(--text-color);
-    text-decoration: none;
-    margin-left: 20px;
-    padding: 8px 12px;
-    border-radius: 5px;
-    transition: background-color 0.3s;
+.header-text .subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
     font-weight: 500;
 }
 
-header nav a.active {
-    background-color: var(--primary-color-admin);
-    color: #fff;
-}
-
-header nav a:hover:not(.active) {
-    background-color: var(--border-color);
-}
-
-
-/* --- Footer --- */
-footer {
-    background-color: var(--surface-color);
-    text-align: center;
-    padding: 20px;
-    margin-top: auto;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
-}
-footer a {
-    color: var(--primary-color-admin);
+.nav-links a {
     text-decoration: none;
-}
-footer a:hover {
-    text-decoration: underline;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
 }
 
+.admin-portal-link {
+    color: var(--primary);
+    background-color: #eff6ff;
+    border: 1px solid #dbeafe;
+}
 
-/* --- Card --- */
-.card {
-    background-color: var(--surface-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+.admin-portal-link:hover {
+    background-color: #dbeafe;
+}
+
+.portal-home-link {
+    color: var(--text-muted);
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+}
+
+.portal-home-link:hover {
+    background-color: var(--border-light);
+}
+
+/* ==========================================================================
+   Structural Layout Containers
+   ========================================================================== */
+.portal-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+/* Search Card Forms and Controls Panel Layouts */
+.search-card {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-light);
     padding: 2rem;
-    margin-top: 20px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
 }
 
-.card h2, .card h3 {
-    margin-top: 0;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
-    color: var(--primary-color-admin);
-    font-size: 1.4rem;
+.card-title {
+    font-size: 1.25rem;
+    color: var(--primary);
+    font-weight: 700;
     margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-light);
+    padding-bottom: 0.5rem;
 }
 
-/* --- Forms --- */
+/* ==========================================================================
+   Form Input Styles (Responsive Grid Alignment)
+   ========================================================================== */
 .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
 }
 
-.form-group input[type="text"],
-.form-group input[type="file"],
-.form-group select {
+.required-label::after {
+    content: " *";
+    color: var(--danger);
+}
+
+input[type="text"],
+select {
     width: 100%;
-    padding: 10px;
-    border: 1px solid var(--dark-gray);
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--text-dark);
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-grid {
+input[type="text"]:focus,
+select:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background-color: var(--card-bg);
+}
+
+/* Radio Button Group Selection Custom Styles */
+.radio-group {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    background-color: var(--bg-main);
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.radio-label:hover {
+    border-color: var(--primary-light);
+    background-color: #f1f5f9;
+}
+
+.radio-label input[type="radio"] {
+    accent-color: var(--primary);
+    width: 1.15rem;
+    height: 1.15rem;
+}
+
+/* File Dropzone Drag Area */
+.file-dropzone-wrapper {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: var(--bg-main);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.file-dropzone-wrapper:hover {
+    border-color: var(--primary-light);
+    background-color: #eff6ff;
+}
+
+.file-dropzone-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.dropzone-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+}
+
+.upload-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--primary-light);
+}
+
+.file-specs {
+    font-size: 0.75rem;
+}
+
+.selected-file-badge {
+    margin-top: 0.75rem;
+    background-color: var(--accent-light);
+    color: #92400e;
+    border: 1px solid #fde68a;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* ==========================================================================
+   Action Buttons Global Styles
+   ========================================================================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1e40af;
+}
+
+.btn-secondary {
+    background-color: #e2e8f0;
+    color: #334155;
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: #cbd5e1;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-full {
+    width: 100%;
 }
 
 .form-actions {
-    margin-top: 20px;
     display: flex;
-    gap: 10px;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
-.form-note {
-    margin-top: 15px;
+
+.form-actions-admin {
+    margin-top: 1.5rem;
+}
+
+/* ==========================================================================
+   Responsive Tables Styles
+   ========================================================================== */
+.results-section {
+    margin-top: 2rem;
+}
+
+.results-heading {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.results-table th {
+    background-color: #f1f5f9;
+    color: var(--primary);
+    font-weight: 700;
+    padding: 1rem;
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.results-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-dark);
+}
+
+.results-table tr:last-child td {
+    border-bottom: none;
+}
+
+.results-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Action Trigger Mini Button */
+.btn-view-result {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    background-color: var(--primary-light);
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-view-result:hover {
+    background-color: #2563eb;
+}
+
+/* ==========================================================================
+   Loading, Messages, Alerts & Fallbacks
+   ========================================================================== */
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem;
+}
+
+.spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 4px solid var(--border-light);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.no-records-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.alert-icon {
+    width: 3rem;
+    height: 3rem;
+    color: #eab308;
+}
+
+/* ==========================================================================
+   Modals Base Structuring
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+    z-index: 1000;
+}
+
+.modal-container {
+    background-color: var(--card-bg);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 800px;
+    position: relative;
+    margin-top: 2rem;
+}
+
+.modal-small {
+    max-width: 500px;
+}
+
+.modal-header-simple {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-simple h3 {
+    font-size: 1.1rem;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.btn-icon-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.modal-body-simple {
+    padding: 1.5rem;
+}
+
+.modal-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.modal-simple-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.modal-actions-top {
+    position: sticky;
+    top: 0;
+    background-color: #f1f5f9;
+    padding: 0.75rem 1.5rem;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-download {
+    background-color: var(--success);
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.btn-download:hover {
+    background-color: #059669;
+}
+
+.btn-close-modal {
+    background-color: #64748b;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.btn-close-modal:hover {
+    background-color: #475569;
+}
+
+/* ==========================================================================
+   Admin Specific Grid & Elements
+   ========================================================================== */
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media(min-width: 992px) {
+    .admin-grid {
+        grid-template-columns: 1.5fr 1fr;
+    }
+}
+
+.progress-panel {
+    background-color: #f8fafc;
+    border: 2px solid var(--primary);
+}
+
+.progress-details {
+    margin-bottom: 1rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.detail-label {
+    font-weight: 600;
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
-/* --- Buttons --- */
-.btn {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    transition: background-color 0.3s, opacity 0.3s;
-}
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+.detail-value {
+    font-size: 0.85rem;
+    color: var(--text-dark);
 }
 
-.btn-primary {
-    background-color: var(--primary-color-admin);
-    color: #fff;
+.text-navy {
+    color: var(--primary) !important;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: #357ABD;
+.text-blue {
+    color: var(--primary-light) !important;
 }
 
-.btn-danger {
-    background-color: var(--danger-color);
-    color: white;
-}
-
-.btn-danger:hover:not(:disabled) {
-    background-color: #c0392b;
-}
-
-
-/* --- Admin Page Specifics --- */
-main.admin-main {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-    gap: 20px;
-}
-
-.progress-wrapper {
-    margin-top: 15px;
-    display: none;
-}
-.progress-wrapper label {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
-}
-.progress-bar {
-    background-color: var(--border-color);
-    border-radius: 5px;
+.progress-bar-track {
+    width: 100%;
+    height: 0.75rem;
+    background-color: var(--border-light);
+    border-radius: 9999px;
     overflow: hidden;
-    width: 100%;
-    height: 20px;
+    margin-top: 1rem;
 }
 
-.progress-fill {
-    background-color: var(--success-color);
+.progress-bar-fill {
     height: 100%;
-    width: 0%;
-    transition: width 0.25s;
+    background-color: var(--primary);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
 }
 
-#progress-percent, #replace-progress-percent {
-    font-weight: bold;
-    margin-left: 10px;
-    font-size: 0.9rem;
+.percentage-display {
+    margin-top: 0.5rem;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-dark);
 }
 
-#progress-log, #replace-progress-log {
-    margin-top: 10px;
-    font-size: 0.9em;
-    max-height: 100px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    background-color: #fafafa;
-    border-radius: 4px;
-    line-height: 1.4;
+.operation-warning-box {
+    margin-top: 1.5rem;
+    background-color: var(--accent-light);
+    border: 1px solid #fcd34d;
+    padding: 1rem;
+    border-radius: 0.375rem;
 }
 
-/* --- Table --- */
-.table-responsive {
-    overflow-x: auto;
-    width: 100%;
+.warning-badge {
+    background-color: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-
-th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-}
-td .btn {
-    margin-right: 5px;
-    margin-bottom: 5px;
-}
-
-/* --- Modal --- */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 90%;
-    max-width: 500px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-/* --- Student Search Page Specifics --- */
-.hero {
-    text-align: center;
-    padding: 2rem 1rem;
-    background-color: var(--surface-color);
-    border-radius: 8px;
-    margin-top: 20px;
-}
-.hero h2 {
-    border: none;
-    padding: 0;
-}
-.hidden {
-    display: none;
-}
-
-#results-table-container tbody .btn {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-}
-#no-results-message {
-    text-align: center;
-    padding: 2rem;
+.operation-warning-box p {
+    font-size: 0.8rem;
+    color: #92400e;
     font-weight: 500;
-    color: var(--text-muted);
 }
-/* Marksheet Modal */
-#marksheet-outer-container .modal-content {
-    max-width: 800px;
-    padding: 0;
+
+/* Operation Mini Button Icons */
+.btn-mini-action {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    margin-right: 0.25rem;
+    background-color: white;
+    color: var(--text-dark);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
 }
-.marksheet-header {
+
+.btn-mini-action:hover {
+    background-color: var(--bg-main);
+}
+
+.btn-mini-danger {
+    color: var(--danger);
+    border-color: #fca5a5;
+}
+
+.btn-mini-danger:hover {
+    background-color: var(--danger-light);
+}
+
+.btn-mini-accent {
+    color: #d97706;
+    border-color: #fcd34d;
+}
+
+.btn-mini-accent:hover {
+    background-color: var(--accent-light);
+}
+
+.table-placeholder-row {
     text-align: center;
-    padding: 2rem;
-    border-bottom: 2px solid var(--border-color);
+    padding: 2rem !important;
+    color: var(--text-muted);
+    font-style: italic;
 }
-.marksheet-header .logo {
-    max-width: 60px;
-    margin-bottom: 1rem;
+
+.text-danger-alert {
+    color: #b91c1c;
 }
-.marksheet-header h2 {
-    border: none;
-    padding: 0;
+
+/* ==========================================================================
+   OFFICIAL MARKSHEET DESIGN LAYOUT (High Quality capture block)
+   ========================================================================== */
+.marksheet-wrapper {
+    background-color: white;
+    padding: 2.5rem;
+    border: 12px double var(--primary); /* Traditional Academic Double Border */
+    color: black;
+    position: relative;
+    font-family: var(--font-sans);
+}
+
+.marksheet-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border-bottom: 3px double var(--primary);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.marksheet-logo-box {
+    flex-shrink: 0;
+}
+
+.marksheet-title-box {
+    flex-grow: 1;
+}
+
+.marksheet-title-box h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.15rem;
+}
+
+.marksheet-domain {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+}
+
+.divider-line {
+    height: 2px;
+    background-color: var(--primary);
     margin: 0.5rem 0;
 }
-.marksheet-header h3 {
-    border: none;
-    padding: 0;
-    margin: 0;
-    font-size: 1.2rem;
-    color: var(--text-muted);
+
+.marksheet-exam-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 0.25rem;
+    text-transform: uppercase;
 }
-.marksheet-body {
-    padding: 2rem;
+
+/* Traditional Academic Score Table styling */
+.marksheet-data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
 }
-.details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 1rem;
+
+.marksheet-data-table th,
+.marksheet-data-table td {
+    border: 1px solid #475569;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
 }
-.detail-item {
-    padding: 10px;
-    border-radius: 4px;
-    background: #f9f9f9;
+
+.marksheet-data-table th {
+    background-color: #f8fafc;
+    color: var(--text-dark);
+    font-weight: 700;
+    text-align: left;
+    width: 25%;
 }
-.detail-label {
-    display: block;
-    font-weight: bold;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+
+.marksheet-data-table td {
+    color: black;
+    width: 25%;
 }
-.detail-value {
+
+.uppercase-val {
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.highlight-val {
+    font-weight: 700;
     font-size: 1rem;
 }
-.marks-section {
-    margin-top: 2rem;
-    background: #f0f4f8;
-    padding: 1.5rem;
-    border-radius: 8px;
-    text-align: center;
+
+.marks-summary-row {
+    background-color: #eff6ff;
 }
-.marks-section .detail-item.wide {
-    background: none;
-    display: inline-block;
-    margin: 0 1.5rem;
+
+.marks-summary-row th.marks-label {
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: 0.025em;
+    padding: 1.25rem 1rem;
+    border-top: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
 }
-.marks-section .detail-item.score .detail-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: var(--primary-color);
+
+.marks-summary-row td.marks-value {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--primary);
+    text-align: right;
+    padding: 0.75rem 1.5rem;
+    border-top: 2px solid var(--primary);
+    border-bottom: 2px solid var(--primary);
 }
 
 .marksheet-footer {
-    padding: 1.5rem 2rem;
-    text-align: center;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    background: #f8f9fa;
-    border-top: 1px solid var(--border-color);
-}
-.modal-actions {
-    text-align: center;
-    padding: 1.5rem;
-    background: #f1f5f9;
-    border-top: 1px solid var(--border-color);
-}
-/* Admin Modal */
-.modal-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    align-items: flex-end;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 1.5rem;
+    margin-top: 2rem;
 }
-.modal-header h2 {
-    border: none;
-    margin: 0; padding: 0;
+
+.footer-sign-off {
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
-.close {
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
+
+.stamp-text {
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
-@media (max-width: 768px) {
-    header {
+
+.official-url {
+    font-weight: 600;
+    color: var(--primary-light);
+}
+
+.timestamp-stamp {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ==========================================================================
+   Responsive Media Adaptations
+   ========================================================================== */
+@media(max-width: 768px) {
+    .header-container {
         flex-direction: column;
-        align-items: flex-start;
+        gap: 1rem;
+        text-align: center;
     }
-    header h1, header nav {
-        margin-bottom: 1rem;
+    
+    .logo-wrapper {
+        flex-direction: column;
+        gap: 0.5rem;
     }
-    header nav a {
-        margin-left: 0;
-        margin-right: 10px;
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .marksheet-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .marksheet-data-table th,
+    .marksheet-data-table td {
+        display: block;
+        width: 100% !important;
+    }
+
+    .marksheet-data-table th {
+        background-color: #f1f5f9;
+        border-bottom: none;
+    }
+
+    .marksheet-data-table td {
+        border-top: none;
+        margin-bottom: 0.25rem;
+    }
+
+    .marks-summary-row th.marks-label,
+    .marks-summary-row td.marks-value {
+        text-align: center;
     }
 }
