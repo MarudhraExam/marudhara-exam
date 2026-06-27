@@ -44,6 +44,8 @@ export {
   where,
   orderBy,
   limit,
+  startAt,
+  endAt,
   writeBatch,
   serverTimestamp
 };
