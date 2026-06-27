@@ -373,19 +373,24 @@ motherInput.value = '';
 });
 
 // Reset results when search field changes
-searchField.addEventListener('change', () => {
-  resultsSection.classList.remove('visible');
-  resultsTbody.innerHTML = '';
-  hideSearchAlert();
-  searchInput.value = '';
-  // Update placeholder
-  const placeholders = {
-    searchRoll:   'Enter roll number…',
-    searchName:   'Enter candidate name…',
-    searchFather: 'Enter father name…',
-    searchMother: 'Enter mother name…'
-  };
-  searchInput.placeholder = placeholders[searchField.value] || 'Enter value to search…';
+rollInput.addEventListener('input', () => {
+  if (rollInput.value.trim()) {
+    nameInput.disabled = true;
+    fatherInput.disabled = true;
+    motherInput.disabled = true;
+  } else {
+    nameInput.disabled = false;
+    fatherInput.disabled = false;
+    motherInput.disabled = false;
+  }
+});
+
+nameInput.addEventListener('input', () => {
+  if (nameInput.value.trim()) {
+    rollInput.disabled = true;
+  } else {
+    rollInput.disabled = false;
+  }
 });
 
 // ── Init ─────────────────────────────────────────────────────
