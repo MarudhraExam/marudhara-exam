@@ -3,153 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marudhara Exam - Admin Management Dashboard</title>
-    <!-- Stylesheet -->
+    <title>Marudhara Exam - Admin Dashboard</title>
+    <!-- Combined Stylesheet Interface -->
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Google Fonts for Professional Appearance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SheetJS (XLSX) CDN to process multiple Excel sheets in the browser -->
+    <!-- SheetJS CDN to process multiple Excel sheets in the browser -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-    <!-- Header Section -->
-    <header class="main-header">
-        <div class="header-container">
-            <div class="logo-wrapper">
-                <svg width="50" height="50" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Marudhara Exam Logo">
-                    <circle cx="50" cy="50" r="45" stroke="#1e3a8a" stroke-width="8" fill="#f8fafc"/>
-                    <path d="M50 20 L25 45 H35 V75 H65 V45 H75 Z" fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2" stroke-linejoin="round"/>
-                    <circle cx="50" cy="52" r="6" fill="#f59e0b"/>
-                </svg>
-                <div class="header-text">
-                    <h1>Marudhara Exam Admin</h1>
-                    <p class="subtitle">Result Management Control Panel</p>
+    <div class="app-shell">
+
+        <!-- ==========================================================================
+             LEFT SIDEBAR ARCHITECTURE (Desktop Persistent / Mobile Off-Screen Drawer)
+             ========================================================================== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-circle">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" stroke="#103f91" stroke-width="8" fill="#ffffff"/>
+                        <path d="M50 20 L25 45 H35 V75 H65 V45 H75 Z" fill="#103f91" stroke="#103f91" stroke-width="2" stroke-linejoin="round"/>
+                        <circle cx="50" cy="52" r="6" fill="#f97316"/>
+                    </svg>
+                </div>
+                <div class="logo-meta">
+                    <h2>Marudhara</h2>
+                    <p>ADMIN PANEL</p>
                 </div>
             </div>
-            <nav class="nav-links">
-                <a href="index.html" class="portal-home-link">← Return to Search Portal</a>
-            </nav>
-        </div>
-    </header>
 
-    <!-- Admin Body Container -->
-    <main class="portal-container">
-        
-        <!-- Grid layout for Form actions and global configurations -->
-        <div class="admin-grid">
+            <!-- Navigation Lists -->
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="sidebar-link active">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#importCard" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>Import Result</span>
+                </a>
+                <a href="#activeExams" class="sidebar-link">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Uploaded Exams</span>
+                </a>
+                <a href="#" class="sidebar-link" onclick="alert('Configuration profiles are managed natively via Firestore settings.')">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>&copy; 2026 Marudhara Exam</p>
+                <p style="color: var(--text-muted); font-size: 0.65rem; margin-top: 0.25rem;">Result System v2.0</p>
+            </div>
+        </aside>
+
+        <!-- Sidebar overlay for Mobile Drawer trigger -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- ==========================================================================
+             RIGHT CONTENT WORKSPACE (Sticky Header + Summary Cards + Control Grids)
+             ========================================================================== -->
+        <div class="app-content">
             
-            <!-- Section A: Upload / Creation Area -->
-            <section class="search-card admin-form-card">
-                <h2 class="card-title">Import New Exam Result Set</h2>
-                <form id="uploadForm" novalidate>
-                    <!-- Exam Name Input -->
-                    <div class="form-group">
-                        <label for="newExamName" class="required-label">Exam Name</label>
-                        <input type="text" id="newExamName" placeholder="e.g., LDC Grade-II & Junior Assistant Exam 2026" required autocomplete="off">
+            <!-- Sticky Header -->
+            <header class="app-header">
+                <div class="header-inner">
+                    <div class="header-title-wrapper">
+                        <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open navigation sidebar">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <div class="header-text-group">
+                            <h1>Marudhara Exam</h1>
+                            <p>Result Management System</p>
+                        </div>
+                    </div>
+                    <a href="index.html" class="external-nav-btn">← Public Search Portal</a>
+                </div>
+            </header>
+
+            <!-- Workspace Frame -->
+            <main class="workspace">
+
+                <!-- 1. TOP SUMMARY METRICS (Dashboard Cards) -->
+                <section class="metric-grid" id="dashboard">
+                    <div class="metric-card m-exams">
+                        <div class="metric-card-content">
+                            <h4>Total Exams</h4>
+                            <div class="metric-val" id="summaryTotalExams">0</div>
+                            <p>Active result lists</p>
+                        </div>
+                        <div class="metric-icon-box">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:24px; height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                        </div>
                     </div>
 
-                    <!-- File Picker Input -->
-                    <div class="form-group">
-                        <label for="excelFile" class="required-label">Select Excel Result File (.xlsx, .xls)</label>
-                        <div class="file-dropzone-wrapper">
-                            <input type="file" id="excelFile" accept=".xlsx, .xls" required>
-                            <div class="dropzone-prompt">
-                                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    <path d="M12 5v14M5 12h14"></path>
-                                </svg>
-                                <span>Choose a file or drag & drop</span>
-                                <p class="file-specs">Strictly supports multi-sheet format files. Header in Sheet 1.</p>
+                    <div class="metric-card m-students">
+                        <div class="metric-card-content">
+                            <h4>Total Students</h4>
+                            <div class="metric-val" id="summaryTotalStudents">0</div>
+                            <p>Imported candidates</p>
+                        </div>
+                        <div class="metric-icon-box">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:24px; height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="metric-card m-upload">
+                        <div class="metric-card-content">
+                            <h4>Last Upload</h4>
+                            <div class="metric-val" id="summaryLastUpload" style="font-size: 1.25rem; white-space: nowrap;">N/A</div>
+                            <p>Most recent sync window</p>
+                        </div>
+                        <div class="metric-icon-box">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:24px; height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="metric-card m-status">
+                        <div class="metric-card-content">
+                            <h4>Database Status</h4>
+                            <div class="metric-val" style="font-size: 1.4rem;">
+                                <span class="live-pulse"></span>ACTIVE
+                            </div>
+                            <p>Sync Engine Connected</p>
+                        </div>
+                        <div class="metric-icon-box">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:24px; height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CONTROL DASHBOARD INNER GRID -->
+                <section class="workspace-grid">
+                    
+                    <!-- Import Card Container -->
+                    <div class="dashboard-card" id="importCard">
+                        <div class="card-header-bar">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <h3>Import New Exam Dataset</h3>
+                        </div>
+                        <div class="card-body-block">
+                            <form id="uploadForm" novalidate>
+                                <div class="form-group-block">
+                                    <label for="newExamName" class="required-marker">Exam Name</label>
+                                    <input type="text" id="newExamName" placeholder="e.g., Rajasthan LDC Exam 2026" required autocomplete="off">
+                                </div>
+
+                                <div class="form-group-block">
+                                    <label for="excelFile" class="required-marker">Select Excel Worksheet</label>
+                                    <div class="premium-dropzone">
+                                        <input type="file" id="excelFile" accept=".xlsx, .xls" required>
+                                        <div class="dropzone-view">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span class="dropzone-title">Choose File or Drag Spreadsheet here</span>
+                                            <span class="dropzone-meta">Supports multi-sheet format files. First sheet must contain headers.</span>
+                                        </div>
+                                    </div>
+                                    <!-- Selected file badge -->
+                                    <div id="fileSelectedDisplay" class="loaded-file-badge hidden"></div>
+                                </div>
+
+                                <button type="submit" id="uploadBtn" class="btn-core btn-accent">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:18px; height:18px;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                    <span>Process & Import Records</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Live Progress Monitor Overlay Card -->
+                    <div id="uploadProgressContainer" class="sync-panel-monitor hidden">
+                        <div class="sync-header">
+                            <div class="sync-title">
+                                <span class="sync-pulse-indicator"></span>
+                                <span id="progressStatusText">Initializing synchronization...</span>
+                            </div>
+                            <span class="sync-val" style="color: var(--accent);" id="processedCountText">0 / 0</span>
+                        </div>
+
+                        <div class="sync-row">
+                            <span class="sync-lbl">Operations Target:</span>
+                            <span class="sync-val">Batch Commit (Firestore Write)</span>
+                        </div>
+
+                        <!-- Tubed Progress fill -->
+                        <div class="sync-progress-tube">
+                            <div id="progressBar" class="sync-progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="sync-percentage-bubble" id="progressPercent">0%</div>
+
+                        <div class="sync-warning">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div>
+                                <p style="font-weight:700; margin-bottom:0.15rem;">DO NOT INTERRUPT OR CLOSE WINDOW</p>
+                                <p>System commits batches of 500 rows to ensure Firestore integrity. Stopping now leaves partial datasets.</p>
                             </div>
                         </div>
-                        <div id="fileSelectedDisplay" class="selected-file-badge hidden"></div>
+                    </div>
+                </section>
+
+                <!-- 3. CURRENT ACTIVE DATASET SECTION -->
+                <section class="active-exams-wrapper" id="activeExams">
+                    <div class="section-head-bar">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <h3>Active Result Datasets</h3>
                     </div>
 
-                    <!-- Form Submissions Actions -->
-                    <div class="form-actions-admin">
-                        <button type="submit" id="uploadBtn" class="btn btn-primary btn-full">
-                            <span>Process & Import Records</span>
-                        </button>
+                    <div class="custom-table-container">
+                        <div style="overflow-x: auto;">
+                            <table class="custom-responsive-table">
+                                <thead>
+                                    <tr>
+                                        <th>Exam Name</th>
+                                        <th>Source File Reference</th>
+                                        <th>Records count</th>
+                                        <th>Import Date</th>
+                                        <th style="text-align: right;">Operations Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="examsTableBody">
+                                    <tr>
+                                        <td colspan="5" class="table-placeholder-cell">Initializing system interface components...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </form>
-            </section>
+                </section>
 
-            <!-- Section B: Live Progress Dashboard panel (Displays conditionally during processing) -->
-            <section id="uploadProgressContainer" class="search-card progress-panel hidden">
-                <h2 class="card-title text-navy">Execution & Synchronization Monitor</h2>
-                
-                <div class="progress-details">
-                    <div class="detail-row">
-                        <span class="detail-label">Status:</span>
-                        <strong id="progressStatusText" class="detail-value text-blue">Initializing parser engine...</strong>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Records Processed:</span>
-                        <strong id="processedCountText" class="detail-value">0 / 0</strong>
-                    </div>
-                </div>
-
-                <!-- Horizontal Progress Tracker -->
-                <div class="progress-bar-track">
-                    <div id="progressBar" class="progress-bar-fill" style="width: 0%;"></div>
-                </div>
-                <div class="percentage-display">
-                    <span id="progressPercent">0%</span> Complete
-                </div>
-
-                <!-- Safe Block Overlay Warning -->
-                <div class="operation-warning-box">
-                    <span class="warning-badge">Do Not Close Browser Window</span>
-                    <p>Writing records directly to Firestore via batched chunks. Aborting now will result in fragmented or partial database collections.</p>
-                </div>
-            </section>
+            </main>
         </div>
+    </div>
 
-        <!-- Section C: Active / Configured Exams Table list -->
-        <section class="results-section active-exams-box">
-            <h3 class="results-heading">Active Result Datasets</h3>
-            <div class="table-responsive">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Exam Name</th>
-                            <th>Source File Name</th>
-                            <th>Records Count</th>
-                            <th>Import Date</th>
-                            <th class="text-center">Operations Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="examsTableBody">
-                        <!-- Instantiated Dynamically via Admin JS controller -->
-                        <tr>
-                            <td colspan="5" class="table-placeholder-row">Loading active collections from Firestore...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+    <!-- ==========================================================================
+         MODAL FORMS SYSTEMS (Title modification / Spreadsheets Replacements)
+         ========================================================================== -->
 
-    <!-- Modal Form: Edit Exam Name -->
-    <div id="editNameModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editNameModalTitle">
-        <div class="modal-container modal-small">
-            <header class="modal-header-simple">
-                <h3 id="editNameModalTitle">Modify Examination Title</h3>
-                <button type="button" class="btn-icon-close" id="cancelEditBtn">✕</button>
+    <!-- Modal Form: Edit Exam Title -->
+    <div id="editNameModal" class="modal-backdrop-layer hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <header class="modal-head-row">
+                <h3>Modify Examination Title</h3>
+                <button type="button" class="modal-dismiss-btn" id="cancelEditBtn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </header>
-            <div class="modal-body-simple">
-                <p class="modal-desc">This cascade operation updates both the primary index table and every individual candidate's result record reference.</p>
+            <div class="modal-content-pad">
+                <p class="modal-helper-text">This updates both the primary statistics catalog and all linked candidate result documents.</p>
                 <form id="editNameForm" novalidate>
                     <input type="hidden" id="editExamId">
-                    <div class="form-group">
-                        <label for="editExamNameInput" class="required-label">Updated Exam Name</label>
+                    <div class="form-group-block">
+                        <label for="editExamNameInput" class="required-marker">Updated Exam Name</label>
                         <input type="text" id="editExamNameInput" required autocomplete="off">
                     </div>
-                    <div class="modal-simple-actions">
-                        <button type="button" class="btn btn-secondary" id="closeEditModalBtn">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="saveExamNameBtn">Cascade Save</button>
+                    <div class="modal-actions-tray">
+                        <button type="button" class="btn-core btn-slate btn-inline" id="closeEditModalBtn">Cancel</button>
+                        <button type="submit" class="btn-core btn-accent btn-inline" id="saveExamNameBtn">Cascade Save</button>
                     </div>
                 </form>
             </div>
@@ -157,30 +297,37 @@
     </div>
 
     <!-- Modal Form: Replace Excel Spreadsheet Data -->
-    <div id="replaceExcelModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="replaceExcelModalTitle">
-        <div class="modal-container modal-small">
-            <header class="modal-header-simple">
-                <h3 id="replaceExcelModalTitle">Replace Exam Dataset</h3>
-                <button type="button" class="btn-icon-close" id="cancelReplaceBtn">✕</button>
+    <div id="replaceExcelModal" class="modal-backdrop-layer hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <header class="modal-head-row">
+                <h3>Replace Exam Dataset</h3>
+                <button type="button" class="modal-dismiss-btn" id="cancelReplaceBtn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </header>
-            <div class="modal-body-simple">
-                <p class="modal-desc text-danger-alert"><strong>Warning:</strong> Proceeding deletes every existing candidate reference of this exam before writing the fresh worksheet import.</p>
+            <div class="modal-content-pad">
+                <p class="modal-helper-text" style="color: var(--danger); font-weight:600;">Warning: This cascading action deletes every existing candidate sheet reference before importing the new file.</p>
                 <form id="replaceExcelForm" novalidate>
                     <input type="hidden" id="replaceExamId">
                     <input type="hidden" id="replaceExamNameVal">
                     
-                    <div class="form-group">
-                        <label for="replaceExcelInput" class="required-label">Select Fresh Spreadsheet (.xlsx, .xls)</label>
-                        <div class="file-dropzone-wrapper">
+                    <div class="form-group-block">
+                        <label for="replaceExcelInput" class="required-marker">Select Fresh Spreadsheet (.xlsx, .xls)</label>
+                        <div class="premium-dropzone" style="padding: 1.5rem;">
                             <input type="file" id="replaceExcelInput" accept=".xlsx, .xls" required>
-                            <div class="dropzone-prompt">
-                                <span>Choose replacement file</span>
+                            <div class="dropzone-view">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="width:32px; height:32px;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                <span class="dropzone-title" style="font-size:0.85rem;">Click to choose replacement file</span>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-simple-actions">
-                        <button type="button" class="btn btn-secondary" id="closeReplaceModalBtn">Cancel</button>
-                        <button type="submit" class="btn btn-danger" id="confirmReplaceBtn">Proceed Cascade Replace</button>
+                    <div class="modal-actions-tray">
+                        <button type="button" class="btn-core btn-slate btn-inline" id="closeReplaceModalBtn">Cancel</button>
+                        <button type="submit" class="btn-core btn-critical btn-inline" id="confirmReplaceBtn">Proceed Cascade Replace</button>
                     </div>
                 </form>
             </div>
@@ -189,5 +336,91 @@
 
     <!-- Script Entrypoint using ES Modules -->
     <script type="module" src="js/admin.js"></script>
+
+    <!-- ==========================================================================
+         SAFE INLINE DOM METRICS OBSERVER
+         Dynamically populates dashboard KPI statistics directly from the 
+         table contents without modifying the compiled Firestore operational scripts.
+         ========================================================================== -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("sidebarOverlay");
+            const toggle = document.getElementById("menuToggle");
+
+            // Toggle responsive mobile sidebar drawer
+            if(toggle && sidebar && overlay) {
+                toggle.addEventListener("click", () => {
+                    sidebar.classList.toggle("mobile-open");
+                    overlay.classList.toggle("visible");
+                });
+                overlay.addEventListener("click", () => {
+                    sidebar.classList.remove("mobile-open");
+                    overlay.classList.remove("visible");
+                });
+            }
+
+            // Sync navigation highlights based on scroll position / click
+            document.querySelectorAll(".sidebar-link").forEach(link => {
+                link.addEventListener("click", (e) => {
+                    document.querySelectorAll(".sidebar-link").forEach(l => l.classList.remove("active"));
+                    link.classList.add("active");
+                    
+                    // Close drawer on link selection (mobile)
+                    sidebar.classList.remove("mobile-open");
+                    overlay.classList.remove("visible");
+                });
+            });
+
+            // Set up a mutation observer to listen to dynamic changes inside examsTableBody
+            const tableBody = document.getElementById("examsTableBody");
+            const observer = new MutationObserver(() => {
+                const rows = Array.from(tableBody.querySelectorAll("tr"));
+                
+                // Filter out component placeholders
+                const activeRows = rows.filter(r => !r.querySelector(".table-placeholder-cell"));
+                
+                let totalExams = activeRows.length;
+                let totalStudents = 0;
+                let datesCollected = [];
+
+                activeRows.forEach(row => {
+                    const cells = row.querySelectorAll("td");
+                    if (cells.length >= 4) {
+                        // Sum up students count (Column 3)
+                        const countText = cells[2].textContent.replace(/,/g, '');
+                        const val = parseInt(countText, 10);
+                        if (!isNaN(val)) {
+                            totalStudents += val;
+                        }
+
+                        // Collect upload dates (Column 4)
+                        const dateVal = cells[3].textContent.trim();
+                        if (dateVal && dateVal !== "N/A" && dateVal !== "N/A") {
+                            datesCollected.push(new Date(dateVal));
+                        }
+                    }
+                });
+
+                // Compute standard dates references
+                let mostRecentDateStr = "N/A";
+                if (datesCollected.length > 0) {
+                    const mostRecent = new Date(Math.max.apply(null, datesCollected));
+                    mostRecentDateStr = mostRecent.toLocaleDateString("en-IN", {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                    });
+                }
+
+                // Update UI Counters dynamically
+                document.getElementById("summaryTotalExams").textContent = totalExams;
+                document.getElementById("summaryTotalStudents").textContent = totalStudents.toLocaleString("en-IN");
+                document.getElementById("summaryLastUpload").textContent = mostRecentDateStr;
+            });
+
+            if (tableBody) {
+                observer.observe(tableBody, { childList: true, subtree: true });
+            }
+        });
+    </script>
 </body>
 </html>
