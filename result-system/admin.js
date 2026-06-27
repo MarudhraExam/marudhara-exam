@@ -1,529 +1,657 @@
-/**
- * Marudhara Exam - Admin Controller Operations
- * Handles dynamic Excel parsing, batch chunking, progress updates,
- * and database operations (cascade edit and delete).
- */
+// admin.js — Marudhara Exam Result Search System
+// ES6 Module — imports from existing firebase.js
 
 import {
-    db,
-    collection,
-    doc,
-    getDocs,
-    updateDoc,
-    deleteDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    writeBatch,
-    serverTimestamp
-} from "./firebase-config.js";
+  db
+} from './firebase.js';
 
-// DOM Elements Selection
-const uploadForm = document.getElementById("uploadForm");
-const newExamNameInput = document.getElementById("newExamName");
-const excelFileInput = document.getElementById("excelFile");
-const fileSelectedDisplay = document.getElementById("fileSelectedDisplay");
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  writeBatch,
+  serverTimestamp,
+  orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const uploadProgressContainer = document.getElementById("uploadProgressContainer");
-const progressBar = document.getElementById("progressBar");
-const progressPercent = document.getElementById("progressPercent");
-const progressStatusText = document.getElementById("progressStatusText");
-const processedCountText = document.getElementById("processedCountText");
+// ── Constants ────────────────────────────────────────────────
+const RESULTS_COL       = 'results';
+const STUDENTS_COL      = 'resultStudents';
+const BATCH_SIZE        = 500;
 
-const examsTableBody = document.getElementById("examsTableBody");
+// Header name → Firestore field mapping
+const HEADER_MAP = {
+  SLNO:        'slno',
+  RANK:        'rank',
+  APPLICATION: 'applicationNo',
+  ROLL_NO:     'rollNo',
+  CAND_NAME:   'name',
+  FATHER_NAME: 'fatherName',
+  MOTHER_NAME: 'motherName',
+  DOB:         'dob',
+  GENDER:      'gender',
+  CAT:         'category',
+  HCAT:        'horizontalCategory',
+  FCAT:        'femaleCategory',
+  TSP:         'tsp',
+  NET:         'netMarks',
+  Sel_Cat:     'selectionCategory'
+};
 
-// Modals: Edit Exam Title
-const editNameModal = document.getElementById("editNameModal");
-const editExamIdInput = document.getElementById("editExamId");
-const editExamNameInput = document.getElementById("editExamNameInput");
-const editNameForm = document.getElementById("editNameForm");
-const cancelEditBtn = document.getElementById("cancelEditBtn");
-const closeEditModalBtn = document.getElementById("closeEditModalBtn");
+// ── DOM References ───────────────────────────────────────────
+const examNameInput      = document.getElementById('exam-name-input');
+const excelFileInput     = document.getElementById('excel-file-input');
+const fileDisplay        = document.getElementById('file-display');
+const fileDisplayText    = document.getElementById('file-display-text');
+const importBtn          = document.getElementById('import-btn');
+const importProgressWrap = document.getElementById('import-progress-wrap');
+const importProgressBar  = document.getElementById('import-progress-bar');
+const importProgressLabel= document.getElementById('import-progress-label');
+const globalAlert        = document.getElementById('global-alert');
+const globalAlertText    = document.getElementById('global-alert-text');
+const uploadSummary      = document.getElementById('upload-summary');
+const sumExamName        = document.getElementById('sum-exam-name');
+const sumFileName        = document.getElementById('sum-file-name');
+const sumCount           = document.getElementById('sum-count');
+const sumDate            = document.getElementById('sum-date');
+const examsLoading       = document.getElementById('exams-loading');
+const examsTableWrap     = document.getElementById('exams-table-wrap');
+const examsTbody         = document.getElementById('exams-tbody');
 
-// Modals: Replace Excel
-const replaceExcelModal = document.getElementById("replaceExcelModal");
-const replaceExamIdInput = document.getElementById("replaceExamId");
-const replaceExamNameValInput = document.getElementById("replaceExamNameVal");
-const replaceExcelInput = document.getElementById("replaceExcelInput");
-const replaceExcelForm = document.getElementById("replaceExcelForm");
-const cancelReplaceBtn = document.getElementById("cancelReplaceBtn");
-const closeReplaceModalBtn = document.getElementById("closeReplaceModalBtn");
+// Delete modal
+const deleteModal        = document.getElementById('delete-modal');
+const deleteConfirmText  = document.getElementById('delete-confirm-text');
+const deleteConfirmBtn   = document.getElementById('delete-confirm-btn');
 
-// Expected headers configuration
-const EXPECTED_HEADERS = [
-    'SLNO', 'RANK', 'APPLICATION', 'ROLL_NO', 'CAND_NAME', 
-    'FATHER_NAME', 'MOTHER_NAME', 'DOB', 'GENDER', 'CAT', 
-    'HCAT', 'FCAT', 'TSP', 'NET', 'Sel_Cat'
-];
+// Rename modal
+const renameModal        = document.getElementById('rename-modal');
+const renameInput        = document.getElementById('rename-input');
+const renameConfirmBtn   = document.getElementById('rename-confirm-btn');
 
-// Initialize and Fetch Existing Collections
-document.addEventListener("DOMContentLoaded", fetchActiveExams);
+// Replace modal
+const replaceModal            = document.getElementById('replace-modal');
+const replaceExamNameDisplay  = document.getElementById('replace-exam-name-display');
+const replaceFileInput        = document.getElementById('replace-file-input');
+const replaceFileDisplay      = document.getElementById('replace-file-display');
+const replaceFileDisplayText  = document.getElementById('replace-file-display-text');
+const replaceConfirmBtn       = document.getElementById('replace-confirm-btn');
+const replaceProgressWrap     = document.getElementById('replace-progress-wrap');
+const replaceProgressBar      = document.getElementById('replace-progress-bar');
+const replaceProgressLabel    = document.getElementById('replace-progress-label');
 
-// Display picked file name
-excelFileInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        fileSelectedDisplay.textContent = `Selected File: ${file.name}`;
-        fileSelectedDisplay.classList.remove("hidden");
-    } else {
-        fileSelectedDisplay.classList.add("hidden");
-    }
+// ── State ────────────────────────────────────────────────────
+let pendingDeleteId   = null;
+let pendingRenameId   = null;
+let pendingReplaceId  = null;
+let pendingReplaceName= null;
+
+// ── Utility: Toast ───────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 250);
+  }, 3500);
+}
+
+// ── Utility: Global Alert ────────────────────────────────────
+function showAlert(message, type = 'info') {
+  globalAlert.className = `alert alert-${type}`;
+  globalAlertText.textContent = message;
+  globalAlert.classList.remove('hidden');
+  globalAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAlert() {
+  globalAlert.classList.add('hidden');
+}
+
+// ── Utility: Modal ───────────────────────────────────────────
+function openModal(modalEl) {
+  modalEl.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modalEl) {
+  modalEl.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close buttons via data-close attribute
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.getAttribute('data-close');
+    closeModal(document.getElementById(id));
+  });
 });
 
-/**
- * Parses the Excel file and extracts student records.
- * Uses Sheet 1 row 0 to discover header mapping dynamically.
- * Treats Sheet 2 onwards as purely student data rows.
- */
-async function parseExcelData(file, targetExamName) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true, raw: false });
-                
-                if (workbook.SheetNames.length === 0) {
-                    throw new Error("The selected workbook contains no sheets.");
-                }
-
-                // Parse Sheet 1 first to extract row index mapping dynamically
-                const sheet1Name = workbook.SheetNames[0];
-                const sheet1 = workbook.Sheets[sheet1Name];
-                const sheet1Rows = XLSX.utils.sheet_to_json(sheet1, { header: 1, defval: "" });
-
-                if (sheet1Rows.length === 0) {
-                    throw new Error("First sheet is empty. Header row cannot be identified.");
-                }
-
-                // Locate structural positions dynamically (No hardcoding)
-                const firstRow = sheet1Rows[0].map(h => String(h).trim().toUpperCase());
-                const colMap = {};
-                
-                EXPECTED_HEADERS.forEach(header => {
-                    colMap[header] = firstRow.indexOf(header);
-                });
-
-                // Validation check for mandatory identifiers
-                if (colMap['ROLL_NO'] === -1 || colMap['CAND_NAME'] === -1) {
-                    throw new Error("Critical headers ('ROLL_NO' or 'CAND_NAME') are missing from Sheet 1.");
-                }
-
-                const studentsList = [];
-
-                // Helper to normalize cell value
-                const getVal = (row, header) => {
-                    const idx = colMap[header];
-                    if (idx === undefined || idx === -1 || idx >= row.length) return "";
-                    const val = row[idx];
-                    return (val === undefined || val === null) ? "" : String(val).trim();
-                };
-
-                // Process Sheet 1 Data rows starting from Row index 1
-                for (let r = 1; r < sheet1Rows.length; r++) {
-                    const row = sheet1Rows[r];
-                    if (row.length === 0 || !getVal(row, 'ROLL_NO')) continue; // Skip blank rows
-                    studentsList.push(buildStudentRecord(row, getVal, targetExamName));
-                }
-
-                // Process Sheet 2 onwards (All rows are treated directly as student data without headers)
-                for (let s = 1; s < workbook.SheetNames.length; s++) {
-                    const sheetName = workbook.SheetNames[s];
-                    const sheet = workbook.Sheets[sheetName];
-                    const sheetRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-                    
-                    for (let r = 0; r < sheetRows.length; r++) {
-                        const row = sheetRows[r];
-                        if (row.length === 0 || !getVal(row, 'ROLL_NO')) continue; // Skip blank rows
-                        studentsList.push(buildStudentRecord(row, getVal, targetExamName));
-                    }
-                }
-
-                resolve(studentsList);
-            } catch (err) {
-                reject(err);
-            }
-        };
-        reader.onerror = (err) => reject(err);
-        reader.readAsArrayBuffer(file);
-    });
-}
-
-/**
- * Builds the student record schema.
- */
-function buildStudentRecord(row, getVal, examName) {
-    const rollNo = getVal(row, 'ROLL_NO');
-    const name = getVal(row, 'CAND_NAME');
-    const fatherName = getVal(row, 'FATHER_NAME');
-    const motherName = getVal(row, 'MOTHER_NAME');
-
-    return {
-        examName: examName,
-        rank: getVal(row, 'RANK'),
-        applicationNo: getVal(row, 'APPLICATION'),
-        rollNo: rollNo,
-        name: name,
-        fatherName: fatherName,
-        motherName: motherName,
-        dob: getVal(row, 'DOB'),
-        gender: getVal(row, 'GENDER'),
-        category: getVal(row, 'CAT'),
-        horizontalCategory: getVal(row, 'HCAT'),
-        femaleCategory: getVal(row, 'FCAT'),
-        tsp: getVal(row, 'TSP'),
-        netMarks: getVal(row, 'NET'),
-        selectionCategory: getVal(row, 'Sel_Cat'),
-        // Generated lowercase fields for fast index searches
-        searchRoll: rollNo.toLowerCase(),
-        searchName: name.toLowerCase(),
-        searchFather: fatherName.toLowerCase(),
-        searchMother: motherName.toLowerCase(),
-        createdAt: serverTimestamp()
-    };
-}
-
-/**
- * Batched uploader to safe write to Firestore.
- */
-async function uploadStudentRecords(examId, studentsList) {
-    const total = studentsList.length;
-    let committedCount = 0;
-
-    for (let i = 0; i < total; i += 500) {
-        const chunk = studentsList.slice(i, i + 500);
-        const batch = writeBatch(db);
-
-        chunk.forEach(student => {
-            const studentDocRef = doc(collection(db, "resultStudents"));
-            // Append parent examId reference
-            batch.set(studentDocRef, { ...student, examId });
-        });
-
-        await batch.commit();
-        committedCount += chunk.length;
-        updateUploadProgress(committedCount, total, `Writing records to Firestore...`);
-    }
-}
-
-/**
- * Deletes all associated student records in batches of 500.
- */
-async function deleteStudentRecords(examId, onProgress) {
-    const studentRef = collection(db, "resultStudents");
-    const q = query(studentRef, where("examId", "==", examId));
-    let totalDeleted = 0;
-
-    while (true) {
-        const snapshot = await getDocs(query(q, limit(500)));
-        if (snapshot.empty) break;
-
-        const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-        totalDeleted += snapshot.size;
-        if (onProgress) onProgress(totalDeleted);
-    }
-}
-
-/**
- * Cascades update of examName across matching student documents.
- */
-async function cascadeUpdateExamName(examId, newName, onProgress) {
-    const studentRef = collection(db, "resultStudents");
-    // Dynamic query avoids infinite loop cycles
-    const q = query(studentRef, where("examId", "==", examId), where("examName", "!=", newName), limit(500));
-    let totalUpdated = 0;
-
-    while (true) {
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) break;
-
-        const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => {
-            batch.update(doc.ref, { examName: newName });
-        });
-
-        await batch.commit();
-        totalUpdated += snapshot.size;
-        if (onProgress) onProgress(totalUpdated);
-    }
-}
-
-/**
- * Handle new dataset creation and import workflow.
- */
-uploadForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const examName = newExamNameInput.value.trim();
-    const file = excelFileInput.files[0];
-
-    if (!examName || !file) {
-        alert("Please provide both the Exam Name and the Excel file.");
-        return;
-    }
-
-    try {
-        setUIProcessingState(true);
-        updateUploadProgress(0, 100, "Reading Excel workbook...");
-
-        // Parse worksheets
-        const studentsList = await parseExcelData(file, examName);
-        
-        updateUploadProgress(0, studentsList.length, `Parsed ${studentsList.length} records. Creating parent exam metadata...`);
-
-        // Create metadata document in 'results'
-        const examDocRef = doc(collection(db, "results"));
-        const examId = examDocRef.id;
-
-        await writeBatch(db).set(examDocRef, {
-            examName: examName,
-            fileName: file.name,
-            studentsCount: studentsList.length,
-            createdAt: serverTimestamp()
-        }).commit();
-
-        // Write students in chunks of 500
-        await uploadStudentRecords(examId, studentsList);
-
-        alert("Database successfully populated with student records.");
-        uploadForm.reset();
-        fileSelectedDisplay.classList.add("hidden");
-        fetchActiveExams();
-    } catch (err) {
-        console.error("Upload error:", err);
-        alert(`Process Failed: ${err.message}`);
-    } finally {
-        setUIProcessingState(false);
-    }
+// Close on backdrop click
+[deleteModal, renameModal, replaceModal].forEach(modal => {
+  modal.addEventListener('click', e => {
+    if (e.target === modal) closeModal(modal);
+  });
 });
 
-/**
- * Handle Replacement process.
- */
-replaceExcelForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const examId = replaceExamIdInput.value;
-    const examName = replaceExamNameValInput.value;
-    const file = replaceExcelInput.files[0];
-
-    if (!examId || !file) {
-        alert("Selection error. Re-try replacing the files.");
-        return;
-    }
-
-    try {
-        closeModal(replaceExcelModal);
-        setUIProcessingState(true);
-        updateUploadProgress(0, 100, "Initializing replacements... Cleaning up existing entries...");
-
-        // 1. Delete associated student records
-        await deleteStudentRecords(examId, (deleted) => {
-            updateUploadProgress(deleted, deleted + 100, `Removed ${deleted} old records...`);
-        });
-
-        updateUploadProgress(0, 100, "Parsing new Excel worksheet...");
-
-        // 2. Parse new worksheet
-        const studentsList = await parseExcelData(file, examName);
-
-        // 3. Update parent metadata
-        const examDocRef = doc(db, "results", examId);
-        await updateDoc(examDocRef, {
-            fileName: file.name,
-            studentsCount: studentsList.length,
-            createdAt: serverTimestamp()
-        });
-
-        // 4. Batch write new student records
-        await uploadStudentRecords(examId, studentsList);
-
-        alert("Replacement process completed successfully.");
-        replaceExcelForm.reset();
-        fetchActiveExams();
-    } catch (err) {
-        console.error("Replacement error:", err);
-        alert(`Replacement process failed: ${err.message}`);
-    } finally {
-        setUIProcessingState(false);
-    }
-});
-
-/**
- * Handle Title modification.
- */
-editNameForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const examId = editExamIdInput.value;
-    const newName = editExamNameInput.value.trim();
-
-    if (!examId || !newName) {
-        alert("Please enter a valid exam title.");
-        return;
-    }
-
-    try {
-        closeModal(editNameModal);
-        setUIProcessingState(true);
-        updateUploadProgress(0, 100, "Updating parent Exam Metadata...");
-
-        // 1. Update metadata title
-        const examDocRef = doc(db, "results", examId);
-        await updateDoc(examDocRef, { examName: newName });
-
-        updateUploadProgress(0, 100, "Cascading title modifications across student records...");
-
-        // 2. Cascade changes through records
-        await cascadeUpdateExamName(examId, newName, (updated) => {
-            updateUploadProgress(updated, updated + 100, `Synchronized ${updated} records...`);
-        });
-
-        alert("Title updated across all records.");
-        editNameForm.reset();
-        fetchActiveExams();
-    } catch (err) {
-        console.error("Modification error:", err);
-        alert(`Modification process failed: ${err.message}`);
-    } finally {
-        setUIProcessingState(false);
-    }
-});
-
-/**
- * Deletes Exam completely.
- */
-async function handleDeleteExam(examId, examName) {
-    if (!confirm(`Are you absolutely sure you want to delete "${examName}"?\nThis deletes the exam and all its student records. This action cannot be undone.`)) {
-        return;
-    }
-
-    try {
-        setUIProcessingState(true);
-        updateUploadProgress(0, 100, "Clearing student records...");
-
-        // 1. Delete associated student records
-        await deleteStudentRecords(examId, (deleted) => {
-            updateUploadProgress(deleted, deleted + 100, `Cleared ${deleted} records...`);
-        });
-
-        updateUploadProgress(99, 100, "Clearing parent exam metadata...");
-
-        // 2. Delete parent metadata
-        const examDocRef = doc(db, "results", examId);
-        await deleteDoc(examDocRef);
-
-        alert("Exam and associated records deleted.");
-        fetchActiveExams();
-    } catch (err) {
-        console.error("Deletion error:", err);
-        alert(`Deletion process failed: ${err.message}`);
-    } finally {
-        setUIProcessingState(false);
-    }
+// ── Utility: Format Date ─────────────────────────────────────
+function formatDate(timestamp) {
+  if (!timestamp) return '—';
+  const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return d.toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
 }
 
-/**
- * Renders the dashboard elements.
- */
-async function fetchActiveExams() {
-    try {
-        const resultsRef = collection(db, "results");
-        const q = query(resultsRef, orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
+// ── Utility: Safe string ─────────────────────────────────────
+function safe(val) {
+  if (val === null || val === undefined) return '';
+  return String(val).trim();
+}
 
-        examsTableBody.innerHTML = "";
+// ── Excel Parsing ────────────────────────────────────────────
+// Returns array of student objects using dynamic header mapping from Sheet-1
+function parseExcel(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data   = new Uint8Array(e.target.result);
+        const wb     = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheets = wb.SheetNames;
 
-        if (snapshot.empty) {
-            examsTableBody.innerHTML = `<tr><td colspan="5" class="table-placeholder-row">No active result sets found. Start by importing a dataset.</td></tr>`;
-            return;
+        if (!sheets.length) {
+          return reject(new Error('Excel file has no sheets.'));
         }
 
-        snapshot.docs.forEach(docSnap => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-            const dateStr = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString("en-IN", {
-                day: '2-digit', month: 'short', year: 'numeric'
-            }) : "N/A";
+        // ── Read header from Sheet-1 ─────────────────────────
+        const sheet1    = wb.Sheets[sheets[0]];
+        const sheet1Rows = XLSX.utils.sheet_to_json(sheet1, { header: 1, defval: '' });
 
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><strong>${data.examName}</strong></td>
-                <td><code style="font-size:0.8rem; color:#475569;">${data.fileName}</code></td>
-                <td>${data.studentsCount.toLocaleString("en-IN")}</td>
-                <td>${dateStr}</td>
-                <td class="text-center" style="white-space: nowrap;">
-                    <button class="btn-mini-action btn-mini-accent" data-action="edit" data-id="${id}" data-name="${data.examName}">Edit Title</button>
-                    <button class="btn-mini-action" data-action="replace" data-id="${id}" data-name="${data.examName}">Replace Excel</button>
-                    <button class="btn-mini-action btn-mini-danger" data-action="delete" data-id="${id}" data-name="${data.examName}">Delete</button>
-                </td>
-            `;
+        if (!sheet1Rows.length) {
+          return reject(new Error('Sheet 1 is empty. Cannot read headers.'));
+        }
 
-            // Operational event attachments
-            tr.querySelectorAll("button").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    const action = btn.getAttribute("data-action");
-                    const examId = btn.getAttribute("data-id");
-                    const name = btn.getAttribute("data-name");
+        // First row of Sheet-1 = headers
+        const headerRow = sheet1Rows[0].map(h => safe(h));
 
-                    if (action === "edit") {
-                        openEditModal(examId, name);
-                    } else if (action === "replace") {
-                        openReplaceModal(examId, name);
-                    } else if (action === "delete") {
-                        handleDeleteExam(examId, name);
-                    }
-                });
-            });
-
-            examsTableBody.appendChild(tr);
+        // Build column index map: { HEADER_NAME: colIndex }
+        const colIndex = {};
+        headerRow.forEach((h, i) => {
+          if (h && HEADER_MAP[h] !== undefined) {
+            colIndex[h] = i;
+          }
         });
-    } catch (err) {
-        console.error("Fetch collections failed:", err);
-        examsTableBody.innerHTML = `<tr><td colspan="5" class="table-placeholder-row text-danger-alert">Failed to retrieve exam datasets. View logs for more information.</td></tr>`;
+
+        // Validate required headers
+        const required = ['ROLL_NO', 'CAND_NAME', 'RANK'];
+        const missing  = required.filter(h => colIndex[h] === undefined);
+        if (missing.length) {
+          return reject(new Error(`Missing required headers in Sheet 1: ${missing.join(', ')}`));
+        }
+
+        // ── Collect all student rows ─────────────────────────
+        const students = [];
+
+        // Sheet-1: data starts from row index 1 (skip header row 0)
+        for (let r = 1; r < sheet1Rows.length; r++) {
+          const row = sheet1Rows[r];
+          const student = buildStudentFromRow(row, colIndex);
+          if (student) students.push(student);
+        }
+
+        // Remaining sheets: all rows are data (no header)
+        for (let s = 1; s < sheets.length; s++) {
+          const sheet   = wb.Sheets[sheets[s]];
+          const rows    = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+          for (let r = 0; r < rows.length; r++) {
+            const row = rows[r];
+            const student = buildStudentFromRow(row, colIndex);
+            if (student) students.push(student);
+          }
+        }
+
+        if (!students.length) {
+          return reject(new Error('No student records found in the Excel file.'));
+        }
+
+        resolve(students);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Build a student object from a data row using the colIndex map
+function buildStudentFromRow(row, colIndex) {
+  // Skip completely empty rows
+  if (!row || row.every(cell => safe(cell) === '')) return null;
+
+  const get = headerName => {
+    const idx = colIndex[headerName];
+    return idx !== undefined ? safe(row[idx]) : '';
+  };
+
+  const rollNo     = get('ROLL_NO');
+  const name       = get('CAND_NAME');
+
+  // Skip rows with no roll number and no name
+  if (!rollNo && !name) return null;
+
+  return {
+    rank:               get('RANK'),
+    applicationNo:      get('APPLICATION'),
+    rollNo:             rollNo,
+    name:               name,
+    fatherName:         get('FATHER_NAME'),
+    motherName:         get('MOTHER_NAME'),
+    dob:                get('DOB'),
+    gender:             get('GENDER'),
+    category:           get('CAT'),
+    horizontalCategory: get('HCAT'),
+    femaleCategory:     get('FCAT'),
+    tsp:                get('TSP'),
+    netMarks:           get('NET'),
+    selectionCategory:  get('Sel_Cat'),
+    // Search fields (lowercase)
+    searchRoll:         rollNo.toLowerCase(),
+    searchName:         name.toLowerCase(),
+    searchFather:       get('FATHER_NAME').toLowerCase(),
+    searchMother:       get('MOTHER_NAME').toLowerCase()
+  };
+}
+
+// ── Firestore: Batch write students ─────────────────────────
+async function batchWriteStudents(students, examId, examName, onProgress) {
+  const total   = students.length;
+  let written   = 0;
+
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const chunk = students.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+
+    chunk.forEach(student => {
+      const ref = doc(collection(db, STUDENTS_COL));
+      batch.set(ref, {
+        examId,
+        examName,
+        ...student,
+        createdAt: serverTimestamp()
+      });
+    });
+
+    await batch.commit();
+    written += chunk.length;
+
+    const pct = Math.round((written / total) * 100);
+    onProgress(pct, written, total);
+  }
+}
+
+// ── Firestore: Delete all students of an exam ────────────────
+async function deleteAllStudents(examId, onProgress) {
+  const q       = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
+  const snap    = await getDocs(q);
+  const docs    = snap.docs;
+  const total   = docs.length;
+  let deleted   = 0;
+
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+    chunk.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    deleted += chunk.length;
+    if (onProgress) {
+      const pct = Math.round((deleted / total) * 100);
+      onProgress(pct, deleted, total);
     }
+  }
 }
 
-// UI State Management Controls
-function setUIProcessingState(isProcessing) {
-    if (isProcessing) {
-        uploadProgressContainer.classList.remove("hidden");
-        document.querySelectorAll("button, input, select").forEach(el => el.disabled = true);
-    } else {
-        uploadProgressContainer.classList.add("hidden");
-        document.querySelectorAll("button, input, select").forEach(el => el.disabled = false);
+// ── Firestore: Batch update examName in students ─────────────
+async function updateStudentsExamName(examId, newName) {
+  const q    = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
+  const snap = await getDocs(q);
+  const docs = snap.docs;
+
+  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+    const chunk = docs.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+    chunk.forEach(d => batch.update(d.ref, { examName: newName }));
+    await batch.commit();
+  }
+}
+
+// ── Load Exams Table ─────────────────────────────────────────
+async function loadExams() {
+  examsLoading.classList.remove('hidden');
+  examsTableWrap.classList.add('hidden');
+
+  try {
+    const q    = query(collection(db, RESULTS_COL), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+
+    examsLoading.classList.add('hidden');
+    examsTableWrap.classList.remove('hidden');
+
+    if (snap.empty) {
+      examsTbody.innerHTML = '<tr class="empty-row"><td colspan="5">No exams uploaded yet.</td></tr>';
+      return;
     }
+
+    let html = '';
+    let idx  = 1;
+    snap.forEach(docSnap => {
+      const d   = docSnap.data();
+      const id  = docSnap.id;
+      const dt  = formatDate(d.createdAt);
+      html += `
+        <tr data-id="${id}">
+          <td>${idx++}</td>
+          <td><strong>${escHtml(d.examName)}</strong></td>
+          <td>${Number(d.studentsCount).toLocaleString('en-IN')}</td>
+          <td>${dt}</td>
+          <td>
+            <div class="table-actions">
+              <button class="btn btn-sm btn-outline"   onclick="handleReplace('${id}','${escAttr(d.examName)}')">Replace</button>
+              <button class="btn btn-sm btn-primary"   onclick="handleRename('${id}','${escAttr(d.examName)}')">Rename</button>
+              <button class="btn btn-sm btn-danger"    onclick="handleDelete('${id}','${escAttr(d.examName)}')">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+    examsTbody.innerHTML = html;
+  } catch (err) {
+    examsLoading.classList.add('hidden');
+    examsTableWrap.classList.remove('hidden');
+    showAlert('Failed to load exams: ' + err.message, 'danger');
+  }
 }
 
-function updateUploadProgress(current, total, statusText) {
-    const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
-    progressBar.style.width = `${percent}%`;
-    progressPercent.textContent = `${percent}%`;
-    progressStatusText.textContent = statusText;
-    processedCountText.textContent = `${current.toLocaleString("en-IN")} / ${total.toLocaleString("en-IN")}`;
+// ── Escape helpers ───────────────────────────────────────────
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
-// Modal Toggle helpers
-function openEditModal(id, currentName) {
-    editExamIdInput.value = id;
-    editExamNameInput.value = currentName;
-    editNameModal.classList.remove("hidden");
-}
+// ── File input display update ────────────────────────────────
+excelFileInput.addEventListener('change', () => {
+  const file = excelFileInput.files[0];
+  if (file) {
+    fileDisplayText.textContent = file.name;
+    fileDisplay.classList.add('has-file');
+  } else {
+    fileDisplayText.textContent = 'Click to choose Excel file';
+    fileDisplay.classList.remove('has-file');
+  }
+});
 
-function openReplaceModal(id, examName) {
-    replaceExamIdInput.value = id;
-    replaceExamNameValInput.value = examName;
-    replaceExcelModal.classList.remove("hidden");
-}
+replaceFileInput.addEventListener('change', () => {
+  const file = replaceFileInput.files[0];
+  if (file) {
+    replaceFileDisplayText.textContent = file.name;
+    replaceFileDisplay.classList.add('has-file');
+  } else {
+    replaceFileDisplayText.textContent = 'Click to choose Excel file';
+    replaceFileDisplay.classList.remove('has-file');
+  }
+});
 
-function closeModal(modalElement) {
-    modalElement.classList.add("hidden");
-}
+// ── IMPORT ───────────────────────────────────────────────────
+importBtn.addEventListener('click', async () => {
+  hideAlert();
 
-cancelEditBtn.addEventListener("click", () => closeModal(editNameModal));
-closeEditModalBtn.addEventListener("click", () => closeModal(editNameModal));
-cancelReplaceBtn.addEventListener("click", () => closeModal(replaceExcelModal));
-closeReplaceModalBtn.addEventListener("click", () => closeModal(replaceExcelModal));
+  const examName = examNameInput.value.trim();
+  const file     = excelFileInput.files[0];
+
+  if (!examName) {
+    showAlert('Please enter an exam name.', 'danger');
+    examNameInput.focus();
+    return;
+  }
+  if (!file) {
+    showAlert('Please choose an Excel file.', 'danger');
+    return;
+  }
+
+  // Disable UI
+  importBtn.disabled = true;
+  importBtn.textContent = 'Importing…';
+  importProgressWrap.classList.remove('hidden');
+  importProgressBar.style.width = '0%';
+  importProgressLabel.textContent = 'Reading Excel file…';
+  uploadSummary.classList.remove('visible');
+
+  try {
+    // Parse Excel
+    const students = await parseExcel(file);
+    importProgressLabel.textContent = `Parsed ${students.length.toLocaleString('en-IN')} students. Writing to database…`;
+    importProgressBar.style.width = '5%';
+
+    // Write exam doc
+    const examRef = await addDoc(collection(db, RESULTS_COL), {
+      examName,
+      fileName:      file.name,
+      studentsCount: students.length,
+      createdAt:     serverTimestamp()
+    });
+
+    const examId = examRef.id;
+
+    // Batch write students
+    await batchWriteStudents(students, examId, examName, (pct, written, total) => {
+      // Reserve first 5% for parsing, remaining 95% for upload
+      const displayPct = 5 + Math.round(pct * 0.95);
+      importProgressBar.style.width = displayPct + '%';
+      importProgressLabel.textContent = `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} students`;
+    });
+
+    importProgressBar.style.width = '100%';
+    importProgressLabel.textContent = 'Done!';
+
+    // Show summary
+    const now = new Date();
+    sumExamName.textContent = examName;
+    sumFileName.textContent = file.name;
+    sumCount.textContent    = students.length.toLocaleString('en-IN');
+    sumDate.textContent     = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    uploadSummary.classList.add('visible');
+    uploadSummary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    showToast('Import successful!', 'success');
+
+    // Reset form
+    examNameInput.value = '';
+    excelFileInput.value = '';
+    fileDisplayText.textContent = 'Click to choose Excel file';
+    fileDisplay.classList.remove('has-file');
+
+    // Reload exams list
+    await loadExams();
+
+  } catch (err) {
+    showAlert('Import failed: ' + err.message, 'danger');
+    importProgressLabel.textContent = 'Failed.';
+  } finally {
+    importBtn.disabled = false;
+    importBtn.textContent = 'Import Results';
+    setTimeout(() => {
+      importProgressWrap.classList.add('hidden');
+      importProgressBar.style.width = '0%';
+    }, 2000);
+  }
+});
+
+// ── DELETE ───────────────────────────────────────────────────
+window.handleDelete = function(examId, examName) {
+  pendingDeleteId = examId;
+  deleteConfirmText.textContent =
+    `This will permanently delete "${examName}" and all associated student records. This action cannot be undone.`;
+  openModal(deleteModal);
+};
+
+deleteConfirmBtn.addEventListener('click', async () => {
+  if (!pendingDeleteId) return;
+
+  deleteConfirmBtn.disabled = true;
+  deleteConfirmBtn.textContent = 'Deleting…';
+
+  try {
+    // Delete all students
+    await deleteAllStudents(pendingDeleteId);
+    // Delete exam doc
+    await deleteDoc(doc(db, RESULTS_COL, pendingDeleteId));
+
+    closeModal(deleteModal);
+    showToast('Exam deleted successfully.', 'success');
+    await loadExams();
+  } catch (err) {
+    showToast('Delete failed: ' + err.message, 'danger');
+  } finally {
+    deleteConfirmBtn.disabled = false;
+    deleteConfirmBtn.textContent = 'Delete';
+    pendingDeleteId = null;
+  }
+});
+
+// ── RENAME ───────────────────────────────────────────────────
+window.handleRename = function(examId, examName) {
+  pendingRenameId = examId;
+  renameInput.value = examName;
+  openModal(renameModal);
+  setTimeout(() => renameInput.focus(), 100);
+};
+
+renameConfirmBtn.addEventListener('click', async () => {
+  const newName = renameInput.value.trim();
+  if (!newName) {
+    renameInput.focus();
+    return;
+  }
+  if (!pendingRenameId) return;
+
+  renameConfirmBtn.disabled = true;
+  renameConfirmBtn.textContent = 'Renaming…';
+
+  try {
+    // Update exam doc
+    await updateDoc(doc(db, RESULTS_COL, pendingRenameId), { examName: newName });
+    // Update all student docs
+    await updateStudentsExamName(pendingRenameId, newName);
+
+    closeModal(renameModal);
+    showToast('Exam renamed successfully.', 'success');
+    await loadExams();
+  } catch (err) {
+    showToast('Rename failed: ' + err.message, 'danger');
+  } finally {
+    renameConfirmBtn.disabled = false;
+    renameConfirmBtn.textContent = 'Rename';
+    pendingRenameId = null;
+  }
+});
+
+// Enter key in rename input
+renameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') renameConfirmBtn.click();
+});
+
+// ── REPLACE ──────────────────────────────────────────────────
+window.handleReplace = function(examId, examName) {
+  pendingReplaceId   = examId;
+  pendingReplaceName = examName;
+  replaceExamNameDisplay.textContent = examName;
+  replaceFileInput.value = '';
+  replaceFileDisplayText.textContent = 'Click to choose Excel file';
+  replaceFileDisplay.classList.remove('has-file');
+  replaceProgressWrap.classList.add('hidden');
+  replaceProgressBar.style.width = '0%';
+  openModal(replaceModal);
+};
+
+replaceConfirmBtn.addEventListener('click', async () => {
+  const file = replaceFileInput.files[0];
+  if (!file) {
+    showToast('Please choose an Excel file.', 'danger');
+    return;
+  }
+  if (!pendingReplaceId) return;
+
+  replaceConfirmBtn.disabled = true;
+  replaceConfirmBtn.textContent = 'Replacing…';
+  replaceProgressWrap.classList.remove('hidden');
+  replaceProgressBar.style.width = '0%';
+  replaceProgressLabel.textContent = 'Reading Excel file…';
+
+  try {
+    // Parse new Excel
+    const students = await parseExcel(file);
+    replaceProgressLabel.textContent = `Parsed ${students.length.toLocaleString('en-IN')} students. Deleting old records…`;
+    replaceProgressBar.style.width = '5%';
+
+    // Delete old students
+    await deleteAllStudents(pendingReplaceId, (pct) => {
+      const displayPct = 5 + Math.round(pct * 0.3);
+      replaceProgressBar.style.width = displayPct + '%';
+      replaceProgressLabel.textContent = `Deleting old records… ${displayPct}%`;
+    });
+
+    replaceProgressBar.style.width = '35%';
+    replaceProgressLabel.textContent = 'Writing new records…';
+
+    // Write new students
+    await batchWriteStudents(students, pendingReplaceId, pendingReplaceName, (pct, written, total) => {
+      const displayPct = 35 + Math.round(pct * 0.6);
+      replaceProgressBar.style.width = displayPct + '%';
+      replaceProgressLabel.textContent = `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')}`;
+    });
+
+    // Update exam doc
+    await updateDoc(doc(db, RESULTS_COL, pendingReplaceId), {
+      fileName:      file.name,
+      studentsCount: students.length,
+      createdAt:     serverTimestamp()
+    });
+
+    replaceProgressBar.style.width = '100%';
+    replaceProgressLabel.textContent = 'Done!';
+
+    closeModal(replaceModal);
+    showToast('Excel replaced successfully.', 'success');
+    await loadExams();
+
+  } catch (err) {
+    showToast('Replace failed: ' + err.message, 'danger');
+    replaceProgressLabel.textContent = 'Failed.';
+  } finally {
+    replaceConfirmBtn.disabled = false;
+    replaceConfirmBtn.textContent = 'Replace';
+    pendingReplaceId   = null;
+    pendingReplaceName = null;
+    setTimeout(() => {
+      replaceProgressWrap.classList.add('hidden');
+      replaceProgressBar.style.width = '0%';
+    }, 2000);
+  }
+});
+
+// ── Init ─────────────────────────────────────────────────────
+loadExams();
