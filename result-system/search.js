@@ -1,331 +1,306 @@
+/**
+ * Marudhara Exam - Student Search Portal Controller
+ * Facilitates fast query execution, dynamic rendering, and PNG generation.
+ */
+
 import {
     db,
     collection,
     getDocs,
-    getDoc,
-    doc,
     query,
     where,
-    orderBy,
-    limit,
-    startAt,
-    endAt
-} from "./firebase.js";
-// This assumes html2canvas is loaded globally, e.g., via a script tag in index.html, as per instructions.
-// If it were a module, it would be: import html2canvas from 'html2canvas';
+    orderBy
+} from "./firebase-config.js";
 
-// --- DOM Element References ---
-const searchForm = document.getElementById('search-form');
-const examSelect = document.getElementById('search-exam');
-const rollInput = document.getElementById('search-roll');
-const nameInput = document.getElementById('search-name');
-const fatherNameInput = document.getElementById('search-father');
-const motherNameInput = document.getElementById('search-mother');
+// DOM Elements
+const examSelect = document.getElementById("examSelect");
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const loadingSpinner = document.getElementById("loadingSpinner");
 
-const resultsSection = document.getElementById('results-list-section');
-const resultsTableBody = document.querySelector('#results-table-container tbody');
-const noResultsMessage = document.getElementById('no-results-message');
+const resultsSection = document.getElementById("resultsSection");
+const resultsTableBody = document.getElementById("resultsTableBody");
+const noResultsMessage = document.getElementById("noResultsMessage");
 
-const modalContainer = document.getElementById('marksheet-outer-container');
-const marksheetContent = document.getElementById('marksheet-capture-target');
-const downloadButton = document.getElementById('download-btn');
-const closeButton = document.getElementById('close-report-btn');
+// Modals elements
+const resultModal = document.getElementById("resultModal");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const downloadPngBtn = document.getElementById("downloadPngBtn");
+const markSheetCapture = document.getElementById("markSheetCapture");
+const resetBtn = document.getElementById("resetBtn");
 
+// Modals Specific Data Elements
+const modalExamName = document.getElementById("modalExamName");
+const modalRank = document.getElementById("modalRank");
+const modalRollNo = document.getElementById("modalRollNo");
+const modalCandName = document.getElementById("modalCandName");
+const modalFatherName = document.getElementById("modalFatherName");
+const modalMotherName = document.getElementById("modalMotherName");
+const modalAppNo = document.getElementById("modalAppNo");
+const modalDob = document.getElementById("modalDob");
+const modalGender = document.getElementById("modalGender");
+const modalCategory = document.getElementById("modalCategory");
+const modalHCategory = document.getElementById("modalHCategory");
+const modalFCategory = document.getElementById("modalFCategory");
+const modalTsp = document.getElementById("modalTsp");
+const modalSelCategory = document.getElementById("modalSelCategory");
+const modalNetMarks = document.getElementById("modalNetMarks");
+const modalGenerationTime = document.getElementById("modalGenerationTime");
 
-// --- Firestore Initialization ---
+// Local cache for retrieved query records
+let currentActiveStudent = null;
 
-const resultsCollection = collection(db, 'results');
-const studentsCollection = collection(db, 'resultStudents');
-const SEARCH_LIMIT = 50; // Limit the number of search results
-const examNameCache = new Map();
-
-
-// --- Core Functions ---
+// Initial Setup
+document.addEventListener("DOMContentLoaded", populateExamsDropdown);
 
 /**
- * Loads all available exams from the 'results' collection and populates the select dropdown.
- * Sorts exams by creation date, newest first.
+ * Retrieves the available active datasets to populate selection dropdown.
  */
-const loadExams = async () => {
+async function populateExamsDropdown() {
     try {
-        const q = query(resultsCollection, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
+        const resultsRef = collection(db, "results");
+        const q = query(resultsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
 
-        const defaultOption = examSelect.querySelector('option[value=""]');
-        examSelect.innerHTML = '';
-        if (defaultOption) {
-            examSelect.appendChild(defaultOption);
-        }
+        examSelect.innerHTML = '<option value="" disabled selected>-- Choose an Exam --</option>';
 
-        querySnapshot.forEach((doc) => {
-            const exam = doc.data();
-            const option = document.createElement('option');
-            option.value = doc.id;
-            option.textContent = exam.examName;
+        snapshot.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const option = document.createElement("option");
+            option.value = docSnap.id;
+            option.textContent = data.examName;
             examSelect.appendChild(option);
         });
-    } catch (error) {
-        console.error(error);
+    } catch (err) {
+        console.error("Failed to populate dropdown list:", err);
+        alert("Unable to fetch examination list. Please reload the page.");
     }
-};
+}
 
 /**
- * Handles the search form submission, validates input, and constructs the Firestore query.
- * @param {Event} e - The form submission event.
+ * Handle Search Form Submissions.
  */
-const handleSearch = async (e) => {
+searchForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    resetSearch();
+    
+    const selectedExamId = examSelect.value;
+    const searchTypeElement = document.querySelector('input[name="searchType"]:checked');
+    const queryTextRaw = searchInput.value;
 
-    const examId = examSelect.value;
-    const rollNo = rollInput.value.trim();
-    const name = nameInput.value.trim();
-    const fatherName = fatherNameInput.value.trim();
-    const motherName = motherNameInput.value.trim();
-
-    // --- Validation ---
-    if (!examId) {
-        alert("Please select an examination.");
+    if (!selectedExamId) {
+        alert("Please select an Examination from the dropdown.");
         return;
     }
-    if (!rollNo && !name && !fatherName && !motherName) {
-        alert("Please enter a Roll Number or at least one other search detail (Candidate, Father, or Mother's Name).");
+    if (!searchTypeElement) {
+        alert("Please select a search criteria category.");
+        return;
+    }
+    if (!queryTextRaw || !queryTextRaw.trim()) {
+        alert("Please enter a valid search value.");
         return;
     }
 
-    // --- Query Construction ---
-    let finalQuery;
-    const baseQuery = query(studentsCollection, where("examId", "==", examId));
+    const queryType = searchTypeElement.value;
+    const queryText = queryTextRaw.trim().toLowerCase();
 
-    if (rollNo) {
-        // Priority 1: Exact match on Roll Number
-        finalQuery = query(baseQuery, where("searchRoll", "==", rollNo.toLowerCase()));
-    } else {
-        // Priority 2-4: Prefix search on the first available text field
-        const nameLower = name.toLowerCase();
-        const fatherNameLower = fatherName.toLowerCase();
-        const motherNameLower = motherName.toLowerCase();
-        
-        let searchField, searchValue;
-        
-        if (name) {
-            searchField = "searchName";
-            searchValue = nameLower;
-        } else if (fatherName) {
-            searchField = "searchFather";
-            searchValue = fatherNameLower;
-        } else if (motherName) {
-            searchField = "searchMother";
-            searchValue = motherNameLower;
-        }
+    // Map internal key references based on user selection
+    const searchFieldsMap = {
+        rollNo: "searchRoll",
+        name: "searchName",
+        fatherName: "searchFather",
+        motherName: "searchMother"
+    };
 
-        finalQuery = query(baseQuery,
-            orderBy(searchField),
-            startAt(searchValue),
-            endAt(searchValue + '\uf8ff'),
-            limit(SEARCH_LIMIT)
+    const targetField = searchFieldsMap[queryType];
+
+    try {
+        setLoadingState(true);
+        clearResultsArea();
+
+        // Target individual student records using compound indexing range parameters
+        const studentRef = collection(db, "resultStudents");
+        const studentQuery = query(
+            studentRef,
+            where("examId", "==", selectedExamId),
+            where(targetField, ">=", queryText),
+            where(targetField, "<=", queryText + "\uf8ff")
         );
-    }
 
-    await searchStudents(finalQuery);
-};
+        const querySnapshot = await getDocs(studentQuery);
 
-/**
- * Executes the Firestore query and passes the results to be rendered.
- * @param {Query} q - The Firestore query to execute.
- */
-const searchStudents = async (q) => {
-    try {
-        // You can add a loading spinner here
-        const querySnapshot = await getDocs(q);
-        await renderResults(querySnapshot);
-    } catch (error) {
-        console.error("Error searching students:", error);
-        alert("An error occurred during the search. Please check your details and try again.");
-    } finally {
-        // You can hide the loading spinner here
-        resultsSection.classList.remove('hidden');
-    }
-};
-
-const getExamNameById = async (examId) => {
-    if (!examId) return '';
-    if (examNameCache.has(examId)) return examNameCache.get(examId);
-
-    const examDoc = await getDoc(doc(db, 'results', examId));
-    const examName = examDoc.exists() ? (examDoc.data().examName || '') : '';
-    examNameCache.set(examId, examName);
-    return examName;
-};
-
-const getStudentExamName = async (student) => {
-    return student.examName || await getExamNameById(student.examId) || 'EXAMINATION RESULT';
-};
-
-
-/**
- * Renders the search results in the HTML table.
- * @param {QuerySnapshot} snapshot - The snapshot returned from the Firestore query.
- */
-const renderResults = async (snapshot) => {
-    if (snapshot.empty) {
-        noResultsMessage.classList.remove('hidden');
-        return;
-    }
-
-    for (const studentDoc of snapshot.docs) {
-        const student = studentDoc.data();
-        const examName = await getStudentExamName(student);
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${examName}</td>
-            <td>${student.rank || 'N/A'}</td>
-            <td>${student.rollNo}</td>
-            <td>${student.name}</td>
-            <td>${student.fatherName}</td>
-            <td>${student.category || 'N/A'}</td>
-            <td>${student.netMarks || 'N/A'}</td>
-            <td>
-                <button class="btn view-result-btn" data-id="${studentDoc.id}">View Result</button>
-            </td>
-        `;
-        resultsTableBody.appendChild(row);
-    }
-};
-
-/**
- * Fetches the full details for a single student and displays them in the modal.
- * @param {string} studentId - The Firestore document ID for the student.
- */
-const showResult = async (studentId) => {
-    try {
-
-        console.log("showResult started");
-        console.log(studentId);
-
-        const studentDocRef = doc(db, "resultStudents", studentId);
-        const studentDoc = await getDoc(studentDocRef);
-
-        console.log(studentDoc.exists());
-        console.log(studentDoc.data());
-
-        if (!studentDoc.exists()) {
-            alert("Could not find the detailed result for this student.");
+        if (querySnapshot.empty) {
+            noResultsMessage.classList.remove("hidden");
+            resultsSection.classList.add("hidden");
             return;
         }
 
-        const student = studentDoc.data();
-        const examName = await getStudentExamName(student);
-        
-        // Populate all fields in the marksheet
-        Object.keys(student).forEach(key => {
-            const element = document.getElementById(`marksheet-${key}`);
-            if (element) {
-                element.textContent = student[key] || 'N/A';
-            }
-        });
-        
-        // Populate exam name and date
-        document.getElementById('marksheet-exam-name').textContent = examName;
-        document.getElementById('marksheet-date').textContent = new Date().toLocaleDateString();
+        // Render matching candidate records
+        renderResultsTable(querySnapshot.docs);
 
-        modalContainer.classList.remove('hidden');
-console.log(modalContainer);
-console.log(modalContainer.className);
-
-modalContainer.style.display = "block";
-modalContainer.style.visibility = "visible";
-modalContainer.style.opacity = "1";
-modalContainer.style.zIndex = "99999";
-    } catch (error) {
-        console.error("Error showing result:", error);
-        alert("An error occurred while fetching the detailed result.");
+    } catch (err) {
+        console.error("Search execution failed:", err);
+        alert("A system query index restriction occurred. If this is a new setup, ensure composite indexes match the target schema query criteria.");
+    } finally {
+        setLoadingState(false);
     }
-};
-
-/**
- * Downloads the content of the result modal as a high-quality PNG image.
- */
-const downloadPNG = () => {
-    if (typeof html2canvas === 'undefined') {
-        alert('Could not generate PNG. The html2canvas library is missing.');
-        console.error('html2canvas is not loaded.');
-        return;
-    }
-    const rollNo = document.getElementById('marksheet-rollNo').textContent || 'unknown';
-    const filename = `Result_${rollNo}.png`;
-
-    html2canvas(marksheetContent, {
-        scale: 2, // for higher quality
-        backgroundColor: '#ffffff' // ensure a white background
-    }).then(canvas => {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }).catch(error => {
-        console.error('Error during PNG download:', error);
-        alert('Could not download the result card. Please try again.');
-    });
-};
-
-/**
- * Resets the search form and clears previous results.
- */
-const resetSearch = () => {
-    resultsTableBody.innerHTML = '';
-    resultsSection.classList.add('hidden');
-    noResultsMessage.classList.add('hidden');
-};
-
-/**
- * Closes the result detail modal.
- */
-const closeModal = () => {
-    modalContainer.classList.add('hidden');
-};
-
-// --- Event Listeners Initialization ---
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Load exams into the dropdown when the page is ready
-    loadExams();
-
-    // Handle form submission
-    searchForm.addEventListener('submit', handleSearch);
-
-    // Handle form reset
-    searchForm.addEventListener('reset', resetSearch);
-
-    // Handle 'View Result' button clicks using event delegation
-    console.log(resultsTableBody);
-   resultsTableBody.addEventListener('click', (e) => {
-
-    console.log("Clicked:", e.target);
-
-    if (e.target && e.target.classList.contains('view-result-btn')) {
-
-        console.log("Button clicked");
-
-        const studentId = e.target.dataset.id;
-
-        console.log("Student ID:", studentId);
-
-        showResult(studentId);
-    }
-
 });
 
-    // Handle modal buttons
-    downloadButton.addEventListener('click', downloadPNG);
-    closeButton.addEventListener('click', closeModal);
+/**
+ * Render matched candidates to table.
+ */
+function renderResultsTable(documentsList) {
+    resultsTableBody.innerHTML = "";
 
-    // Allow closing the modal by clicking outside of it
-    modalContainer.addEventListener('click', (e) => {
-        if (e.target === modalContainer) {
-            closeModal();
-        }
+    documentsList.forEach(docSnap => {
+        const data = docSnap.data();
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${data.examName}</td>
+            <td><strong>${data.rank || "N/A"}</strong></td>
+            <td>${data.rollNo}</td>
+            <td class="uppercase-val">${data.name}</td>
+            <td class="uppercase-val">${data.fatherName}</td>
+            <td>${data.category}</td>
+            <td><strong>${data.netMarks}</strong></td>
+            <td>
+                <button type="button" class="btn-view-result" data-id="${docSnap.id}">View Result</button>
+            </td>
+        `;
+
+        // Action trigger activation
+        tr.querySelector(".btn-view-result").addEventListener("click", () => {
+            displayResultModal(data);
+        });
+
+        resultsTableBody.appendChild(tr);
     });
+
+    resultsSection.classList.remove("hidden");
+    noResultsMessage.classList.add("hidden");
+}
+
+/**
+ * Prepares the structural elements and fires modal activations.
+ */
+function displayResultModal(studentData) {
+    currentActiveStudent = studentData;
+
+    // Populate element data targets
+    modalExamName.textContent = studentData.examName;
+    modalRank.textContent = studentData.rank || "N/A";
+    modalRollNo.textContent = studentData.rollNo || "N/A";
+    modalCandName.textContent = studentData.name || "N/A";
+    modalFatherName.textContent = studentData.fatherName || "N/A";
+    modalMotherName.textContent = studentData.motherName || "N/A";
+    modalAppNo.textContent = studentData.applicationNo || "N/A";
+    modalDob.textContent = studentData.dob || "N/A";
+    modalGender.textContent = studentData.gender || "N/A";
+    modalCategory.textContent = studentData.category || "N/A";
+    modalHCategory.textContent = studentData.horizontalCategory || "N/A";
+    modalFCategory.textContent = studentData.femaleCategory || "N/A";
+    modalTsp.textContent = studentData.tsp || "N/A";
+    modalSelCategory.textContent = studentData.selectionCategory || "N/A";
+    modalNetMarks.textContent = studentData.netMarks || "N/A";
+
+    // Format stamp parameters
+    const dateNow = new Date();
+    const stampFormatted = dateNow.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+    modalGenerationTime.textContent = `Generated: ${stampFormatted}`;
+
+    // Reveal container
+    resultModal.classList.remove("hidden");
+}
+
+/**
+ * Renders the modal capture targeting sharp high scale outputs.
+ */
+downloadPngBtn.addEventListener("click", () => {
+    if (!currentActiveStudent) return;
+
+    const originalButtonText = downloadPngBtn.innerHTML;
+    downloadPngBtn.disabled = true;
+    downloadPngBtn.innerHTML = "Generating Canvas...";
+
+    // Configure options parameters for html2canvas
+    const captureOptions = {
+        scale: 2, // High resolution output density
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: -window.scrollY // Compensates visual shifts
+    };
+
+    html2canvas(markSheetCapture, captureOptions).then(canvas => {
+        try {
+            const fileStream = canvas.toDataURL("image/png");
+            const downloadAnchor = document.createElement("a");
+            const slugFileName = `Result_${currentActiveStudent.rollNo}.png`;
+
+            downloadAnchor.href = fileStream;
+            downloadAnchor.download = slugFileName;
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+        } catch (err) {
+            console.error("Canvas export breakdown:", err);
+            alert("Local rendering system failed to construct image stream.");
+        } finally {
+            downloadPngBtn.disabled = false;
+            downloadPngBtn.innerHTML = originalButtonText;
+        }
+    }).catch(err => {
+        console.error("Capture aborted:", err);
+        alert("Image compilation timed out.");
+        downloadPngBtn.disabled = false;
+        downloadPngBtn.innerHTML = originalButtonText;
+    });
+});
+
+/**
+ * Handle form and display clears.
+ */
+resetBtn.addEventListener("click", () => {
+    searchForm.reset();
+    clearResultsArea();
+});
+
+function clearResultsArea() {
+    resultsTableBody.innerHTML = "";
+    resultsSection.classList.add("hidden");
+    noResultsMessage.classList.add("hidden");
+    currentActiveStudent = null;
+}
+
+function setLoadingState(isLoading) {
+    if (isLoading) {
+        loadingSpinner.classList.remove("hidden");
+        searchForm.querySelectorAll("button, input, select").forEach(el => el.disabled = true);
+    } else {
+        loadingSpinner.classList.add("hidden");
+        searchForm.querySelectorAll("button, input, select").forEach(el => el.disabled = false);
+    }
+}
+
+// Modal Toggle helpers
+function closeModal() {
+    resultModal.classList.add("hidden");
+    currentActiveStudent = null;
+}
+
+closeModalBtn.addEventListener("click", closeModal);
+
+// Close overlay when clicking outer area frame
+resultModal.addEventListener("click", (e) => {
+    if (e.target === resultModal) {
+        closeModal();
+    }
 });
