@@ -1,3 +1,4 @@
+console.log("IMPORT JS LOADED");
 import {
     db,
     collection,
