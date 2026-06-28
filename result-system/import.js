@@ -524,7 +524,6 @@ students.push({
 });
 
 
-                resolve(students);
 
             } catch (err) {
                 reject(err);
