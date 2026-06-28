@@ -351,11 +351,31 @@ const headers = firstData[0].map(h =>
         .replace(/\(/g, "")
         .replace(/\)/g, "")
 );
-                const col = {};
+               const col = {};
 
-                headers.forEach((h, i) => {
-                    col[h] = i;
-                });
+headers.forEach((h, i) => {
+    col[h] = i;
+});
+
+function findColumn(...aliases) {
+    for (const alias of aliases) {
+        const key = String(alias)
+            .trim()
+            .toUpperCase()
+            .replace(/\s+/g, "")
+            .replace(/_/g, "")
+            .replace(/-/g, "")
+            .replace(/\./g, "")
+            .replace(/\(/g, "")
+            .replace(/\)/g, "");
+
+        if (col[key] !== undefined) {
+            return col[key];
+        }
+    }
+    return -1;
+}
+
 console.log(headers);
 console.log(col);
 const FIELD_MAP = {
