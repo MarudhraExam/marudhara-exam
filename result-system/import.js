@@ -354,6 +354,34 @@ const headers = firstData[0].map(h =>
                 });
 console.log(headers);
 console.log(col);
+const FIELD_MAP = {
+    rollNo: ["ROLLNO","ROLLNUMBER","ROLL","APPLICATIONNO","APPLICATION","REGISTRATIONNO"],
+    name: ["CANDNAME","CANDIDATENAME","NAME","STUDENTNAME"],
+    fatherName: ["FATHERNAME","FNAME","FATHER"],
+    motherName: ["MOTHERNAME","MNAME","MOTHER"],
+    applicationNo: ["APPLICATION","APPLICATIONNO"],
+    dob: ["DOB","DATEOFBIRTH","BIRTHDATE"],
+    gender: ["GENDER","SEX"],
+    category: ["CAT","CATEGORY"],
+    horizontalCategory: ["HCAT","HORIZONTALCATEGORY"],
+    femaleCategory: ["FCAT","FEMALECATEGORY"],
+    tsp: ["TSP","NONTSP"],
+    netMarks: ["NET","NETMARKS","MARKS","SCORE","OBTAINEDMARKS"],
+    rank: ["RANK","OVERALLRANK"],
+    selectionCategory: ["SELCAT","SELECTIONCATEGORY"]
+};
+
+function getColumn(field) {
+    const aliases = FIELD_MAP[field] || [];
+
+    for (const alias of aliases) {
+        if (col[alias] !== undefined) {
+            return col[alias];
+        }
+    }
+
+    return -1;
+}
                 // ===== ALL SHEETS =====
                 workbook.SheetNames.forEach((sheetName, sheetIndex) => {
 
