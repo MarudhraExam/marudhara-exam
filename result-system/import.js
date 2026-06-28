@@ -402,49 +402,50 @@ function getColumn(field) {
 
                         if (!row || row.every(c => String(c).trim() === "")) continue;
 
-                      const rollNo = String(row[col["ROLLNO"]] || "").trim();
-                        const name = String(row[col["CANDNAME"]] || "").trim();
+const rollNo = String(row[getColumn("rollNo")] ?? "").trim();
+const name = String(row[getColumn("name")] ?? "").trim();
+const fatherName = String(row[getColumn("fatherName")] ?? "").trim();
+const motherName = String(row[getColumn("motherName")] ?? "").trim();
 
+const rollNo = String(row[col["ROLLNO"]] || "").trim();
+const name = String(row[col["CANDNAME"]] || "").trim();
 const fatherName = String(row[col["FATHERNAME"]] || "").trim();
-
 const motherName = String(row[col["MOTHERNAME"]] || "").trim();
 
-rank: String(row[col["RANK"]] || "").trim(),
+students.push({
+    rollNo,
+    name,
+    fatherName,
+    motherName,
 
-applicationNo: String(row[col["APPLICATION"]] || row[col["APPLICATIONNO"]] || "").trim(),
+    rank: String(row[getColumn("rank")] ?? "").trim(),
 
-dob: String(row[col["DOB"]] || "").trim(),
+    applicationNo: String(row[getColumn("applicationNo")] ?? "").trim(),
 
-gender: String(row[col["GENDER"]] || "").trim(),
+    dob: String(row[getColumn("dob")] ?? "").trim(),
 
-category: String(row[col["CAT"]] || "").trim(),
+    gender: String(row[getColumn("gender")] ?? "").trim(),
 
-horizontalCategory: String(row[col["HCAT"]] || "").trim(),
+    category: String(row[getColumn("category")] ?? "").trim(),
 
-femaleCategory: String(row[col["FCAT"]] || "").trim(),
+    horizontalCategory: String(row[getColumn("horizontalCategory")] ?? "").trim(),
 
-tsp: String(row[col["TSP"]] || "").trim(),
+    femaleCategory: String(row[getColumn("femaleCategory")] ?? "").trim(),
 
-netMarks: String(row[col["NET"]] || "").trim(),
+    tsp: String(row[getColumn("tsp")] ?? "").trim(),
 
-selectionCategory:
-String(
-    row[col["SELCAT"]] ??
-    row[col["SELECTIONCATEGORY"]] ??
-    ""
-).trim(),
+    netMarks: String(row[getColumn("netMarks")] ?? "").trim(),
 
-                            searchRoll: rollNo.toLowerCase(),
+    selectionCategory: String(row[getColumn("selectionCategory")] ?? "").trim(),
 
-                            searchName: name.toLowerCase(),
+    searchRoll: rollNo.toLowerCase(),
 
-                            searchFather: fatherName.toLowerCase(),
+    searchName: name.toLowerCase(),
 
-                            searchMother: motherName.toLowerCase()
-                        });
-                    }
+    searchFather: fatherName.toLowerCase(),
 
-                });
+    searchMother: motherName.toLowerCase()
+});
 
                 resolve(students);
 
