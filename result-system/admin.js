@@ -460,7 +460,36 @@ async function commitWithRetry(batch, retry = 0) {
         throw err;
     }
 }
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
+async function commitWithRetry(batch, retry = 0) {
+  try {
+    await batch.commit();
+  } catch (err) {
+    const code = err.code || "";
+
+    if (
+      code.includes("resource-exhausted") ||
+      code.includes("deadline-exceeded") ||
+      code.includes("unavailable")
+    ) {
+
+      if (retry >= 8) throw err;
+
+      const wait = Math.min(2000 * Math.pow(2, retry), 15000);
+
+      console.warn("Retry After", wait);
+
+      await sleep(wait);
+
+      return commitWithRetry(batch, retry + 1);
+    }
+
+    throw err;
+  }
+}
 async function batchWriteStudents(
     students,
     examId,
