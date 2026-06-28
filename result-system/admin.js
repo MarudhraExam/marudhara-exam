@@ -188,12 +188,7 @@ function parseExcel(file) {
           }
         });
 
-        // Validate required headers
-        const required = ['ROLL_NO', 'CAND_NAME', 'RANK'];
-        const missing  = required.filter(h => colIndex[h] === undefined);
-        if (missing.length) {
-          return reject(new Error(`Missing required headers in Sheet 1: ${missing.join(', ')}`));
-        }
+       // Smart header mapping - no required header validation
 
         // ── Collect all student rows ─────────────────────────
         const students = [];
