@@ -426,32 +426,134 @@ function parseExcel(file) {
 // ════════════════════════════════════════════════════════════
 
 // ── Batch write students ─────────────────────────────────────
-async function batchWriteStudents(students, examId, examName, onProgress) {
-  const total  = students.length;
-  let written  = 0;
+// ── Smart Batch Upload with Retry ───────────────────────────
 
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const chunk = students.slice(i, i + BATCH_SIZE);
-    const batch = writeBatch(db);
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    chunk.forEach(student => {
-      const ref = doc(collection(db, STUDENTS_COL));
-      batch.set(ref, {
-        examId,
-        examName,
-        ...student,
-        createdAt: serverTimestamp()
-      });
-    });
+async function commitWithRetry(batch, retry = 0) {
+    try {
+        await batch.commit();
+        return true;
+    } catch (err) {
 
-    await batch.commit();
-    written += chunk.length;
+        const code = err.code || "";
 
-    const pct = Math.round((written / total) * 100);
-    onProgress(pct, written, total);
-  }
+        if (
+            code.includes("resource-exhausted") ||
+            code.includes("deadline-exceeded") ||
+            code.includes("unavailable")
+        ) {
+
+            if (retry >= 8) throw err;
+
+            const delay = Math.min(2000 * Math.pow(2, retry), 15000);
+
+            console.warn(
+                `Firestore busy. Retry ${retry + 1} after ${delay} ms`
+            );
+
+            await sleep(delay);
+
+            return commitWithRetry(batch, retry + 1);
+        }
+
+        throw err;
+    }
 }
 
+async function batchWriteStudents(
+    students,
+    examId,
+    examName,
+    onProgress
+) {
+
+    let batchSize = 500;
+
+    let uploaded = 0;
+
+    const total = students.length;
+
+    const startTime = Date.now();
+
+    for (let i = 0; i < total;) {
+
+        const chunk = students.slice(i, i + batchSize);
+
+        const batch = writeBatch(db);
+
+        chunk.forEach(student => {
+
+            const ref = doc(collection(db, STUDENTS_COL));
+
+            batch.set(ref, {
+                ...student,
+                examId,
+                examName,
+                createdAt: serverTimestamp()
+            });
+
+        });
+
+        try {
+
+            await commitWithRetry(batch);
+
+            uploaded += chunk.length;
+
+            i += chunk.length;
+
+            const percent = Math.round(uploaded * 100 / total);
+
+            const elapsed = (Date.now() - startTime) / 1000;
+
+            const speed = uploaded / Math.max(elapsed, 1);
+
+            const remaining = total - uploaded;
+
+            const eta = Math.round(remaining / Math.max(speed, 1));
+
+            if (onProgress) {
+
+                onProgress(
+                    percent,
+                    uploaded,
+                    total,
+                    eta
+                );
+
+            }
+
+            await sleep(300);
+
+            if (batchSize < 500)
+                batchSize += 50;
+
+        }
+        catch (err) {
+
+            console.error(err);
+
+            if (batchSize > 100) {
+
+                batchSize = Math.max(100, Math.floor(batchSize / 2));
+
+                console.warn(
+                    "Reducing batch size to",
+                    batchSize
+                );
+
+                continue;
+
+            }
+
+            throw err;
+
+        }
+
+    }
+
+}
 // ── Delete all students of an exam ───────────────────────────
 async function deleteAllStudents(examId, onProgress) {
   const q      = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
