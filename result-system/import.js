@@ -471,15 +471,10 @@ function getColumn(field) {
 
                         if (!row || row.every(c => String(c).trim() === "")) continue;
 
-const rollNo = String(row[getColumn("rollNo")] ?? "").trim();
-const name = String(row[getColumn("name")] ?? "").trim();
-const fatherName = String(row[getColumn("fatherName")] ?? "").trim();
-const motherName = String(row[getColumn("motherName")] ?? "").trim();
-
-const rollNo = String(row[col["ROLLNO"]] || "").trim();
-const name = String(row[col["CANDNAME"]] || "").trim();
-const fatherName = String(row[col["FATHERNAME"]] || "").trim();
-const motherName = String(row[col["MOTHERNAME"]] || "").trim();
+const rollNo = String(row[findColumn(...FIELD_MAP.rollNo)] ?? "").trim();
+const name = String(row[findColumn(...FIELD_MAP.name)] ?? "").trim();
+const fatherName = String(row[findColumn(...FIELD_MAP.fatherName)] ?? "").trim();
+const motherName = String(row[findColumn(...FIELD_MAP.motherName)] ?? "").trim();
 
 students.push({
     rollNo,
@@ -487,25 +482,25 @@ students.push({
     fatherName,
     motherName,
 
-    rank: String(row[getColumn("rank")] ?? "").trim(),
+    rank: String(row[findColumn(...FIELD_MAP.rank)] ?? "").trim(),
 
-    applicationNo: String(row[getColumn("applicationNo")] ?? "").trim(),
+    applicationNo: String(row[findColumn(...FIELD_MAP.applicationNo)] ?? "").trim(),
 
-    dob: String(row[getColumn("dob")] ?? "").trim(),
+    dob: String(row[findColumn(...FIELD_MAP.dob)] ?? "").trim(),
 
-    gender: String(row[getColumn("gender")] ?? "").trim(),
+    gender: String(row[findColumn(...FIELD_MAP.gender)] ?? "").trim(),
 
-    category: String(row[getColumn("category")] ?? "").trim(),
+    category: String(row[findColumn(...FIELD_MAP.category)] ?? "").trim(),
 
-    horizontalCategory: String(row[getColumn("horizontalCategory")] ?? "").trim(),
+    horizontalCategory: String(row[findColumn(...FIELD_MAP.horizontalCategory)] ?? "").trim(),
 
-    femaleCategory: String(row[getColumn("femaleCategory")] ?? "").trim(),
+    femaleCategory: String(row[findColumn(...FIELD_MAP.femaleCategory)] ?? "").trim(),
 
-    tsp: String(row[getColumn("tsp")] ?? "").trim(),
+    tsp: String(row[findColumn(...FIELD_MAP.tsp)] ?? "").trim(),
 
-    netMarks: String(row[getColumn("netMarks")] ?? "").trim(),
+    netMarks: String(row[findColumn(...FIELD_MAP.netMarks)] ?? "").trim(),
 
-    selectionCategory: String(row[getColumn("selectionCategory")] ?? "").trim(),
+    selectionCategory: String(row[findColumn(...FIELD_MAP.selectionCategory)] ?? "").trim(),
 
     searchRoll: rollNo.toLowerCase(),
 
