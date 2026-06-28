@@ -23,71 +23,67 @@ const STUDENTS_COL = 'resultStudents';
 const BATCH_SIZE   = 500;
 
 // ── Smart Field Map ──────────────────────────────────────────
-// Each key maps to an array of normalized header aliases.
-// Header normalization: UPPERCASE, strip spaces/underscores/dashes/dots/parens.
+// Every key maps to an array of normalized aliases.
+// Normalization strips all punctuation/whitespace and uppercases.
+// Add more aliases here without touching any other code.
 const FIELD_MAP = {
   rollNo: [
-    "ROLLNO","ROLLNUMBER","ROLL","ROLLNO",
-    "APPLICATIONNO","APPLICATION","APPLICATIONNUMBER",
-    "REGISTRATIONNO","REGISTRATIONNUMBER"
+    "ROLLNO", "ROLLNUMBER", "ROLL", "REGNNO", "REGDNO",
+    "REGISTRATIONNO", "REGISTRATIONNUMBER", "REGNUMBER",
+    "REGNO", "REGDNUMBER",
+    "APPLICATIONNO", "APPLICATION", "APPLICATIONNUMBER",
+    "APPLICATIONID", "APPNO", "APPID",
+    "CANDIDATEID", "CANDIDATENO"
   ],
   name: [
-    "CANDNAME","CANDIDATENAME","NAME",
-    "STUDENTNAME","APPLICANTNAME"
+    "NAME", "CANDNAME", "CANDIDATENAME", "CANDIDATEFULLNAME",
+    "STUDENTNAME", "APPLICANTNAME", "FULLNAME"
   ],
   fatherName: [
-    "FATHERNAME","FATHER","FNAME"
+    "FATHERNAME", "FATHER", "FNAME", "FATHERSNAME"
   ],
   motherName: [
-    "MOTHERNAME","MOTHER","MNAME"
+    "MOTHERNAME", "MOTHER", "MNAME", "MOTHERSNAME"
   ],
   applicationNo: [
-    "APPLICATION","APPLICATIONNO","APPLICATIONNUMBER"
+    "APPLICATIONNO", "APPLICATION", "APPLICATIONNUMBER",
+    "APPLICATIONID", "APPNO", "APPID"
   ],
   dob: [
-    "DOB","DATEOFBIRTH","BIRTHDATE"
+    "DOB", "DATEOFBIRTH", "BIRTHDATE", "DATEOFBIRTH", "BDATE"
   ],
   gender: [
-    "GENDER","SEX"
+    "GENDER", "SEX"
   ],
   category: [
-    "CATEGORY","CAT","CASTE"
+    "CATEGORY", "CAT", "CASTE", "CASTECATEGORY"
   ],
   horizontalCategory: [
-    "HCAT","HORIZONTALCATEGORY"
+    "HCAT", "HORIZONTALCATEGORY", "HCATEGORY", "HORIZCAT"
   ],
   femaleCategory: [
-    "FCAT","FEMALECATEGORY"
+    "FCAT", "FEMALECATEGORY", "FCATEGORY"
   ],
   tsp: [
-    "TSP","NONTSP","AREA"
+    "TSP", "NONTSP", "AREA", "TSPAREA"
   ],
   netMarks: [
-    "NET","NETMARKS","MARKS",
-    "SCORE","TOTALMARKS","OBTAINEDMARKS"
+    "NET", "NETMARKS", "MARKS", "NETSCORE",
+    "SCORE", "TOTALMARKS", "OBTAINEDMARKS", "TOTAL"
   ],
   rank: [
-    "RANK","OVERALLRANK","MERITRANK"
+    "RANK", "MERIT", "MERITRANK", "OVERALLRANK",
+    "MERITNO", "MERITPOSITION", "POSITION"
   ],
   selectionCategory: [
-    "SELCAT","SELECTIONCATEGORY"
+    "SELCAT", "SELECTIONCATEGORY", "SELCATEGORY", "SELECTEDCAT"
   ]
 };
 
-// ── Header Normalizer ────────────────────────────────────────
-function normalizeHeader(h) {
-  return String(h)
-    .trim()
-    .toUpperCase()
-    .replace(/\r/g, "")
-    .replace(/\n/g, "")
-    .replace(/\s+/g, "")
-    .replace(/_/g, "")
-    .replace(/-/g, "")
-    .replace(/\./g, "")
-    .replace(/\(/g, "")
-    .replace(/\)/g, "");
-}
+// ── All normalized aliases in one flat set (for header-row detection) ─
+const ALL_ALIASES = new Set(
+  Object.values(FIELD_MAP).flat()
+);
 
 // ── DOM References ───────────────────────────────────────────
 const examNameInput       = document.getElementById('exam-name-input');
@@ -131,10 +127,10 @@ const replaceProgressBar     = document.getElementById('replace-progress-bar');
 const replaceProgressLabel   = document.getElementById('replace-progress-label');
 
 // ── State ────────────────────────────────────────────────────
-let pendingDeleteId   = null;
-let pendingRenameId   = null;
-let pendingReplaceId  = null;
-let pendingReplaceName= null;
+let pendingDeleteId    = null;
+let pendingRenameId    = null;
+let pendingReplaceId   = null;
+let pendingReplaceName = null;
 
 // ── Utility: Toast ───────────────────────────────────────────
 function showToast(message, type = 'info') {
@@ -215,10 +211,167 @@ function escAttr(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
-// ── Excel Parsing ────────────────────────────────────────────
-// Dynamically detects columns using FIELD_MAP aliases.
-// Header order, header names, and sheet names do not matter.
-// Extra columns are ignored. Missing columns return "".
+// ════════════════════════════════════════════════════════════
+// EXCEL PARSER — production-grade, fully dynamic
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Normalize a raw header cell value into a canonical lookup key.
+ * Strips ALL punctuation, whitespace, and special characters, then uppercases.
+ */
+function normalizeHeader(raw) {
+  return String(raw)
+    .toUpperCase()
+    .replace(/[\s\t\r\n_\-\.:;,\/\\()\[\]{}'\"#*]+/g, '');
+}
+
+/**
+ * Score a candidate header row by counting how many of its cells
+ * match at least one known alias in FIELD_MAP.
+ * Returns the match count (higher = better header candidate).
+ */
+function scoreHeaderRow(row) {
+  let score = 0;
+  for (const cell of row) {
+    if (ALL_ALIASES.has(normalizeHeader(cell))) score++;
+  }
+  return score;
+}
+
+/**
+ * Scan the first `scanLimit` rows of a sheet's data array and return
+ * the index of the row that best matches known field aliases.
+ * Falls back to row 0 if nothing scores > 0.
+ */
+function detectHeaderRowIndex(rows, scanLimit = 10) {
+  let bestIdx   = 0;
+  let bestScore = 0;
+  const limit = Math.min(scanLimit, rows.length);
+  for (let i = 0; i < limit; i++) {
+    const score = scoreHeaderRow(rows[i]);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx   = i;
+    }
+  }
+  return bestIdx;
+}
+
+/**
+ * Build a column-index map for one sheet.
+ * Returns { colMap, headerRowIndex } where colMap is:
+ *   { NORMALIZED_ALIAS: columnIndex, … }
+ */
+function buildColMap(rows) {
+  const headerRowIndex = detectHeaderRowIndex(rows);
+  const headerRow      = rows[headerRowIndex] || [];
+  const colMap         = {};
+  headerRow.forEach((cell, i) => {
+    const key = normalizeHeader(cell);
+    if (key && colMap[key] === undefined) {
+      colMap[key] = i;
+    }
+  });
+  return { colMap, headerRowIndex };
+}
+
+/**
+ * Given a colMap and a list of field aliases, return the first matching
+ * column index, or -1 if none found.
+ */
+function findCol(colMap, aliases) {
+  for (const alias of aliases) {
+    const key = normalizeHeader(alias);
+    if (colMap[key] !== undefined) return colMap[key];
+  }
+  return -1;
+}
+
+/**
+ * Extract a string value from a data row using field aliases.
+ * Returns "" when the column is absent or the cell is empty.
+ */
+function getVal(row, colMap, aliases) {
+  const idx = findCol(colMap, aliases);
+  if (idx === -1) return '';
+  return safe(row[idx]);
+}
+
+/**
+ * Return true when every mapped field in the row is blank.
+ * Used to skip genuinely empty rows while preserving rows with
+ * partial data (e.g. roll number missing but name present).
+ */
+function isRowAllEmpty(row, colMap) {
+  return Object.values(FIELD_MAP).every(aliases => {
+    return getVal(row, colMap, aliases) === '';
+  });
+}
+
+/**
+ * Build a single student object from one data row.
+ * Returns null only if ALL mapped fields are empty.
+ */
+function buildStudent(row, colMap) {
+  if (!row) return null;
+  if (isRowAllEmpty(row, colMap)) return null;
+
+  const rollNo      = getVal(row, colMap, FIELD_MAP.rollNo);
+  const name        = getVal(row, colMap, FIELD_MAP.name);
+  const fatherName  = getVal(row, colMap, FIELD_MAP.fatherName);
+  const motherName  = getVal(row, colMap, FIELD_MAP.motherName);
+  const applicationNo = getVal(row, colMap, FIELD_MAP.applicationNo);
+
+  return {
+    rollNo,
+    applicationNo,
+    rank:               getVal(row, colMap, FIELD_MAP.rank),
+    name,
+    fatherName,
+    motherName,
+    dob:                getVal(row, colMap, FIELD_MAP.dob),
+    gender:             getVal(row, colMap, FIELD_MAP.gender),
+    category:           getVal(row, colMap, FIELD_MAP.category),
+    horizontalCategory: getVal(row, colMap, FIELD_MAP.horizontalCategory),
+    femaleCategory:     getVal(row, colMap, FIELD_MAP.femaleCategory),
+    tsp:                getVal(row, colMap, FIELD_MAP.tsp),
+    netMarks:           getVal(row, colMap, FIELD_MAP.netMarks),
+    selectionCategory:  getVal(row, colMap, FIELD_MAP.selectionCategory),
+    searchRoll:         rollNo.toLowerCase(),
+    searchName:         name.toLowerCase(),
+    searchFather:       fatherName.toLowerCase(),
+    searchMother:       motherName.toLowerCase()
+  };
+}
+
+/**
+ * Parse one worksheet's raw 2-D array into student objects.
+ * Header row is auto-detected; data rows follow immediately after it.
+ */
+function parseSheet(rows) {
+  if (!rows.length) return [];
+
+  const { colMap, headerRowIndex } = buildColMap(rows);
+  const students = [];
+
+  for (let r = headerRowIndex + 1; r < rows.length; r++) {
+    const student = buildStudent(rows[r], colMap);
+    if (student) students.push(student);
+  }
+
+  return students;
+}
+
+/**
+ * Main entry point: read an Excel File object and resolve with an array
+ * of student objects deduplicated by rollNo+applicationNo+name.
+ *
+ * - Works with any number of sheets.
+ * - Each sheet gets its own independent header detection.
+ * - Column order never matters.
+ * - Missing columns return "".
+ * - Completely blank rows are skipped; rows with partial data are kept.
+ */
 function parseExcel(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -235,99 +388,29 @@ function parseExcel(file) {
           return reject(new Error('Excel file has no sheets.'));
         }
 
-        // Read header row from Sheet 1 to build column index map
-        const firstSheet = workbook.Sheets[sheets[0]];
-        const firstRows  = XLSX.utils.sheet_to_json(firstSheet, {
-          header: 1,
-          defval: ''
-        });
+        const allStudents = [];
+        // Deduplicate across sheets using rollNo + applicationNo + name
+        const seen = new Set();
 
-        if (!firstRows.length) {
-          return reject(new Error('Sheet 1 is empty. Cannot read headers.'));
-        }
-
-        // Normalize every header and map to its column index
-        const col = {};
-        firstRows[0].forEach((h, i) => {
-          const key = normalizeHeader(h);
-          if (key) col[key] = i;
-        });
-
-        // Find a column index by trying each alias in order
-        function findColumn(aliases) {
-          for (const alias of aliases) {
-            const key = normalizeHeader(alias);
-            if (col[key] !== undefined) return col[key];
-          }
-          return -1;
-        }
-
-        // Get the string value for a field from a data row
-        function getValue(row, aliases) {
-          const index = findColumn(aliases);
-          if (index === -1) return '';
-          return String(row[index] ?? '').trim();
-        }
-
-        // Build one student object from a data row
-        function buildStudent(row) {
-          // Skip completely blank rows
-          if (!row || row.every(c => String(c).trim() === '')) return null;
-
-          const rollNo      = getValue(row, FIELD_MAP.rollNo);
-          const name        = getValue(row, FIELD_MAP.name);
-          const fatherName  = getValue(row, FIELD_MAP.fatherName);
-          const motherName  = getValue(row, FIELD_MAP.motherName);
-
-          // Skip rows with no roll number and no name
-          if (!rollNo && !name) return null;
-
-          return {
-            rank:               getValue(row, FIELD_MAP.rank),
-            applicationNo:      getValue(row, FIELD_MAP.applicationNo),
-            rollNo,
-            name,
-            fatherName,
-            motherName,
-            dob:                getValue(row, FIELD_MAP.dob),
-            gender:             getValue(row, FIELD_MAP.gender),
-            category:           getValue(row, FIELD_MAP.category),
-            horizontalCategory: getValue(row, FIELD_MAP.horizontalCategory),
-            femaleCategory:     getValue(row, FIELD_MAP.femaleCategory),
-            tsp:                getValue(row, FIELD_MAP.tsp),
-            netMarks:           getValue(row, FIELD_MAP.netMarks),
-            selectionCategory:  getValue(row, FIELD_MAP.selectionCategory),
-            // Lowercase search fields
-            searchRoll:   rollNo.toLowerCase(),
-            searchName:   name.toLowerCase(),
-            searchFather: fatherName.toLowerCase(),
-            searchMother: motherName.toLowerCase()
-          };
-        }
-
-        const students = [];
-
-        // Sheet 1: skip row 0 (header), parse from row 1 onwards
-        for (let r = 1; r < firstRows.length; r++) {
-          const student = buildStudent(firstRows[r]);
-          if (student) students.push(student);
-        }
-
-        // Remaining sheets: all rows are data (header was only in Sheet 1)
-        for (let s = 1; s < sheets.length; s++) {
-          const ws   = workbook.Sheets[sheets[s]];
+        for (const sheetName of sheets) {
+          const ws   = workbook.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-          for (let r = 0; r < rows.length; r++) {
-            const student = buildStudent(rows[r]);
-            if (student) students.push(student);
+          const sheetStudents = parseSheet(rows);
+
+          for (const student of sheetStudents) {
+            const key = `${student.rollNo}|${student.applicationNo}|${student.name}`.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              allStudents.push(student);
+            }
           }
         }
 
-        if (!students.length) {
+        if (!allStudents.length) {
           return reject(new Error('No student records found in the Excel file.'));
         }
 
-        resolve(students);
+        resolve(allStudents);
 
       } catch (err) {
         reject(err);
@@ -338,7 +421,11 @@ function parseExcel(file) {
   });
 }
 
-// ── Firestore: Batch write students ─────────────────────────
+// ════════════════════════════════════════════════════════════
+// FIRESTORE OPERATIONS
+// ════════════════════════════════════════════════════════════
+
+// ── Batch write students ─────────────────────────────────────
 async function batchWriteStudents(students, examId, examName, onProgress) {
   const total  = students.length;
   let written  = 0;
@@ -365,7 +452,7 @@ async function batchWriteStudents(students, examId, examName, onProgress) {
   }
 }
 
-// ── Firestore: Delete all students of an exam ────────────────
+// ── Delete all students of an exam ───────────────────────────
 async function deleteAllStudents(examId, onProgress) {
   const q      = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
   const snap   = await getDocs(q);
@@ -386,7 +473,7 @@ async function deleteAllStudents(examId, onProgress) {
   }
 }
 
-// ── Firestore: Batch update examName in students ─────────────
+// ── Batch update examName in all student docs ─────────────────
 async function updateStudentsExamName(examId, newName) {
   const q    = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
   const snap = await getDocs(q);
@@ -447,7 +534,10 @@ async function loadExams() {
   }
 }
 
-// ── File input display update ────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// FILE INPUT DISPLAY
+// ════════════════════════════════════════════════════════════
+
 excelFileInput.addEventListener('change', () => {
   const file = excelFileInput.files[0];
   if (file) {
@@ -470,7 +560,10 @@ replaceFileInput.addEventListener('change', () => {
   }
 });
 
-// ── IMPORT ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// IMPORT
+// ════════════════════════════════════════════════════════════
+
 importBtn.addEventListener('click', async () => {
   hideAlert();
 
@@ -511,7 +604,8 @@ importBtn.addEventListener('click', async () => {
     await batchWriteStudents(students, examId, examName, (pct, written, total) => {
       const displayPct = 5 + Math.round(pct * 0.95);
       importProgressBar.style.width = displayPct + '%';
-      importProgressLabel.textContent = `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} students`;
+      importProgressLabel.textContent =
+        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} students`;
     });
 
     importProgressBar.style.width = '100%';
@@ -549,7 +643,10 @@ importBtn.addEventListener('click', async () => {
   }
 });
 
-// ── DELETE ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// DELETE
+// ════════════════════════════════════════════════════════════
+
 window.handleDelete = function(examId, examName) {
   pendingDeleteId = examId;
   deleteConfirmText.textContent =
@@ -579,7 +676,10 @@ deleteConfirmBtn.addEventListener('click', async () => {
   }
 });
 
-// ── RENAME ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// RENAME
+// ════════════════════════════════════════════════════════════
+
 window.handleRename = function(examId, examName) {
   pendingRenameId = examId;
   renameInput.value = examName;
@@ -618,7 +718,10 @@ renameInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') renameConfirmBtn.click();
 });
 
-// ── REPLACE ──────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// REPLACE
+// ════════════════════════════════════════════════════════════
+
 window.handleReplace = function(examId, examName) {
   pendingReplaceId   = examId;
   pendingReplaceName = examName;
@@ -647,7 +750,8 @@ replaceConfirmBtn.addEventListener('click', async () => {
 
   try {
     const students = await parseExcel(file);
-    replaceProgressLabel.textContent = `Parsed ${students.length.toLocaleString('en-IN')} students. Deleting old records…`;
+    replaceProgressLabel.textContent =
+      `Parsed ${students.length.toLocaleString('en-IN')} students. Deleting old records…`;
     replaceProgressBar.style.width = '5%';
 
     await deleteAllStudents(pendingReplaceId, (pct) => {
@@ -662,7 +766,8 @@ replaceConfirmBtn.addEventListener('click', async () => {
     await batchWriteStudents(students, pendingReplaceId, pendingReplaceName, (pct, written, total) => {
       const displayPct = 35 + Math.round(pct * 0.6);
       replaceProgressBar.style.width = displayPct + '%';
-      replaceProgressLabel.textContent = `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')}`;
+      replaceProgressLabel.textContent =
+        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')}`;
     });
 
     await updateDoc(doc(db, RESULTS_COL, pendingReplaceId), {
