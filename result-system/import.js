@@ -485,10 +485,10 @@ function getColumn(field) {
 
                         if (!row || row.every(c => String(c).trim() === "")) continue;
 
-const rollNo = String(row[findColumn(...FIELD_MAP.rollNo)] ?? "").trim();
-const name = String(row[findColumn(...FIELD_MAP.name)] ?? "").trim();
-const fatherName = String(row[findColumn(...FIELD_MAP.fatherName)] ?? "").trim();
-const motherName = String(row[findColumn(...FIELD_MAP.motherName)] ?? "").trim();
+const rollNo = getValue(row, FIELD_MAP.rollNo);
+const name = getValue(row, FIELD_MAP.name);
+const fatherName = getValue(row, FIELD_MAP.fatherName);
+const motherName = getValue(row, FIELD_MAP.motherName);
 
 students.push({
     rollNo,
@@ -496,26 +496,31 @@ students.push({
     fatherName,
     motherName,
 
-    rank: String(row[findColumn(...FIELD_MAP.rank)] ?? "").trim(),
+    rank: getValue(row, FIELD_MAP.rank),
 
-    applicationNo: String(row[findColumn(...FIELD_MAP.applicationNo)] ?? "").trim(),
+    applicationNo: getValue(row, FIELD_MAP.applicationNo),
 
-    dob: String(row[findColumn(...FIELD_MAP.dob)] ?? "").trim(),
+    dob: getValue(row, FIELD_MAP.dob),
 
-    gender: String(row[findColumn(...FIELD_MAP.gender)] ?? "").trim(),
+    gender: getValue(row, FIELD_MAP.gender),
 
-    category: String(row[findColumn(...FIELD_MAP.category)] ?? "").trim(),
+    category: getValue(row, FIELD_MAP.category),
 
-    horizontalCategory: String(row[findColumn(...FIELD_MAP.horizontalCategory)] ?? "").trim(),
+    horizontalCategory: getValue(row, FIELD_MAP.horizontalCategory),
 
-    femaleCategory: String(row[findColumn(...FIELD_MAP.femaleCategory)] ?? "").trim(),
+    femaleCategory: getValue(row, FIELD_MAP.femaleCategory),
 
-    tsp: String(row[findColumn(...FIELD_MAP.tsp)] ?? "").trim(),
+    tsp: getValue(row, FIELD_MAP.tsp),
 
-    netMarks: String(row[findColumn(...FIELD_MAP.netMarks)] ?? "").trim(),
+    netMarks: getValue(row, FIELD_MAP.netMarks),
 
-    selectionCategory: String(row[findColumn(...FIELD_MAP.selectionCategory)] ?? "").trim(),
+    selectionCategory: getValue(row, FIELD_MAP.selectionCategory),
 
+    searchRoll: rollNo.toLowerCase(),
+    searchName: name.toLowerCase(),
+    searchFather: fatherName.toLowerCase(),
+    searchMother: motherName.toLowerCase()
+});
     searchRoll: rollNo.toLowerCase(),
 
     searchName: name.toLowerCase(),
