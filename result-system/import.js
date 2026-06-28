@@ -346,6 +346,10 @@ const headers = firstData[0].map(h =>
         .replace(/\n/g, "")
         .replace(/\s+/g, "")
         .replace(/_/g, "")
+        .replace(/-/g, "")
+        .replace(/\./g, "")
+        .replace(/\(/g, "")
+        .replace(/\)/g, "")
 );
                 const col = {};
 
