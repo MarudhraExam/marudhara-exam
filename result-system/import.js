@@ -355,20 +355,65 @@ const headers = firstData[0].map(h =>
 console.log(headers);
 console.log(col);
 const FIELD_MAP = {
-    rollNo: ["ROLLNO","ROLLNUMBER","ROLL","APPLICATIONNO","APPLICATION","REGISTRATIONNO"],
-    name: ["CANDNAME","CANDIDATENAME","NAME","STUDENTNAME"],
-    fatherName: ["FATHERNAME","FNAME","FATHER"],
-    motherName: ["MOTHERNAME","MNAME","MOTHER"],
-    applicationNo: ["APPLICATION","APPLICATIONNO"],
-    dob: ["DOB","DATEOFBIRTH","BIRTHDATE"],
-    gender: ["GENDER","SEX"],
-    category: ["CAT","CATEGORY"],
-    horizontalCategory: ["HCAT","HORIZONTALCATEGORY"],
-    femaleCategory: ["FCAT","FEMALECATEGORY"],
-    tsp: ["TSP","NONTSP"],
-    netMarks: ["NET","NETMARKS","MARKS","SCORE","OBTAINEDMARKS"],
-    rank: ["RANK","OVERALLRANK"],
-    selectionCategory: ["SELCAT","SELECTIONCATEGORY"]
+    rollNo: [
+        "ROLLNO","ROLLNUMBER","ROLL","ROLL_NUMBER",
+        "APPLICATIONNO","APPLICATION","APPLICATIONNUMBER",
+        "REGISTRATIONNO","REGISTRATIONNUMBER"
+    ],
+
+    name: [
+        "CANDNAME","CANDIDATENAME","NAME",
+        "STUDENTNAME","APPLICANTNAME"
+    ],
+
+    fatherName: [
+        "FATHERNAME","FATHER","FNAME"
+    ],
+
+    motherName: [
+        "MOTHERNAME","MOTHER","MNAME"
+    ],
+
+    applicationNo: [
+        "APPLICATION","APPLICATIONNO","APPLICATIONNUMBER"
+    ],
+
+    dob: [
+        "DOB","DATEOFBIRTH","BIRTHDATE"
+    ],
+
+    gender: [
+        "GENDER","SEX"
+    ],
+
+    category: [
+        "CATEGORY","CAT","CASTE"
+    ],
+
+    horizontalCategory: [
+        "HCAT","HORIZONTALCATEGORY"
+    ],
+
+    femaleCategory: [
+        "FCAT","FEMALECATEGORY"
+    ],
+
+    tsp: [
+        "TSP","NONTSP","AREA"
+    ],
+
+    netMarks: [
+        "NET","NETMARKS","MARKS",
+        "SCORE","TOTALMARKS","OBTAINEDMARKS"
+    ],
+
+    rank: [
+        "RANK","OVERALLRANK","MERITRANK"
+    ],
+
+    selectionCategory: [
+        "SELCAT","SELECTIONCATEGORY"
+    ]
 };
 
 function getColumn(field) {
