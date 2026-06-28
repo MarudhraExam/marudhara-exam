@@ -475,6 +475,7 @@ function getColumn(field) {
                         header: 1,
                         defval: ""
                     });
+                resolve(students);
 
                     // First sheet -> header skip
                     // Other sheets -> data starts from row 0
