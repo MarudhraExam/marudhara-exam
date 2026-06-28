@@ -14,7 +14,9 @@ import {
   where,
   writeBatch,
   serverTimestamp,
-  orderBy
+  orderBy,
+  limit,
+  startAfter
 } from "./firebase.js";
 
 // ── Constants ────────────────────────────────────────────────
@@ -425,65 +427,202 @@ function parseExcel(file) {
 // FIRESTORE OPERATIONS
 // ════════════════════════════════════════════════════════════
 
-// ── Batch write students ─────────────────────────────────────
-async function batchWriteStudents(students, examId, examName, onProgress) {
-  const total  = students.length;
-  let written  = 0;
+// ── Helper: Sleep ───────────────────────────────────────────
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const chunk = students.slice(i, i + BATCH_SIZE);
+// ── Helper: Commit with Retry & Exponential Backoff ─────────
+async function commitWithRetry(batch, retry = 0) {
+  try {
+    await batch.commit();
+  } catch (err) {
+    const code = String(err.code || "").toLowerCase();
+    const message = String(err.message || "").toLowerCase();
+
+    const isQuotaOrTransient =
+      code.includes("resource-exhausted") ||
+      code.includes("deadline-exceeded") ||
+      code.includes("unavailable") ||
+      message.includes("resource-exhausted") ||
+      message.includes("quota exceeded") ||
+      message.includes("deadline exceeded") ||
+      message.includes("unavailable") ||
+      message.includes("overloaded");
+
+    if (isQuotaOrTransient) {
+      if (retry >= 8) throw err;
+
+      // Exponential backoff: 2s -> 4s -> 8s -> 16s... up to 30s max
+      const delay = Math.min(2000 * Math.pow(2, retry), 30000);
+      console.warn(`Firestore quota/transient limit reached. Retrying attempt ${retry + 1} after ${delay}ms...`);
+      await sleep(delay);
+      return commitWithRetry(batch, retry + 1);
+    }
+    throw err;
+  }
+}
+
+// ── Optimized Smart Batch Upload with Dynamic Sizing ────────
+async function batchWriteStudents(students, examId, examName, onProgress) {
+  let batchSize = 500;
+  let uploaded = 0;
+  const total = students.length;
+  const startTime = Date.now();
+  let consecutiveSuccesses = 0;
+
+  for (let i = 0; i < total; ) {
+    const chunk = students.slice(i, i + batchSize);
     const batch = writeBatch(db);
 
     chunk.forEach(student => {
       const ref = doc(collection(db, STUDENTS_COL));
       batch.set(ref, {
+        ...student,
         examId,
         examName,
-        ...student,
         createdAt: serverTimestamp()
       });
     });
 
-    await batch.commit();
-    written += chunk.length;
+    try {
+      await commitWithRetry(batch);
+      uploaded += chunk.length;
+      i += chunk.length;
+      consecutiveSuccesses++;
 
-    const pct = Math.round((written / total) * 100);
-    onProgress(pct, written, total);
-  }
-}
+      // Slowly scale back up if we remain stable for multiple consecutive batches
+      if (consecutiveSuccesses >= 3 && batchSize < 500) {
+        batchSize = Math.min(500, batchSize + 50);
+        consecutiveSuccesses = 0; // reset stable count
+        console.info(`Upload stable. Increasing batch size to: ${batchSize}`);
+      }
 
-// ── Delete all students of an exam ───────────────────────────
-async function deleteAllStudents(examId, onProgress) {
-  const q      = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
-  const snap   = await getDocs(q);
-  const docs   = snap.docs;
-  const total  = docs.length;
-  let deleted  = 0;
+      // Progress metrics
+      const percent = Math.round((uploaded * 100) / total);
+      const elapsed = (Date.now() - startTime) / 1000;
+      const speed = uploaded / Math.max(elapsed, 1);
+      const remaining = total - uploaded;
+      const eta = Math.round(remaining / Math.max(speed, 1));
 
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const chunk = docs.slice(i, i + BATCH_SIZE);
-    const batch = writeBatch(db);
-    chunk.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    deleted += chunk.length;
-    if (onProgress) {
-      const pct = Math.round((deleted / total) * 100);
-      onProgress(pct, deleted, total);
+      if (onProgress) {
+        onProgress(percent, uploaded, total, eta);
+      }
+
+      // Batch Delay (200-300ms cooldown) to prevent aggressive throttling
+      await sleep(250);
+
+    } catch (err) {
+      console.error("Batch write failed, reducing batch size:", err);
+      consecutiveSuccesses = 0; // reset stable count
+
+      // Throttle down batch sizes immediately on failure
+      if (batchSize > 250) {
+        batchSize = 250;
+      } else if (batchSize > 100) {
+        batchSize = 100;
+      } else {
+        // Already at lowest batchSize limit (100) and still failing, propagate error to trigger rollback
+        throw err;
+      }
+
+      console.warn(`Dynamic batch scale down triggered. New batch size: ${batchSize}`);
+      // Note: `i` is NOT incremented, so the next iteration will re-attempt this slice with the smaller batch size
     }
   }
 }
 
-// ── Batch update examName in all student docs ─────────────────
-async function updateStudentsExamName(examId, newName) {
-  const q    = query(collection(db, STUDENTS_COL), where('examId', '==', examId));
-  const snap = await getDocs(q);
-  const docs = snap.docs;
+// ── Smart Deletion in Batches of 500 ────────────────────────
+async function deleteAllStudents(examId, onProgress) {
+  let deleted = 0;
+  let hasMore = true;
 
-  for (let i = 0; i < docs.length; i += BATCH_SIZE) {
-    const chunk = docs.slice(i, i + BATCH_SIZE);
+  // Attempt to fetch the total records estimate from RESULTS_COL to compute accurate deletion progress
+  let total = 0;
+  try {
+    const examDoc = await getDoc(doc(db, RESULTS_COL, examId));
+    if (examDoc.exists()) {
+      total = Number(examDoc.data().studentsCount) || 0;
+    }
+  } catch (err) {
+    console.warn("Could not fetch total student count for deletion progress bar:", err);
+  }
+
+  while (hasMore) {
+    const q = query(
+      collection(db, STUDENTS_COL),
+      where('examId', '==', examId),
+      limit(500)
+    );
+
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      hasMore = false;
+      break;
+    }
+
     const batch = writeBatch(db);
-    chunk.forEach(d => batch.update(d.ref, { examName: newName }));
-    await batch.commit();
+    snap.docs.forEach(d => batch.delete(d.ref));
+
+    await commitWithRetry(batch);
+    deleted += snap.docs.length;
+
+    if (onProgress) {
+      const progressTotal = Math.max(total, deleted);
+      const pct = progressTotal > 0 ? Math.round((deleted / progressTotal) * 100) : 100;
+      onProgress(pct, deleted, progressTotal);
+    }
+
+    if (snap.docs.length < 500) {
+      hasMore = false;
+    } else {
+      // Cooldown between batches
+      await sleep(250);
+    }
+  }
+}
+
+// ── Smart Rename (Batch update examName in all student docs) ─
+async function updateStudentsExamName(examId, newName) {
+  let lastVisible = null;
+  let hasMore = true;
+
+  while (hasMore) {
+    let q;
+    if (lastVisible) {
+      q = query(
+        collection(db, STUDENTS_COL),
+        where('examId', '==', examId),
+        orderBy('__name__'),
+        startAfter(lastVisible),
+        limit(500)
+      );
+    } else {
+      q = query(
+        collection(db, STUDENTS_COL),
+        where('examId', '==', examId),
+        orderBy('__name__'),
+        limit(500)
+      );
+    }
+
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      hasMore = false;
+      break;
+    }
+
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => {
+      batch.update(d.ref, { examName: newName });
+    });
+
+    await commitWithRetry(batch);
+    lastVisible = snap.docs[snap.docs.length - 1];
+
+    if (snap.docs.length < 500) {
+      hasMore = false;
+    } else {
+      await sleep(250); // cooldown between batches
+    }
   }
 }
 
@@ -587,6 +726,8 @@ importBtn.addEventListener('click', async () => {
   importProgressLabel.textContent = 'Reading Excel file…';
   uploadSummary.classList.remove('visible');
 
+  let examId = null;
+
   try {
     const students = await parseExcel(file);
     importProgressLabel.textContent = `Parsed ${students.length.toLocaleString('en-IN')} students. Writing to database…`;
@@ -599,13 +740,25 @@ importBtn.addEventListener('click', async () => {
       createdAt:     serverTimestamp()
     });
 
-    const examId = examRef.id;
+    examId = examRef.id;
 
-    await batchWriteStudents(students, examId, examName, (pct, written, total) => {
+    await batchWriteStudents(students, examId, examName, (pct, written, total, eta) => {
       const displayPct = 5 + Math.round(pct * 0.95);
       importProgressBar.style.width = displayPct + '%';
+
+      let etaStr = '';
+      if (eta !== undefined && eta !== null && !isNaN(eta) && isFinite(eta)) {
+        if (eta < 60) {
+          etaStr = ` | ETA: ${eta}s`;
+        } else {
+          const mins = Math.floor(eta / 60);
+          const secs = eta % 60;
+          etaStr = ` | ETA: ${mins}m ${secs}s`;
+        }
+      }
+
       importProgressLabel.textContent =
-        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} students`;
+        `Uploading… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} (${pct}%)${etaStr}`;
     });
 
     importProgressBar.style.width = '100%';
@@ -633,6 +786,17 @@ importBtn.addEventListener('click', async () => {
   } catch (err) {
     showAlert('Import failed: ' + err.message, 'danger');
     importProgressLabel.textContent = 'Failed.';
+
+    // Rollback incomplete exam metadata and student records if write fails
+    if (examId) {
+      console.warn(`Cleaning up incomplete exam metadata for ID: ${examId}`);
+      try {
+        await deleteDoc(doc(db, RESULTS_COL, examId));
+        await deleteAllStudents(examId);
+      } catch (cleanupErr) {
+        console.error('Error during metadata rollback:', cleanupErr);
+      }
+    }
   } finally {
     importBtn.disabled = false;
     importBtn.textContent = 'Import Results';
@@ -763,11 +927,23 @@ replaceConfirmBtn.addEventListener('click', async () => {
     replaceProgressBar.style.width = '35%';
     replaceProgressLabel.textContent = 'Writing new records…';
 
-    await batchWriteStudents(students, pendingReplaceId, pendingReplaceName, (pct, written, total) => {
+    await batchWriteStudents(students, pendingReplaceId, pendingReplaceName, (pct, written, total, eta) => {
       const displayPct = 35 + Math.round(pct * 0.6);
       replaceProgressBar.style.width = displayPct + '%';
+
+      let etaStr = '';
+      if (eta !== undefined && eta !== null && !isNaN(eta) && isFinite(eta)) {
+        if (eta < 60) {
+          etaStr = ` | ETA: ${eta}s`;
+        } else {
+          const mins = Math.floor(eta / 60);
+          const secs = eta % 60;
+          etaStr = ` | ETA: ${mins}m ${secs}s`;
+        }
+      }
+
       replaceProgressLabel.textContent =
-        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')}`;
+        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} (${pct}%)${etaStr}`;
     });
 
     await updateDoc(doc(db, RESULTS_COL, pendingReplaceId), {
