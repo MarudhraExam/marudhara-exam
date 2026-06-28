@@ -4,7 +4,6 @@
 import {
   db,
   collection,
-  addDoc,
   getDocs,
   getDoc,
   doc,
@@ -16,13 +15,15 @@ import {
   serverTimestamp,
   orderBy,
   limit,
-  startAfter
+  startAfter,
+  addDoc
 } from "./firebase.js";
+
+import { generateStaticDatabase } from "./generator.js";
 
 // ── Constants ────────────────────────────────────────────────
 const RESULTS_COL  = 'results';
 const STUDENTS_COL = 'resultStudents';
-const BATCH_SIZE   = 500;
 
 // ── Smart Field Map ──────────────────────────────────────────
 // Every key maps to an array of normalized aliases.
@@ -425,110 +426,11 @@ function parseExcel(file) {
 
 // ════════════════════════════════════════════════════════════
 // FIRESTORE OPERATIONS
+// (Retained for Exam List / Rename / Delete — NOT used for student records)
 // ════════════════════════════════════════════════════════════
 
 // ── Helper: Sleep ───────────────────────────────────────────
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// ── Helper: Commit with Retry & Exponential Backoff ─────────
-async function commitWithRetry(batch, retry = 0) {
-  try {
-    await batch.commit();
-  } catch (err) {
-    const code = String(err.code || "").toLowerCase();
-    const message = String(err.message || "").toLowerCase();
-
-    const isQuotaOrTransient =
-      code.includes("resource-exhausted") ||
-      code.includes("deadline-exceeded") ||
-      code.includes("unavailable") ||
-      message.includes("resource-exhausted") ||
-      message.includes("quota exceeded") ||
-      message.includes("deadline exceeded") ||
-      message.includes("unavailable") ||
-      message.includes("overloaded");
-
-    if (isQuotaOrTransient) {
-      if (retry >= 8) throw err;
-
-      // Exponential backoff: 2s -> 4s -> 8s -> 16s... up to 30s max
-      const delay = Math.min(2000 * Math.pow(2, retry), 30000);
-      console.warn(`Firestore quota/transient limit reached. Retrying attempt ${retry + 1} after ${delay}ms...`);
-      await sleep(delay);
-      return commitWithRetry(batch, retry + 1);
-    }
-    throw err;
-  }
-}
-
-// ── Optimized Smart Batch Upload with Dynamic Sizing ────────
-async function batchWriteStudents(students, examId, examName, onProgress) {
-  let batchSize = 500;
-  let uploaded = 0;
-  const total = students.length;
-  const startTime = Date.now();
-  let consecutiveSuccesses = 0;
-
-  for (let i = 0; i < total; ) {
-    const chunk = students.slice(i, i + batchSize);
-    const batch = writeBatch(db);
-
-    chunk.forEach(student => {
-      const ref = doc(collection(db, STUDENTS_COL));
-      batch.set(ref, {
-        ...student,
-        examId,
-        examName,
-        createdAt: serverTimestamp()
-      });
-    });
-
-    try {
-      await commitWithRetry(batch);
-      uploaded += chunk.length;
-      i += chunk.length;
-      consecutiveSuccesses++;
-
-      // Slowly scale back up if we remain stable for multiple consecutive batches
-      if (consecutiveSuccesses >= 3 && batchSize < 500) {
-        batchSize = Math.min(500, batchSize + 50);
-        consecutiveSuccesses = 0; // reset stable count
-        console.info(`Upload stable. Increasing batch size to: ${batchSize}`);
-      }
-
-      // Progress metrics
-      const percent = Math.round((uploaded * 100) / total);
-      const elapsed = (Date.now() - startTime) / 1000;
-      const speed = uploaded / Math.max(elapsed, 1);
-      const remaining = total - uploaded;
-      const eta = Math.round(remaining / Math.max(speed, 1));
-
-      if (onProgress) {
-        onProgress(percent, uploaded, total, eta);
-      }
-
-      // Batch Delay (200-300ms cooldown) to prevent aggressive throttling
-      await sleep(250);
-
-    } catch (err) {
-      console.error("Batch write failed, reducing batch size:", err);
-      consecutiveSuccesses = 0; // reset stable count
-
-      // Throttle down batch sizes immediately on failure
-      if (batchSize > 250) {
-        batchSize = 250;
-      } else if (batchSize > 100) {
-        batchSize = 100;
-      } else {
-        // Already at lowest batchSize limit (100) and still failing, propagate error to trigger rollback
-        throw err;
-      }
-
-      console.warn(`Dynamic batch scale down triggered. New batch size: ${batchSize}`);
-      // Note: `i` is NOT incremented, so the next iteration will re-attempt this slice with the smaller batch size
-    }
-  }
-}
 
 // ── Smart Deletion in Batches of 500 ────────────────────────
 async function deleteAllStudents(examId, onProgress) {
@@ -562,7 +464,7 @@ async function deleteAllStudents(examId, onProgress) {
     const batch = writeBatch(db);
     snap.docs.forEach(d => batch.delete(d.ref));
 
-    await commitWithRetry(batch);
+    await batch.commit();
     deleted += snap.docs.length;
 
     if (onProgress) {
@@ -615,7 +517,7 @@ async function updateStudentsExamName(examId, newName) {
       batch.update(d.ref, { examName: newName });
     });
 
-    await commitWithRetry(batch);
+    await batch.commit();
     lastVisible = snap.docs[snap.docs.length - 1];
 
     if (snap.docs.length < 500) {
@@ -729,38 +631,64 @@ importBtn.addEventListener('click', async () => {
   let examId = null;
 
   try {
+    // ── Step 1: Parse Excel ──────────────────────────────────
     const students = await parseExcel(file);
-    importProgressLabel.textContent = `Parsed ${students.length.toLocaleString('en-IN')} students. Writing to database…`;
     importProgressBar.style.width = '5%';
+    importProgressLabel.textContent =
+      `Parsed ${students.length.toLocaleString('en-IN')} students. Generating database…`;
 
+    // ── Step 2: Create exam metadata doc in Firestore ────────
+    // (keeps the Exam List table working — only student records move to static JSON)
     const examRef = await addDoc(collection(db, RESULTS_COL), {
       examName,
       fileName:      file.name,
       studentsCount: students.length,
       createdAt:     serverTimestamp()
     });
-
     examId = examRef.id;
 
-    await batchWriteStudents(students, examId, examName, (pct, written, total, eta) => {
-      const displayPct = 5 + Math.round(pct * 0.95);
-      importProgressBar.style.width = displayPct + '%';
+    importProgressBar.style.width = '10%';
+    importProgressLabel.textContent = 'Building static JSON database…';
 
-      let etaStr = '';
-      if (eta !== undefined && eta !== null && !isNaN(eta) && isFinite(eta)) {
-        if (eta < 60) {
-          etaStr = ` | ETA: ${eta}s`;
-        } else {
-          const mins = Math.floor(eta / 60);
-          const secs = eta % 60;
-          etaStr = ` | ETA: ${mins}m ${secs}s`;
-        }
-      }
-
-      importProgressLabel.textContent =
-        `Uploading… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} (${pct}%)${etaStr}`;
+    // ── Step 3: Generate static sharded JSON database ────────
+    const generated = await generateStaticDatabase(students, {
+      title:   examName,
+      session: examName
     });
 
+    importProgressBar.style.width = '90%';
+    importProgressLabel.textContent =
+      `Generated ${students.length.toLocaleString('en-IN')} records across ` +
+      `${generated.stats.rollShards} roll shards, ` +
+      `${generated.stats.nameShards} name shards, ` +
+      `${generated.stats.fatherShards} father shards. Preparing download…`;
+
+    // ── Step 4: Store virtual shards for live preview ────────
+    // search.js will read from this cache immediately after generation
+    // before the admin manually deploys results/ to GitHub
+    try {
+      window.__VIRTUAL_SHARDS__ = generated.filesMap;
+    } catch (_) {}
+
+    // ── Step 5: Persist metadata for getExamMetadata() fallback ─
+    try {
+      localStorage.setItem('__LAST_EXAM_META__', JSON.stringify(generated.metadata));
+    } catch (_) {}
+
+    // ── Step 6: Auto-download results.zip ───────────────────
+    if (generated.zipBlob) {
+      const safeName = examName.replace(/[^a-z0-9_\-]/gi, '_');
+      const url = URL.createObjectURL(generated.zipBlob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = `results_${safeName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ── Step 7: Complete ─────────────────────────────────────
     importProgressBar.style.width = '100%';
     importProgressLabel.textContent = 'Done!';
 
@@ -787,12 +715,11 @@ importBtn.addEventListener('click', async () => {
     showAlert('Import failed: ' + err.message, 'danger');
     importProgressLabel.textContent = 'Failed.';
 
-    // Rollback incomplete exam metadata and student records if write fails
+    // Rollback the exam metadata doc from Firestore if it was created
     if (examId) {
       console.warn(`Cleaning up incomplete exam metadata for ID: ${examId}`);
       try {
         await deleteDoc(doc(db, RESULTS_COL, examId));
-        await deleteAllStudents(examId);
       } catch (cleanupErr) {
         console.error('Error during metadata rollback:', cleanupErr);
       }
@@ -913,39 +840,56 @@ replaceConfirmBtn.addEventListener('click', async () => {
   replaceProgressLabel.textContent = 'Reading Excel file…';
 
   try {
+    // ── Step 1: Parse Excel ──────────────────────────────────
     const students = await parseExcel(file);
-    replaceProgressLabel.textContent =
-      `Parsed ${students.length.toLocaleString('en-IN')} students. Deleting old records…`;
     replaceProgressBar.style.width = '5%';
+    replaceProgressLabel.textContent =
+      `Parsed ${students.length.toLocaleString('en-IN')} students. Generating new database…`;
 
-    await deleteAllStudents(pendingReplaceId, (pct) => {
-      const displayPct = 5 + Math.round(pct * 0.3);
-      replaceProgressBar.style.width = displayPct + '%';
-      replaceProgressLabel.textContent = `Deleting old records… ${displayPct}%`;
+    // ── Step 2: Generate fresh static sharded JSON database ──
+    replaceProgressBar.style.width = '10%';
+    replaceProgressLabel.textContent = 'Building static JSON database…';
+
+    const generated = await generateStaticDatabase(students, {
+      title:   pendingReplaceName,
+      session: pendingReplaceName
     });
 
-    replaceProgressBar.style.width = '35%';
-    replaceProgressLabel.textContent = 'Writing new records…';
+    replaceProgressBar.style.width = '80%';
+    replaceProgressLabel.textContent =
+      `Generated ${students.length.toLocaleString('en-IN')} records across ` +
+      `${generated.stats.rollShards} roll shards, ` +
+      `${generated.stats.nameShards} name shards, ` +
+      `${generated.stats.fatherShards} father shards. Preparing download…`;
 
-    await batchWriteStudents(students, pendingReplaceId, pendingReplaceName, (pct, written, total, eta) => {
-      const displayPct = 35 + Math.round(pct * 0.6);
-      replaceProgressBar.style.width = displayPct + '%';
+    // ── Step 3: Replace virtual shards for live preview ──────
+    try {
+      window.__VIRTUAL_SHARDS__ = generated.filesMap;
+    } catch (_) {}
 
-      let etaStr = '';
-      if (eta !== undefined && eta !== null && !isNaN(eta) && isFinite(eta)) {
-        if (eta < 60) {
-          etaStr = ` | ETA: ${eta}s`;
-        } else {
-          const mins = Math.floor(eta / 60);
-          const secs = eta % 60;
-          etaStr = ` | ETA: ${mins}m ${secs}s`;
-        }
-      }
+    // ── Step 4: Persist updated metadata for fallback ────────
+    try {
+      localStorage.setItem('__LAST_EXAM_META__', JSON.stringify(generated.metadata));
+    } catch (_) {}
 
-      replaceProgressLabel.textContent =
-        `Writing… ${written.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} (${pct}%)${etaStr}`;
-    });
+    // ── Step 5: Auto-download new results.zip ────────────────
+    if (generated.zipBlob) {
+      const safeName = pendingReplaceName.replace(/[^a-z0-9_\-]/gi, '_');
+      const url = URL.createObjectURL(generated.zipBlob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = `results_${safeName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
 
+    replaceProgressBar.style.width = '90%';
+    replaceProgressLabel.textContent = 'Updating exam record…';
+
+    // ── Step 6: Update exam metadata doc in Firestore ────────
+    // (updates the count and date shown in the Exam List table)
     await updateDoc(doc(db, RESULTS_COL, pendingReplaceId), {
       fileName:      file.name,
       studentsCount: students.length,
