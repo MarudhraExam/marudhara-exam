@@ -358,10 +358,14 @@ headers.forEach((h, i) => {
 });
 
 function findColumn(...aliases) {
+
     for (const alias of aliases) {
+
         const key = String(alias)
             .trim()
             .toUpperCase()
+            .replace(/\r/g, "")
+            .replace(/\n/g, "")
             .replace(/\s+/g, "")
             .replace(/_/g, "")
             .replace(/-/g, "")
@@ -373,9 +377,19 @@ function findColumn(...aliases) {
             return col[key];
         }
     }
+
     return -1;
 }
 
+function getValue(row, aliases) {
+
+    const index = findColumn(...aliases);
+
+    if (index === -1) return "";
+
+    return String(row[index] ?? "").trim();
+
+}
 console.log(headers);
 console.log(col);
 const FIELD_MAP = {
