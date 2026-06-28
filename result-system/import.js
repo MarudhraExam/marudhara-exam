@@ -521,14 +521,7 @@ students.push({
     searchFather: fatherName.toLowerCase(),
     searchMother: motherName.toLowerCase()
 });
-    searchRoll: rollNo.toLowerCase(),
 
-    searchName: name.toLowerCase(),
-
-    searchFather: fatherName.toLowerCase(),
-
-    searchMother: motherName.toLowerCase()
-});
 
                 resolve(students);
 
