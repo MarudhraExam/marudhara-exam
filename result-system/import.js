@@ -523,7 +523,10 @@ students.push({
     searchFather: fatherName.toLowerCase(),
     searchMother: motherName.toLowerCase()
 });
+  }   // for loop close
+                });     // workbook.SheetNames.forEach close
 
+                resolve(students);
 
 
             } catch (err) {
