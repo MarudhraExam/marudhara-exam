@@ -5,25 +5,25 @@
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { 
-    getFirestore, 
-    collection, 
-    doc, 
-    addDoc, 
-    getDoc, 
-    getDocs, 
-    setDoc, 
-    updateDoc, 
-    deleteDoc, 
-    query, 
-    where, 
-    orderBy, 
-    limit, 
-    writeBatch, 
-    serverTimestamp, 
-    increment 
+import {
+    getFirestore,
+    collection,
+    doc,
+    addDoc,
+    getDoc,
+    getDocs,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    orderBy,
+    limit,
+    startAfter,
+    writeBatch,
+    serverTimestamp,
+    increment
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
 // Production Firebase Configuration Credentials
 const firebaseConfig = {
     apiKey: "AIzaSyDHe87UG-QGyZKxh7RI8t51q0GgppVd_YA",
@@ -56,6 +56,7 @@ export {
     where,
     orderBy,
     limit,
+    startAfter,
     writeBatch,
     serverTimestamp,
     increment
