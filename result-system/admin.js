@@ -22,24 +22,79 @@ const RESULTS_COL       = 'results';
 const STUDENTS_COL      = 'resultStudents';
 const BATCH_SIZE        = 500;
 
-// Header name → Firestore field mapping
-const HEADER_MAP = {
-  SLNO:        'slno',
-  RANK:        'rank',
-  APPLICATION: 'applicationNo',
-  ROLL_NO:     'rollNo',
-  CAND_NAME:   'name',
-  FATHER_NAME: 'fatherName',
-  MOTHER_NAME: 'motherName',
-  DOB:         'dob',
-  GENDER:      'gender',
-  CAT:         'category',
-  HCAT:        'horizontalCategory',
-  FCAT:        'femaleCategory',
-  TSP:         'tsp',
-  NET:         'netMarks',
-  Sel_Cat:     'selectionCategory'
+const FIELD_MAP = {
+    rollNo: [
+        "ROLLNO","ROLLNUMBER","ROLL","ROLL_NUMBER",
+        "APPLICATIONNO","APPLICATION","APPLICATIONNUMBER",
+        "REGISTRATIONNO","REGISTRATIONNUMBER"
+    ],
+
+    name: [
+        "CANDNAME","CANDIDATENAME","NAME",
+        "STUDENTNAME","APPLICANTNAME"
+    ],
+
+    fatherName: [
+        "FATHERNAME","FATHER","FNAME"
+    ],
+
+    motherName: [
+        "MOTHERNAME","MOTHER","MNAME"
+    ],
+
+    applicationNo: [
+        "APPLICATION","APPLICATIONNO","APPLICATIONNUMBER"
+    ],
+
+    dob: [
+        "DOB","DATEOFBIRTH","BIRTHDATE"
+    ],
+
+    gender: [
+        "GENDER","SEX"
+    ],
+
+    category: [
+        "CATEGORY","CAT","CASTE"
+    ],
+
+    horizontalCategory: [
+        "HCAT","HORIZONTALCATEGORY"
+    ],
+
+    femaleCategory: [
+        "FCAT","FEMALECATEGORY"
+    ],
+
+    tsp: [
+        "TSP","NONTSP","AREA"
+    ],
+
+    netMarks: [
+        "NET","NETMARKS","MARKS",
+        "SCORE","TOTALMARKS","OBTAINEDMARKS"
+    ],
+
+    rank: [
+        "RANK","OVERALLRANK","MERITRANK"
+    ],
+
+    selectionCategory: [
+        "SELCAT","SELECTIONCATEGORY"
+    ]
 };
+
+function getColumn(field) {
+    const aliases = FIELD_MAP[field] || [];
+
+    for (const alias of aliases) {
+        if (col[alias] !== undefined) {
+            return col[alias];
+        }
+    }
+
+    return -1;
+}
 
 // ── DOM References ───────────────────────────────────────────
 const examNameInput      = document.getElementById('exam-name-input');
