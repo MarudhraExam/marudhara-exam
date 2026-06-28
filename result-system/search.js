@@ -6,22 +6,139 @@ import {
   collection,
   getDocs,
   query,
-  where,
-  orderBy,
-  limit
+  orderBy
 } from './firebase.js';
 
+// ── Search Engine (inlined — no external search module required) ─────────────
+
+// Deterministic 2-digit bucket (mirrors generator.js)
+function getRollBucket(roll) {
+  let hash = 0;
+  const clean = String(roll || '').trim().toLowerCase();
+  for (let i = 0; i < clean.length; i++) {
+    hash = (hash * 31 + clean.charCodeAt(i)) % 100;
+  }
+  return String(Math.abs(hash)).padStart(2, '0');
+}
+
+// 2-letter prefix extraction (mirrors generator.js)
+function getNamePrefixes(nameStr) {
+  const clean = String(nameStr || '').trim().toLowerCase().replace(/[^a-z0-9\s]/g, '');
+  const words = clean.split(/\s+/).filter(w => w.length > 0);
+  const prefixes = new Set();
+  for (const w of words) {
+    prefixes.add(w.length === 1 ? w + '_' : w.slice(0, 2));
+  }
+  if (prefixes.size === 0) prefixes.add('__');
+  return Array.from(prefixes);
+}
+
+/**
+ * loadShardJson — loads a single shard JSON file.
+ * Checks the in-memory preview cache first, then fetches from the static server.
+ * @param  {string}       path - e.g. "results/roll/05.json"
+ * @returns {Promise<any>}       Parsed JSON or null if shard does not exist
+ */
+async function loadShardJson(path) {
+  // 1. In-memory preview (immediately after admin generates, before GitHub deploy)
+  if (typeof window !== 'undefined' && window.__VIRTUAL_SHARDS__) {
+    const cached = window.__VIRTUAL_SHARDS__[path];
+    if (cached !== undefined) {
+      try {
+        return typeof cached === 'string' ? JSON.parse(cached) : cached;
+      } catch (e) {
+        console.warn('[search.js] Virtual cache parse error:', e);
+      }
+    }
+  }
+
+  // 2. Static file fetch from GitHub-hosted /results/ directory
+  try {
+    const response = await fetch(`./${path}`);
+    if (!response.ok) {
+      if (response.status === 404) return null; // Shard absent — no records in this bucket
+      throw new Error(`HTTP ${response.status}: Failed to load ${path}`);
+    }
+    return await response.json();
+  } catch (err) {
+    console.error(`[search.js] Error loading shard [${path}]:`, err);
+    return null;
+  }
+}
+
+/**
+ * searchByRoll — Exact Roll Number lookup — O(1) shard access.
+ * @param  {string|number} rollNo
+ * @returns {Promise<Object|null>} Full student result object or null
+ */
+async function searchByRoll(rollNo) {
+  const cleanRoll = String(rollNo || '').trim();
+  if (!cleanRoll) return null;
+
+  const bucket     = getRollBucket(cleanRoll);
+  const bucketData = await loadShardJson(`results/roll/${bucket}.json`);
+  if (!bucketData) return null;
+
+  // Exact key match first (fast path)
+  if (bucketData[cleanRoll]) return bucketData[cleanRoll];
+
+  // Case-insensitive fallback (handles ROLL-001 vs roll-001 etc.)
+  const target = cleanRoll.toLowerCase();
+  for (const [key, student] of Object.entries(bucketData)) {
+    if (key.toLowerCase() === target) return student;
+  }
+
+  return null;
+}
+
+/**
+ * searchByName — Candidate Name prefix search.
+ * Returns lightweight index records; fetchFull() resolves the full result card.
+ * @param  {string}        candidateName
+ * @returns {Promise<Array>} Array of { r, n, f, c, res } index records
+ */
+async function searchByName(candidateName) {
+  const cleanQuery = String(candidateName || '').trim().toLowerCase();
+  if (!cleanQuery) return [];
+
+  const primaryPrefix = getNamePrefixes(cleanQuery)[0] || '__';
+  const indexList     = await loadShardJson(`results/name/${primaryPrefix}.json`);
+  if (!indexList || !Array.isArray(indexList)) return [];
+
+  // Substring filter so partial-name queries work ("Aara" matches "Aarav Sharma")
+  return indexList.filter(item =>
+    String(item.n || '').toLowerCase().includes(cleanQuery)
+  );
+}
+
+/**
+ * searchByFather — Father Name prefix search — same algorithm as searchByName.
+ * @param  {string}        fatherName
+ * @returns {Promise<Array>} Array of { r, n, f, c, res } index records
+ */
+async function searchByFather(fatherName) {
+  const cleanQuery = String(fatherName || '').trim().toLowerCase();
+  if (!cleanQuery) return [];
+
+  const primaryPrefix = getNamePrefixes(cleanQuery)[0] || '__';
+  const indexList     = await loadShardJson(`results/father/${primaryPrefix}.json`);
+  if (!indexList || !Array.isArray(indexList)) return [];
+
+  return indexList.filter(item =>
+    String(item.f || '').toLowerCase().includes(cleanQuery)
+  );
+}
+
 // ── Constants ────────────────────────────────────────────────
-const RESULTS_COL  = 'results';
-const STUDENTS_COL = 'resultStudents';
-const MAX_RESULTS  = 100;
+const RESULTS_COL = 'results';
+const MAX_RESULTS = 100;
 
 // ── DOM References ───────────────────────────────────────────
 const examSelect      = document.getElementById('exam-select');
-const rollInput   = document.getElementById('roll-input');
-const nameInput   = document.getElementById('name-input');
-const fatherInput = document.getElementById('father-input');
-const motherInput = document.getElementById('mother-input');
+const rollInput       = document.getElementById('roll-input');
+const nameInput       = document.getElementById('name-input');
+const fatherInput     = document.getElementById('father-input');
+const motherInput     = document.getElementById('mother-input');
 const searchBtn       = document.getElementById('search-btn');
 const searchAlert     = document.getElementById('search-alert');
 const examLoadAlert   = document.getElementById('exam-load-alert');
@@ -109,6 +226,8 @@ function escHtml(str) {
 }
 
 // ── Load Exams into Dropdown ─────────────────────────────────
+// Exam list is still managed via Firestore (admin creates/renames/deletes exams there).
+// Only student record lookups have moved to static JSON shards.
 async function loadExams() {
   examLoadAlert.classList.remove('hidden');
   examSelect.disabled = true;
@@ -147,16 +266,37 @@ async function loadExams() {
   }
 }
 
+// ── Internal: build a snap-compatible object from a plain array ──────────────
+// renderResults() expects { size, empty, forEach(docSnap => docSnap.data()) }.
+// This adapter wraps a plain array of student objects into that shape.
+function makeSnap(studentArray) {
+  return {
+    size:    studentArray.length,
+    empty:   studentArray.length === 0,
+    forEach: (cb) => studentArray.forEach(student => cb({ data: () => student }))
+  };
+}
+
+// ── Internal: resolve full student record from roll shard and attach examName ─
+// searchByRoll returns the raw stored object. We attach examName so the
+// existing renderResults / viewResult code finds d.examName unchanged.
+async function fetchFull(rollNo, examName) {
+  const student = await searchByRoll(rollNo);
+  if (!student) return null;
+  // Attach examName so existing renderResults / viewResult display it correctly
+  return { ...student, examName };
+}
+
 // ── Search ───────────────────────────────────────────────────
 async function doSearch() {
   hideSearchAlert();
   resultsSection.classList.remove('visible');
 
-  const examId    = examSelect.value.trim();
+  const examId      = examSelect.value.trim();
   const rollValue   = rollInput.value.trim().toLowerCase();
-const nameValue   = nameInput.value.trim().toLowerCase();
-const fatherValue = fatherInput.value.trim().toLowerCase();
-const motherValue = motherInput.value.trim().toLowerCase();
+  const nameValue   = nameInput.value.trim().toLowerCase();
+  const fatherValue = fatherInput.value.trim().toLowerCase();
+  const motherValue = motherInput.value.trim().toLowerCase();
 
   // Validation
   if (!examId) {
@@ -164,118 +304,74 @@ const motherValue = motherInput.value.trim().toLowerCase();
     examSelect.focus();
     return;
   }
-// Roll Number OR Candidate Name required
-if (!rollValue && !nameValue) {
-  showSearchAlert(
-    'Please enter Roll Number OR Candidate Name.',
-    'danger'
-  );
-  rollInput.focus();
-  return;
-}
+  // Roll Number OR Candidate Name required
+  if (!rollValue && !nameValue) {
+    showSearchAlert(
+      'Please enter Roll Number OR Candidate Name.',
+      'danger'
+    );
+    rollInput.focus();
+    return;
+  }
+
+  // Read the human-readable exam name from the selected <option data-name="…">
+  const selectedOption = examSelect.options[examSelect.selectedIndex];
+  const examName = selectedOption ? (selectedOption.getAttribute('data-name') || selectedOption.textContent || '') : '';
 
   searchBtn.disabled = true;
   searchBtn.textContent = 'Searching…';
 
   try {
-    let snap;
+    let students = [];
 
-  if (rollValue) {
+    if (rollValue) {
+      // ── Roll Number search: O(1) exact shard lookup ──────────────────────
+      const found = await fetchFull(rollValue, examName);
+      if (found) {
+        students = [found];
+      }
 
-  const q = query(
-    collection(db, STUDENTS_COL),
-    where("examId", "==", examId),
-    where("searchRoll", "==", rollValue),
-    limit(MAX_RESULTS)
-  );
+    } else {
+      // ── Candidate Name search: prefix shard → index records ──────────────
+      let indexRecords = await searchByName(nameValue);
 
-  snap = await getDocs(q);
+      // If father name is also supplied, narrow index results before fetching
+      // full records (index records carry the 'f' field for this purpose)
+      if (fatherValue) {
+        indexRecords = indexRecords.filter(item =>
+          String(item.f || '').toLowerCase().startsWith(fatherValue)
+        );
+      }
 
-} else {
+      // Respect MAX_RESULTS cap before issuing per-record shard fetches
+      const capped = indexRecords.slice(0, MAX_RESULTS);
 
-  const q = query(
-    collection(db, STUDENTS_COL),
-    where("examId", "==", examId),
-    where("searchName", ">=", nameValue),
-    where("searchName", "<=", nameValue + "\uf8ff"),
-    orderBy("searchName"),
-    limit(MAX_RESULTS)
-  );
+      // Fetch full student records in parallel (each hits one roll shard)
+      const settled = await Promise.all(
+        capped.map(item => fetchFull(item.r, examName))
+      );
 
-  snap = await getDocs(q);
+      // Drop any nulls (shard miss — should not happen in a healthy database)
+      students = settled.filter(Boolean);
 
-}
-if (!rollValue && (fatherValue || motherValue)) {
-
-  const filteredDocs = [];
-
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
-
-    const fatherMatch =
-      !fatherValue ||
-      (d.searchFather || "").startsWith(fatherValue);
-
-    const motherMatch =
-      !motherValue ||
-      (d.searchMother || "").startsWith(motherValue);
-
-    if (fatherMatch && motherMatch) {
-      filteredDocs.push(docSnap);
+      // Mother name filter: mother is not in the index, but IS in the full record
+      if (motherValue) {
+        students = students.filter(s =>
+          String(s.searchMother || s.motherName || '').toLowerCase().startsWith(motherValue)
+        );
+      }
     }
-  });
 
-  snap = {
-    empty: filteredDocs.length === 0,
-    size: filteredDocs.length,
-    forEach: (cb) => filteredDocs.forEach(cb)
-  };
-}
-    if (snap.empty) {
+    if (students.length === 0) {
       showSearchAlert('No results found. Please check your search value and try again.', 'warning');
       return;
     }
 
-    // Render results
-    if (!rollValue) {
-
-  const filtered = [];
-
-  snap.forEach(docSnap => {
-    const d = docSnap.data();
-
-    const fatherOk =
-      !fatherValue ||
-      String(d.searchFather || "").startsWith(fatherValue);
-
-    const motherOk =
-      !motherValue ||
-      String(d.searchMother || "").startsWith(motherValue);
-
-    if (fatherOk && motherOk) {
-      filtered.push(docSnap);
-    }
-  });
-
-  snap = {
-    empty: filtered.length === 0,
-    size: filtered.length,
-    forEach: cb => filtered.forEach(cb)
-  };
-}
-    renderResults(snap);
+    renderResults(makeSnap(students));
 
   } catch (err) {
-    // Firestore composite index error — friendly message
-    if (err.code === 'failed-precondition' || (err.message && err.message.includes('index'))) {
-      showSearchAlert(
-        'A Firestore index is required for this search. Please check the browser console for the index creation link, click it, wait a minute, then try again.',
-        'danger'
-      );
-      console.error('Firestore index error:', err);
-    } else {
-      showSearchAlert('Search failed: ' + err.message, 'danger');
-    }
+    showSearchAlert('Search failed: ' + err.message, 'danger');
+    console.error('Search error:', err);
   } finally {
     searchBtn.disabled = false;
     searchBtn.textContent = 'Search';
@@ -394,25 +490,26 @@ fatherInput.addEventListener('keydown', e => {
 motherInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearch();
 });
+
 // Reset results when exam changes
 examSelect.addEventListener('change', () => {
   resultsSection.classList.remove('visible');
   resultsTbody.innerHTML = '';
   hideSearchAlert();
- rollInput.value = '';
-nameInput.value = '';
-fatherInput.value = '';
-motherInput.value = '';
+  rollInput.value   = '';
+  nameInput.value   = '';
+  fatherInput.value = '';
+  motherInput.value = '';
 });
 
 // Reset results when search field changes
 rollInput.addEventListener('input', () => {
   if (rollInput.value.trim()) {
-    nameInput.disabled = true;
+    nameInput.disabled   = true;
     fatherInput.disabled = true;
     motherInput.disabled = true;
   } else {
-    nameInput.disabled = false;
+    nameInput.disabled   = false;
     fatherInput.disabled = false;
     motherInput.disabled = false;
   }
@@ -427,5 +524,4 @@ nameInput.addEventListener('input', () => {
 });
 
 // ── Init ─────────────────────────────────────────────────────
-
 loadExams();
