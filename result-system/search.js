@@ -124,7 +124,7 @@ async function searchByFather(fatherName) {
   if (!cleanQuery) return [];
 
   const primaryPrefix = getNamePrefixes(cleanQuery)[0] || '__';
-  const indexList     = await loadShardJson(`results/father/${primaryPrefix}.json`);
+  const indexList     = await loadShardJson(`father/${primaryPrefix}.json`);
   if (!indexList || !Array.isArray(indexList)) return [];
 
   return indexList.filter(item =>
