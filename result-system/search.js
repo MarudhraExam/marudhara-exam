@@ -54,7 +54,10 @@ async function loadShardJson(path) {
 
   // 2. Static file fetch from GitHub-hosted /results/ directory
   try {
-    const response = await fetch(`./${path}`);
+   const currentResultFolder =
+  examSelect?.options[examSelect.selectedIndex]?.dataset?.folder || "";
+
+const response = await fetch(`./Results/${currentResultFolder}/results/${path}`);
     if (!response.ok) {
       if (response.status === 404) return null; // Shard absent — no records in this bucket
       throw new Error(`HTTP ${response.status}: Failed to load ${path}`);
