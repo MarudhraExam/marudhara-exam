@@ -105,7 +105,7 @@ async function searchByName(candidateName) {
   if (!cleanQuery) return [];
 
   const primaryPrefix = getNamePrefixes(cleanQuery)[0] || '__';
-  const indexList     = await loadShardJson(`results/name/${primaryPrefix}.json`);
+  const indexList     = await loadShardJson(`name/${primaryPrefix}.json`);
   if (!indexList || !Array.isArray(indexList)) return [];
 
   // Substring filter so partial-name queries work ("Aara" matches "Aarav Sharma")
