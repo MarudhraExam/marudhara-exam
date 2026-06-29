@@ -249,6 +249,7 @@ async function loadExams() {
       option.textContent = d.examName;
       option.setAttribute('data-name', d.examName);
       examSelect.appendChild(option);
+      option.dataset.folder = d.examName;
     });
 
     if (snap.empty) {
