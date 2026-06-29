@@ -79,7 +79,7 @@ async function searchByRoll(rollNo) {
   if (!cleanRoll) return null;
 
   const bucket     = getRollBucket(cleanRoll);
-  const bucketData = await loadShardJson(`results/roll/${bucket}.json`);
+  const bucketData = await loadShardJson(`roll/${bucket}.json`);
   if (!bucketData) return null;
 
   // Exact key match first (fast path)
