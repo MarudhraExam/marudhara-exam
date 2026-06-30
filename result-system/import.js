@@ -44,7 +44,7 @@ const replaceProgressFill = document.getElementById('replace-progress-fill');
 const replaceProgressLog = document.getElementById('replace-progress-log');
 
 // --- Firestore Initialization ---
-const resultsCollection = collection(db, 'results');
+const RESULTS_COL = 'resultExams';
 const studentsCollection = collection(db, 'resultStudents');
 const BATCH_SIZE = 400;
 
