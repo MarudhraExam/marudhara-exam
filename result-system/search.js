@@ -133,8 +133,8 @@ async function searchByFather(fatherName) {
 }
 
 // ── Constants ────────────────────────────────────────────────
-const RESULTS_COL = 'results';
-const MAX_RESULTS = 100;
+const RESULTS_COL = 'resultExams';
+const MAX_RESULTS = 1000;
 
 // ── DOM References ───────────────────────────────────────────
 const examSelect      = document.getElementById('exam-select');
