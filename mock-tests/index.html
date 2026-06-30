@@ -119,23 +119,27 @@
     }
 
     .hero {
-      min-height: 140px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(180deg, rgba(11, 78, 162, 0.08), rgba(11, 78, 162, 0));
-      padding: 18px;
-    }
+    height: 260px;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+}
 
-    .hero img,
-    .hero .fallback-icon {
-      width: 76px;
-      height: 76px;
-      border-radius: 18px;
-      background: white;
-      display: grid;
-      place-items: center;
-      object-fit: contain;
-    }
+.hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;   /* agar poori image dikhani ho */
+    /* object-fit: cover;  agar banner ki tarah fill karni ho */
+    display: block;
+}
+
+.hero .fallback-icon {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-size: 70px;
+}
 
     .hero .fallback-icon {
       color: #0b4ea2;
