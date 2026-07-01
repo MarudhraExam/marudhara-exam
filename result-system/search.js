@@ -148,6 +148,11 @@ const examLoadAlert   = document.getElementById('exam-load-alert');
 const resultsSection  = document.getElementById('results-section');
 const resultsTbody    = document.getElementById('results-tbody');
 const resultsCount    = document.getElementById('results-count');
+const cutoffSection = document.getElementById('cutoff-section');
+const ntspBox = document.getElementById('ntsp-box');
+const tspBox = document.getElementById('tsp-box');
+const cutoffNtsp = document.getElementById('cutoff-ntsp');
+const cutoffTsp = document.getElementById('cutoff-tsp');
 
 // Result card modal
 const resultModal         = document.getElementById('result-modal');
@@ -218,7 +223,27 @@ function disp(val) {
   if (val === null || val === undefined || String(val).trim() === '') return '—';
   return String(val).trim();
 }
+function isEmptyValue(val) {
+  return (
+    val === null ||
+    val === undefined ||
+    String(val).trim() === "" ||
+    String(val).trim() === "-" ||
+    String(val).trim() === "—"
+  );
+}
+function toggleResultField(element, value) {
+  const field = element.closest(".result-field");
 
+  if (!field) return;
+
+  if (isEmptyValue(value)) {
+    field.style.display = "none";
+  } else {
+    field.style.display = "";
+    element.textContent = disp(value);
+  }
+}
 // ── Utility: Escape HTML ─────────────────────────────────────
 function escHtml(str) {
   return String(str)
@@ -423,19 +448,18 @@ window.viewResult = function(jsonStr) {
   rcExamName.textContent = disp(d.examName);
   rcRank.textContent     = disp(d.rank);
   rcRoll.textContent     = disp(d.rollNo);
-  rcApp.textContent      = disp(d.applicationNo);
+  toggleResultField(rcApp, d.applicationNo);
   rcName.textContent     = disp(d.name);
   rcFather.textContent   = disp(d.fatherName);
   rcMother.textContent   = disp(d.motherName);
-  rcDob.textContent      = disp(d.dob);
+  toggleResultField(rcDob, d.dob);
   rcGender.textContent   = disp(d.gender);
   rcCategory.textContent = disp(d.category);
-  rcHcat.textContent     = disp(d.horizontalCategory);
-  rcFcat.textContent     = disp(d.femaleCategory);
-  rcTsp.textContent      = disp(d.tsp);
-  rcNet.textContent      = disp(d.netMarks);
-  rcSelcat.textContent   = disp(d.selectionCategory);
-
+  toggleResultField(rcHcat, d.horizontalCategory);
+  toggleResultField(rcFcat, d.femaleCategory);
+  toggleResultField(rcTsp, d.tsp);
+  toggleResultField(rcSelcat, d.selectionCategory);
+  rcNet.textContent = disp(d.netMarks);
   openModal(resultModal);
 };
 
@@ -504,6 +528,35 @@ examSelect.addEventListener('change', () => {
   nameInput.value   = '';
   fatherInput.value = '';
   motherInput.value = '';
+  // Load Cutoff Images
+cutoffSection.style.display = "none";
+ntspBox.style.display = "none";
+tspBox.style.display = "none";
+
+const folder = examSelect.options[examSelect.selectedIndex]?.dataset?.folder;
+
+if (folder) {
+cutoffNtsp.onerror = () => {
+  ntspBox.style.display = "none";
+};
+
+cutoffTsp.onerror = () => {
+  tspBox.style.display = "none";
+};
+  cutoffNtsp.src = `./Results/${folder}/cutoffNtsp.jpg`;
+  cutoffTsp.src = `./Results/${folder}/cutoffTsp.jpg`;
+
+  cutoffNtsp.onload = () => {
+    cutoffSection.style.display = "block";
+    ntspBox.style.display = "block";
+  };
+
+  cutoffTsp.onload = () => {
+    cutoffSection.style.display = "block";
+    tspBox.style.display = "block";
+  };
+
+}
 });
 
 // Reset results when search field changes
