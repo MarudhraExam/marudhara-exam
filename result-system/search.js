@@ -218,7 +218,15 @@ function disp(val) {
   if (val === null || val === undefined || String(val).trim() === '') return '—';
   return String(val).trim();
 }
-
+function isEmptyValue(val) {
+  return (
+    val === null ||
+    val === undefined ||
+    String(val).trim() === "" ||
+    String(val).trim() === "-" ||
+    String(val).trim() === "—"
+  );
+}
 // ── Utility: Escape HTML ─────────────────────────────────────
 function escHtml(str) {
   return String(str)
