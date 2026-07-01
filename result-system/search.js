@@ -148,6 +148,11 @@ const examLoadAlert   = document.getElementById('exam-load-alert');
 const resultsSection  = document.getElementById('results-section');
 const resultsTbody    = document.getElementById('results-tbody');
 const resultsCount    = document.getElementById('results-count');
+const cutoffSection = document.getElementById('cutoff-section');
+const ntspBox = document.getElementById('ntsp-box');
+const tspBox = document.getElementById('tsp-box');
+const cutoffNtsp = document.getElementById('cutoff-ntsp');
+const cutoffTsp = document.getElementById('cutoff-tsp');
 
 // Result card modal
 const resultModal         = document.getElementById('result-modal');
