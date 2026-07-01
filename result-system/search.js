@@ -454,6 +454,7 @@ window.viewResult = function(jsonStr) {
   toggleResultField(rcFcat, d.femaleCategory);
   toggleResultField(rcTsp, d.tsp);
   toggleResultField(rcSelcat, d.selectionCategory);
+  rcNet.textContent = disp(d.netMarks);
   openModal(resultModal);
 };
 
