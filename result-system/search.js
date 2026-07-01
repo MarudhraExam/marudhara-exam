@@ -536,7 +536,13 @@ tspBox.style.display = "none";
 const folder = examSelect.options[examSelect.selectedIndex]?.dataset?.folder;
 
 if (folder) {
+cutoffNtsp.onerror = () => {
+  ntspBox.style.display = "none";
+};
 
+cutoffTsp.onerror = () => {
+  tspBox.style.display = "none";
+};
   cutoffNtsp.src = `./Results/${folder}/cutoffNtsp.jpg`;
   cutoffTsp.src = `./Results/${folder}/cutoffTsp.jpg`;
 
