@@ -528,6 +528,29 @@ examSelect.addEventListener('change', () => {
   nameInput.value   = '';
   fatherInput.value = '';
   motherInput.value = '';
+  // Load Cutoff Images
+cutoffSection.style.display = "none";
+ntspBox.style.display = "none";
+tspBox.style.display = "none";
+
+const folder = examSelect.options[examSelect.selectedIndex]?.dataset?.folder;
+
+if (folder) {
+
+  cutoffNtsp.src = `./Results/${folder}/cutoffNtsp.jpg`;
+  cutoffTsp.src = `./Results/${folder}/cutoffTsp.jpg`;
+
+  cutoffNtsp.onload = () => {
+    cutoffSection.style.display = "block";
+    ntspBox.style.display = "block";
+  };
+
+  cutoffTsp.onload = () => {
+    cutoffSection.style.display = "block";
+    tspBox.style.display = "block";
+  };
+
+}
 });
 
 // Reset results when search field changes
