@@ -447,15 +447,13 @@ window.viewResult = function(jsonStr) {
   rcName.textContent     = disp(d.name);
   rcFather.textContent   = disp(d.fatherName);
   rcMother.textContent   = disp(d.motherName);
-  rcDob.textContent      = disp(d.dob);
+  toggleResultField(rcDob, d.dob);
   rcGender.textContent   = disp(d.gender);
   rcCategory.textContent = disp(d.category);
-  rcHcat.textContent     = disp(d.horizontalCategory);
-  rcFcat.textContent     = disp(d.femaleCategory);
-  rcTsp.textContent      = disp(d.tsp);
-  rcNet.textContent      = disp(d.netMarks);
-  rcSelcat.textContent   = disp(d.selectionCategory);
-
+  toggleResultField(rcHcat, d.horizontalCategory);
+  toggleResultField(rcFcat, d.femaleCategory);
+  toggleResultField(rcTsp, d.tsp);
+  toggleResultField(rcSelcat, d.selectionCategory);
   openModal(resultModal);
 };
 
