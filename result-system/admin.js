@@ -22,7 +22,7 @@ import {
 import { generateStaticDatabase } from "./generator.js";
 
 // ── Constants ────────────────────────────────────────────────
-const RESULTS_COL  = 'results';
+const RESULTS_COL = 'resultExams';
 const STUDENTS_COL = 'resultStudents';
 
 // ── Smart Field Map ──────────────────────────────────────────
