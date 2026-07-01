@@ -443,7 +443,7 @@ window.viewResult = function(jsonStr) {
   rcExamName.textContent = disp(d.examName);
   rcRank.textContent     = disp(d.rank);
   rcRoll.textContent     = disp(d.rollNo);
-  rcApp.textContent      = disp(d.applicationNo);
+  toggleResultField(rcApp, d.applicationNo);
   rcName.textContent     = disp(d.name);
   rcFather.textContent   = disp(d.fatherName);
   rcMother.textContent   = disp(d.motherName);
