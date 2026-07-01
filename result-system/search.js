@@ -227,6 +227,18 @@ function isEmptyValue(val) {
     String(val).trim() === "—"
   );
 }
+function toggleResultField(element, value) {
+  const field = element.closest(".result-field");
+
+  if (!field) return;
+
+  if (isEmptyValue(value)) {
+    field.style.display = "none";
+  } else {
+    field.style.display = "";
+    element.textContent = String(value).trim();
+  }
+}
 // ── Utility: Escape HTML ─────────────────────────────────────
 function escHtml(str) {
   return String(str)
