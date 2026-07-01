@@ -236,7 +236,7 @@ function toggleResultField(element, value) {
     field.style.display = "none";
   } else {
     field.style.display = "";
-    element.textContent = String(value).trim();
+    element.textContent = disp(value);
   }
 }
 // ── Utility: Escape HTML ─────────────────────────────────────
