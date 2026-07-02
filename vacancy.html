@@ -90,7 +90,7 @@ const vacancyList =
 document.getElementById("vacancyList");
 
 vacancyList.innerHTML = "";
-
+let index = 0;
 const q = query(
 collection(db,"vacancies"),
 orderBy("createdAt","desc")
