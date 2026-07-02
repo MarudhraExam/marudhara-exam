@@ -91,8 +91,13 @@ document.getElementById("vacancyList");
 
 vacancyList.innerHTML = "";
 
+const q = query(
+collection(db,"vacancies"),
+orderBy("createdAt","desc")
+);
+
 const snapshot =
-await getDocs(collection(db,"vacancies"));
+await getDocs(q);
 
 snapshot.forEach((vacancy)=>{
 
