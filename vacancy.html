@@ -112,7 +112,11 @@ index < 2
 ? `<span class="new-badge">NEW</span>`
 : "";
 div.innerHTML = `
-<h3>${data.vacancyName}</h3>
+<h3>
+${data.vacancyName}
+${badge}
+</h3>
+
 <p>Click to View Details</p>
 `;
 
