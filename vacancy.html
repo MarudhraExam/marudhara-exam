@@ -107,7 +107,10 @@ const div =
 document.createElement("div");
 
 div.className = "vacancy";
-
+const badge =
+index < 2
+? `<span class="new-badge">NEW</span>`
+: "";
 div.innerHTML = `
 <h3>${data.vacancyName}</h3>
 <p>Click to View Details</p>
