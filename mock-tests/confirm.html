@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -220,6 +220,29 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Lock message shown when a mock test is not yet live */
+    .lock-message {
+      display: none;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: #fff4e5;
+      color: #7a4b06;
+      font-weight: 600;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .lock-message.visible {
+      display: block;
+    }
+
+    .button-primary:disabled,
+    .button-secondary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
   </style>
 </head>
 <body>
@@ -254,6 +277,9 @@
           <input id="studentMobile" type="tel" placeholder="Enter your mobile number" autocomplete="tel" />
         </div>
 
+        <!-- Shown only when the mock test's live time has not yet arrived -->
+        <div id="lockMessage" class="lock-message"></div>
+
         <div class="button-group">
           <button id="startExamBtn" class="button-primary" type="button">Start exam</button>
           <button id="backBtn" class="button-secondary" type="button">Back</button>
@@ -278,6 +304,11 @@
     const studentMobile = document.getElementById('studentMobile');
     const startExamBtn = document.getElementById('startExamBtn');
     const backBtn = document.getElementById('backBtn');
+    const lockMessage = document.getElementById('lockMessage');
+
+    // Tracks whether the currently loaded mock is allowed to start.
+    // Defaults to false until verification completes (fail-safe).
+    let isMockLive = false;
 
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
@@ -290,6 +321,62 @@
 
     function getMockId() {
       return new URLSearchParams(location.search).get('mockId');
+    }
+
+    // Resolves a mock's live date/time into a JS Date, or null if the mock
+    // has no live-date fields at all (backward compatibility: treat as LIVE).
+    function resolveLiveDateTime(mock) {
+      // Preferred: a single combined field.
+      if (mock.liveDateTime) {
+        const d = new Date(mock.liveDateTime);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      // Fallback: separate date + time fields.
+      if (mock.liveDate) {
+        const timePart = mock.liveTime ? mock.liveTime : '00:00';
+        const d = new Date(`${mock.liveDate} ${timePart}`);
+        if (!isNaN(d.getTime())) {
+          return d;
+        }
+        // Try ISO-style combination as a secondary attempt.
+        const d2 = new Date(`${mock.liveDate}T${timePart}`);
+        return isNaN(d2.getTime()) ? null : d2;
+      }
+
+      // No live-date fields present on this mock at all -> old mock -> live.
+      return null;
+    }
+
+    // Formats a Date for the lock message using readable browser formatting.
+    function formatLiveDateTime(date) {
+      const datePart = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+      const timePart = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      return { datePart, timePart };
+    }
+
+    // Locks the exam: shows the message, disables the button, prevents start.
+    function lockExamStart(liveDate) {
+      isMockLive = false;
+      startExamBtn.disabled = true;
+      startExamBtn.textContent = 'Coming Soon';
+
+      if (liveDate) {
+        const { datePart, timePart } = formatLiveDateTime(liveDate);
+        lockMessage.innerHTML = `🔒 This mock test is not live yet.<br>Live On:<br>${escapeHtml(datePart)}<br>${escapeHtml(timePart)}`;
+      } else {
+        lockMessage.textContent = '🔒 This mock test is not live yet.';
+      }
+      lockMessage.classList.add('visible');
+    }
+
+    // Unlocks the exam: hides the message, restores the button.
+    function unlockExamStart() {
+      isMockLive = true;
+      startExamBtn.disabled = false;
+      startExamBtn.textContent = 'Start exam';
+      lockMessage.classList.remove('visible');
+      lockMessage.innerHTML = '';
     }
 
     function setSummary(items) {
@@ -334,8 +421,13 @@
       if (!mockId) {
         setStatus('Mock ID is missing in the URL.', 'error');
         summaryList.innerHTML = '<div class="empty-state">Cannot load exam details. Return to the test selection page.</div>';
+        // No mock to verify, so keep the start button disabled for safety.
+        startExamBtn.disabled = true;
         return;
       }
+
+      // Disable the button by default while verification is in progress (fail-safe).
+      startExamBtn.disabled = true;
 
       try {
         setStatus('Loading exam details…');
@@ -344,6 +436,8 @@
         if (!snap.exists()) {
           setStatus('Mock test not found.', 'error');
           summaryList.innerHTML = '<div class="empty-state">Selected exam is unavailable.</div>';
+          // Mock doesn't exist, keep Start disabled without throwing errors.
+          startExamBtn.disabled = true;
           return;
         }
 
@@ -366,7 +460,24 @@
           studentMobile.value = existing.studentMobile || '';
         }
 
+        // --- Live status verification (FEATURE 1, 2, 6, 7) ---
+        // Runs every time the page loads, using the mock data already fetched above.
+        const liveDateTime = resolveLiveDateTime(mock);
+        if (liveDateTime && Date.now() < liveDateTime.getTime()) {
+          // Current time is before the mock's live time: block start.
+          lockExamStart(liveDateTime);
+        } else {
+          // Either no live-date fields (old mock, backward compatible) or already live.
+          unlockExamStart();
+        }
+
         startExamBtn.addEventListener('click', () => {
+          // Security check: even if the button was somehow enabled/clicked,
+          // never allow navigation to exam.html before the mock is live.
+          if (!isMockLive) {
+            return;
+          }
+
           const name = studentName.value;
        
           const mobile = studentMobile.value;
@@ -378,6 +489,8 @@
         console.error('Failed to load mock details:', error);
         setStatus('Unable to load exam details.', 'error');
         summaryList.innerHTML = '<div class="empty-state">Unable to fetch exam information.</div>';
+        // On any error, keep the Start button disabled rather than throwing further errors.
+        startExamBtn.disabled = true;
       }
     }
 
