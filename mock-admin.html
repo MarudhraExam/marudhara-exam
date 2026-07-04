@@ -879,10 +879,17 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
       return `
         <tr class="category-row">
-          <td>
-            <strong>${escapeHtml(category.name)}</strong>
-            <div style="margin-top:6px;color:#6b7a96;font-size:0.92rem;">${escapeHtml(category.description || 'No description')}</div>
-          </td>
+         <td>
+    <strong>${escapeHtml(category.name)}</strong>
+
+    <div style="margin-top:6px;color:#6b7a96;font-size:0.92rem;">
+        ${escapeHtml(category.description || 'No description')}
+    </div>
+
+    <div style="margin-top:6px;color:#0b4ea2;font-size:0.88rem;font-weight:600;">
+        Sub Category : ${subCategoryLabel}
+    </div>
+</td>
           <td>${category.order ?? 0}</td>
           <td style="${activeStyle}">${activeLabel}</td>
           <td>${iconValue}</td>
