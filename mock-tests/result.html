@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -163,7 +163,9 @@
       getDocs,
       query,
       where,
-      orderBy
+      orderBy,
+      addDoc,
+      Timestamp
     } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
     const statusBar = document.getElementById('statusBar');
@@ -423,6 +425,58 @@
       } catch (error) {
         console.error('Rank lookup failed:', error);
         return { rank: 1, total: 1 };
+      }
+    }
+
+    // sessionStorage key prefix used to guard against duplicate attempt saves
+    // on page refresh. Keyed by resultId so each completed exam (one unique
+    // mockResults document) maps to exactly one saved attempt record.
+    const attemptSaveKeyPrefix = 'examAttemptSaved_';
+
+    // --- FEATURE 1, 2, 3, 4, 6: Save one attempt record per completed exam ---
+    // Writes a dedicated attempt document (separate collection, never
+    // overwritten) so admins can later compute totals/averages/highest score
+    // without touching existing mockResults data. Safe to call on every page
+    // load: it no-ops if this resultId was already saved in this session,
+    // and never throws if the Firestore write fails.
+    async function saveAttemptRecord(result, resultId) {
+      const guardKey = `${attemptSaveKeyPrefix}${resultId}`;
+
+      // FEATURE 3: Prevent duplicate save when the result page is refreshed.
+      if (sessionStorage.getItem(guardKey)) {
+        return;
+      }
+
+      try {
+        // Reuse the same totalMarks/percentage formula used in renderSummary
+        // so the saved attempt numbers match what the student sees on screen.
+        const totalQuestions = result.totalQuestions ?? (Array.isArray(result.questions) ? result.questions.length : undefined) ?? result.questionCount ?? 0;
+        const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+        const score = result.score ?? 0;
+        const percentage = result.percentage ?? (totalMarks > 0 ? Number(((score / totalMarks) * 100).toFixed(2)) : 0);
+
+        await addDoc(collection(db, 'examAttempts'), {
+          mockId: result.mockId || '',
+          mockTitle: result.mockTitle || 'Mock exam',
+          studentName: result.name || result.studentName || 'Unknown',
+          studentId: result.studentId || result.uid || result.mobile || '',
+          submitTime: result.submittedAt || new Date().toISOString(),
+          score,
+          totalMarks,
+          percentage,
+          correctAnswers: result.correct ?? 0,
+          wrongAnswers: result.wrong ?? 0,
+          unanswered: result.unattempted ?? 0,
+          status: 'completed',
+          resultId: resultId,
+          createdAt: Timestamp.now()
+        });
+
+        // Mark this resultId as saved so a refresh won't create another attempt.
+        sessionStorage.setItem(guardKey, '1');
+      } catch (error) {
+        // FEATURE 6: Never break result display if the Firestore write fails.
+        console.error('Failed to save attempt record:', error);
       }
     }
 
@@ -730,6 +784,12 @@
 
         const result = { id: resultDoc.id, ...resultDoc.data() };
         console.log("Result Mock ID:", result.mockId);
+
+        // FEATURE 1-4: Save exactly one attempt record for this completed
+        // exam. Guarded internally against duplicate saves on refresh, and
+        // never throws (errors are logged, result still displays normally).
+        await saveAttemptRecord(result, resultId);
+
         const categoryName = await fetchCategoryName(result.categoryId || result.category || null);
         const questions = await fetchQuestions(result.mockId);
         const rankInfo = await fetchOverallRank(result.mockId, result.id);
