@@ -1574,9 +1574,12 @@ function renderSubCategories() {
     populateCategoryForm(targetCategory);
 }
 
-if (action === 'manage-sub') {
-    alert("Sub Category Manager ab next step me banega.");
-    return;
+await loadSubCategories(
+    targetCategory.id,
+    targetCategory.name
+);
+
+return;
 }
 
 if (action === 'delete') {
