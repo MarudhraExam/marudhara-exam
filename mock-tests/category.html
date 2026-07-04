@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -58,16 +58,25 @@
 
     <div id="statusBar" class="status-bar">Loading category…</div>
     <section id="categoryHeader" class="category-header"></section>
+    <div id="subCategoryNav" style="display:none; margin-bottom:14px;">
+      <button type="button" class="button-primary" id="backToSubCategoriesBtn">← Back to Sub Categories</button>
+    </div>
     <section id="testsGrid" class="tests-grid"></section>
   </div>
 
   <script type="module">
     import { db } from '../firebase.js';
-    import { collection, doc, getDoc, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { collection, doc, getDoc, getDocs, query, where, orderBy, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
     const statusBar = document.getElementById('statusBar');
     const categoryHeader = document.getElementById('categoryHeader');
     const testsGrid = document.getElementById('testsGrid');
+    const subCategoryNav = document.getElementById('subCategoryNav');
+    const backToSubCategoriesBtn = document.getElementById('backToSubCategoriesBtn');
+
+    let currentCategoryId = null;
+    let currentSubCategories = [];
+    let currentSubCategoryCounts = [];
 
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
@@ -80,6 +89,169 @@
 
     function getQueryParam(name) {
       return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function showSubCategoryNav() {
+      subCategoryNav.style.display = '';
+    }
+
+    function hideSubCategoryNav() {
+      subCategoryNav.style.display = 'none';
+    }
+
+    function renderCategoryHeader(category) {
+      categoryHeader.innerHTML = `
+        <div class="category-summary">
+          <div class="icon">${category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
+          <div class="details">
+            <h2>${escapeHtml(category.name)}</h2>
+            <p>${escapeHtml(category.description || 'Browse available mock tests for this category and begin your practice session.')}</p>
+          </div>
+        </div>`;
+    }
+
+    function renderMockTestCards(tests) {
+      return tests.map(test => {
+        const title = escapeHtml(test.title || test.name || 'Unnamed test');
+        const questions = Number(test.totalQuestions ?? test.questions ?? 0);
+        const duration = Number(test.duration ?? test.durationMinutes ?? 0);
+        const totalMarks = Number(test.totalMarks ?? test.marks ?? 0);
+        const negativeMarks = Number(test.negativeMarks ?? test.penalty ?? 0);
+        const disabled = questions <= 0 ? 'disabled' : '';
+        return `
+          <article class="test-card">
+            <h3>${title}</h3>
+            <div class="badge-row">
+              <span class="badge">Questions: ${questions}</span>
+              <span class="badge">Duration: ${duration || 0} min</span>
+            </div>
+            <div class="badge-row">
+              <span class="badge">Total Marks: ${totalMarks || 0}</span>
+              <span class="badge">Negative: ${negativeMarks || 0}</span>
+            </div>
+            <p>${escapeHtml(test.description || 'Timed practice exam with one question view and live progress tracking.')}</p>
+            <button class="button-primary" type="button" ${disabled} onclick="window.location.href='confirm.html?mockId=${encodeURIComponent(test.id)}';">${questions <= 0 ? 'No questions available' : 'Start exam'}</button>
+          </article>`;
+      }).join('');
+    }
+
+    function renderSubCategoryCards(subCategoriesList, counts) {
+      return subCategoriesList.map((sub, index) => {
+        const name = escapeHtml(sub.name || 'Unnamed sub category');
+        const description = escapeHtml(sub.description || 'Browse mock tests inside this sub category.');
+        const count = Number(counts[index] || 0);
+        return `
+          <article class="test-card">
+            <h3>${name}</h3>
+            <div class="badge-row">
+              <span class="badge">Mock Tests: ${count}</span>
+            </div>
+            <p>${description}</p>
+            <button class="button-primary" type="button" data-subcategory-id="${escapeHtml(sub.id)}" data-subcategory-name="${escapeHtml(sub.name || '')}">Open</button>
+          </article>`;
+      }).join('');
+    }
+
+    async function countMockTestsInSubCategory(categoryId, subCategoryId) {
+      try {
+        const countQuery = query(
+          collection(db, 'mockTests'),
+          where('categoryId', '==', categoryId),
+          where('subCategoryId', '==', subCategoryId)
+        );
+        const snapshot = await getCountFromServer(countQuery);
+        return snapshot.data().count;
+      } catch (error) {
+        console.error(error);
+        return 0;
+      }
+    }
+
+    async function loadMockTestsForCategory(categoryId) {
+      hideSubCategoryNav();
+      setStatus('Loading mock tests…');
+      const testsQuery = query(collection(db, 'mockTests'), where('categoryId', '==', categoryId));
+      const testsSnapshot = await getDocs(testsQuery);
+      console.log('mockTests snapshot size:', testsSnapshot.size);
+      const tests = testsSnapshot.docs.map(docSnap => {
+        console.log('Loaded mock doc:', docSnap.id, docSnap.data());
+        return { id: docSnap.id, ...docSnap.data() };
+      });
+
+      if (!tests.length) {
+        testsGrid.innerHTML = '<div class="empty-state">No mock tests found</div>';
+        setStatus('No mock tests found.', 'error');
+        return;
+      }
+
+      testsGrid.innerHTML = renderMockTestCards(tests);
+      setStatus('Choose a test and confirm your details before starting.');
+    }
+
+    async function loadSubCategoryList(categoryId) {
+      hideSubCategoryNav();
+      setStatus('Loading sub categories…');
+
+      const subCategoryQuery = query(
+        collection(db, 'mockSubCategories'),
+        where('categoryId', '==', categoryId),
+        orderBy('order', 'asc')
+      );
+      const snapshot = await getDocs(subCategoryQuery);
+      currentSubCategories = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+      if (!currentSubCategories.length) {
+        currentSubCategoryCounts = [];
+        testsGrid.innerHTML = '<div class="empty-state">No Sub Categories Found</div>';
+        setStatus('No sub categories found.', 'error');
+        return;
+      }
+
+      currentSubCategoryCounts = await Promise.all(
+        currentSubCategories.map(sub => countMockTestsInSubCategory(categoryId, sub.id))
+      );
+
+      testsGrid.innerHTML = renderSubCategoryCards(currentSubCategories, currentSubCategoryCounts);
+      setStatus('Choose a sub category to view its mock tests.');
+    }
+
+    function renderSubCategoryListFromCache() {
+      hideSubCategoryNav();
+      if (!currentSubCategories.length) {
+        testsGrid.innerHTML = '<div class="empty-state">No Sub Categories Found</div>';
+        setStatus('No sub categories found.', 'error');
+        return;
+      }
+      testsGrid.innerHTML = renderSubCategoryCards(currentSubCategories, currentSubCategoryCounts);
+      setStatus('Choose a sub category to view its mock tests.');
+    }
+
+    async function openSubCategoryTests(categoryId, subCategoryId, subCategoryName) {
+      try {
+        showSubCategoryNav();
+        setStatus(`Loading mock tests for "${subCategoryName}"…`);
+
+        const testsQuery = query(
+          collection(db, 'mockTests'),
+          where('categoryId', '==', categoryId),
+          where('subCategoryId', '==', subCategoryId)
+        );
+        const testsSnapshot = await getDocs(testsQuery);
+        const tests = testsSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+
+        if (!tests.length) {
+          testsGrid.innerHTML = '<div class="empty-state">No Mock Tests Found</div>';
+          setStatus('No mock tests found for this sub category.', 'error');
+          return;
+        }
+
+        testsGrid.innerHTML = renderMockTestCards(tests);
+        setStatus('Choose a test and confirm your details before starting.');
+      } catch (error) {
+        console.error(error);
+        testsGrid.innerHTML = '<div class="empty-state">Unable to load mock tests. Try refreshing the page.</div>';
+        setStatus('Failed to load tests.', 'error');
+      }
     }
 
     async function loadCategory() {
@@ -101,60 +273,32 @@
         }
 
         const category = { id: categoryDoc.id, ...categoryDoc.data() };
-        categoryHeader.innerHTML = `
-          <div class="category-summary">
-            <div class="icon">${category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
-            <div class="details">
-              <h2>${escapeHtml(category.name)}</h2>
-              <p>${escapeHtml(category.description || 'Browse available mock tests for this category and begin your practice session.')}</p>
-            </div>
-          </div>`;
+        currentCategoryId = category.id;
+        renderCategoryHeader(category);
 
-        setStatus('Loading mock tests…');
-        const testsQuery = query(collection(db, 'mockTests'), where('categoryId', '==', categoryId));
-        const testsSnapshot = await getDocs(testsQuery);
-        console.log('mockTests snapshot size:', testsSnapshot.size);
-        const tests = testsSnapshot.docs.map(docSnap => {
-          console.log('Loaded mock doc:', docSnap.id, docSnap.data());
-          return { id: docSnap.id, ...docSnap.data() };
-        });
-
-        if (!tests.length) {
-          testsGrid.innerHTML = '<div class="empty-state">No mock tests found</div>';
-          setStatus('No mock tests found.', 'error');
-          return;
+        if (category.hasSubCategory) {
+          await loadSubCategoryList(category.id);
+        } else {
+          await loadMockTestsForCategory(category.id);
         }
-
-        testsGrid.innerHTML = tests.map(test => {
-          const title = escapeHtml(test.title || test.name || 'Unnamed test');
-          const questions = Number(test.totalQuestions ?? test.questions ?? 0);
-          const duration = Number(test.duration ?? test.durationMinutes ?? 0);
-          const totalMarks = Number(test.totalMarks ?? test.marks ?? 0);
-          const negativeMarks = Number(test.negativeMarks ?? test.penalty ?? 0);
-          const disabled = questions <= 0 ? 'disabled' : '';
-          return `
-            <article class="test-card">
-              <h3>${title}</h3>
-              <div class="badge-row">
-                <span class="badge">Questions: ${questions}</span>
-                <span class="badge">Duration: ${duration || 0} min</span>
-              </div>
-              <div class="badge-row">
-                <span class="badge">Total Marks: ${totalMarks || 0}</span>
-                <span class="badge">Negative: ${negativeMarks || 0}</span>
-              </div>
-              <p>${escapeHtml(test.description || 'Timed practice exam with one question view and live progress tracking.')}</p>
-              <button class="button-primary" type="button" ${disabled} onclick="window.location.href='confirm.html?mockId=${encodeURIComponent(test.id)}';">${questions <= 0 ? 'No questions available' : 'Start exam'}</button>
-            </article>`;
-        }).join('');
-
-        setStatus('Choose a test and confirm your details before starting.');
       } catch (error) {
         console.error(error);
         testsGrid.innerHTML = '<div class="empty-state">Unable to load mock tests. Try refreshing the page.</div>';
         setStatus('Failed to load tests.', 'error');
       }
     }
+
+    testsGrid.addEventListener('click', event => {
+      const openButton = event.target.closest('[data-subcategory-id]');
+      if (!openButton || !testsGrid.contains(openButton)) {
+        return;
+      }
+      const subCategoryId = openButton.dataset.subcategoryId;
+      const subCategoryName = openButton.dataset.subcategoryName || '';
+      openSubCategoryTests(currentCategoryId, subCategoryId, subCategoryName);
+    });
+
+    backToSubCategoriesBtn.addEventListener('click', renderSubCategoryListFromCache);
 
     document.addEventListener('DOMContentLoaded', loadCategory);
   </script>
