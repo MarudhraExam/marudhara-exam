@@ -555,7 +555,71 @@
             </table>
           </div>
         </section>
+    <section id="subCategorySection" class="section-card" style="display:none;">
 
+<h2>Sub Category Manager</h2>
+
+<p id="selectedCategoryName"></p>
+
+<div class="form-grid">
+
+<label>
+Sub Category Name
+<input type="text" id="subCategoryName">
+</label>
+
+<label>
+Display Order
+<input type="number" id="subCategoryOrder" value="0">
+</label>
+
+</div>
+
+<div class="action-group">
+
+<button
+class="button-primary"
+id="saveSubCategoryBtn">
+
+Save Sub Category
+
+</button>
+
+</div>
+
+<table class="category-table">
+
+<thead>
+
+<tr>
+
+<th>Name</th>
+
+<th>Order</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="subCategoryRows">
+
+<tr>
+
+<td colspan="3">
+
+No Sub Categories
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</section>
         <section id="mock-test-manager" class="section-card">
           <h2>Mock Test Manager</h2>
           <p>Publish mock tests with category binding, scoring, duration, and Excel metadata.</p>
