@@ -401,6 +401,22 @@
       color: #b12b29;
     }
 
+    /* FEATURE 4: status badge colors - Scheduled (orange), Live (green), Expired (red) */
+    .mock-badge.status-scheduled {
+      background: #fff4e5;
+      color: #a15c00;
+    }
+
+    .mock-badge.status-live {
+      background: #e6f7ea;
+      color: #1e583a;
+    }
+
+    .mock-badge.status-expired {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
     .mock-actions {
       display: flex;
       gap: 10px;
@@ -640,6 +656,26 @@ No Sub Categories
           <h2>Mock Test Manager</h2>
           <p>Publish mock tests with category binding, scoring, duration, and Excel metadata.</p>
 
+          <!-- FEATURE 6: Mock dashboard stats row (reuses existing .stats-grid / .stat-card styles) -->
+          <section class="stats-grid" style="margin-bottom:24px;">
+            <article class="stat-card">
+              <h3>Total Mock Tests</h3>
+              <p id="mockStatTotal">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Live Mock Tests</h3>
+              <p id="mockStatLive">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Scheduled Mock Tests</h3>
+              <p id="mockStatScheduled">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Total Attempts</h3>
+              <p id="mockStatAttempts">0</p>
+            </article>
+          </section>
+
           <div class="status-bar" id="mockStatusBar">Ready to publish mock tests.</div>
 
           <div class="form-grid">
@@ -685,6 +721,15 @@ No Sub Categories
                 <option value="free">Free</option>
                 <option value="premium">Premium</option>
               </select>
+            </label>
+            <!-- FEATURE 1: Live Date & Live Time fields (required) -->
+            <label>
+              Live Date
+              <input type="date" id="mockLiveDate" required />
+            </label>
+            <label>
+              Live Time
+              <input type="time" id="mockLiveTime" required />
             </label>
           </div>
 
@@ -772,7 +817,8 @@ No Sub Categories
       updateDoc,
       serverTimestamp,
       where,
-      writeBatch
+      writeBatch,
+      getCountFromServer
     } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
     // INTEGRATION POINT (student-facing pages, not part of this file):
@@ -827,6 +873,14 @@ No Sub Categories
       mockTestList: document.getElementById('mockTestList'),
       mockSubCategoryWrapper: document.getElementById('mockSubCategoryWrapper'),
       mockSubCategorySelect: document.getElementById('mockSubCategorySelect'),
+      // FEATURE 1: Live Date & Live Time form fields
+      mockLiveDate: document.getElementById('mockLiveDate'),
+      mockLiveTime: document.getElementById('mockLiveTime'),
+      // FEATURE 6: Mock dashboard stat elements
+      mockStatTotal: document.getElementById('mockStatTotal'),
+      mockStatLive: document.getElementById('mockStatLive'),
+      mockStatScheduled: document.getElementById('mockStatScheduled'),
+      mockStatAttempts: document.getElementById('mockStatAttempts'),
 
       subCategorySection: document.getElementById('subCategorySection'),
       subCategoryStatusBar: document.getElementById('subCategoryStatusBar'),
@@ -854,6 +908,9 @@ No Sub Categories
     let mockTests = [];
 
     let editingMockId = null;
+
+    // FEATURE 5: cache of { mockId: attemptCount } read from the results collection
+    let mockAttemptCounts = {};
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
       elements.statusBar.className = `status-bar ${type}`.trim();
@@ -1228,6 +1285,27 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       return cleanedRows.length;
     }
 
+    // FEATURE 3: Auto status calculation based on liveDateTime vs current time.
+    // Backward compatible: mocks without liveDateTime are treated as 'live' since
+    // they were already immediately available before this feature existed.
+    function computeMockStatus(mock) {
+      if (!mock.liveDateTime) {
+        return 'live';
+      }
+      const liveMoment = new Date(mock.liveDateTime);
+      if (Number.isNaN(liveMoment.getTime())) {
+        return 'live';
+      }
+      return liveMoment.getTime() > Date.now() ? 'scheduled' : 'live';
+    }
+
+    // FEATURE 4: Status badge markup (Scheduled = orange, Live = green, Expired = red)
+    function formatMockStatusBadge(status) {
+      const labels = { scheduled: 'Scheduled', live: 'Live', expired: 'Expired' };
+      const label = labels[status] || 'Live';
+      return `<span class="mock-badge status-${status}">${label}</span>`;
+    }
+
     function formatMockRow(mock) {
       const category = categories.find(category => category.id === mock.categoryId);
       const categoryLabel = category ? category.name : 'Unknown category';
@@ -1238,6 +1316,17 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const durationMinutes = mock.duration ?? mock.durationMinutes ?? 0;
       const passing = mock.passingPercentage != null ? `${mock.passingPercentage}%` : 'N/A';
       const title = mock.title || mock.name || 'Untitled test';
+
+      // FEATURE 3 & 4: auto-computed status badge
+      const status = computeMockStatus(mock);
+      const statusBadge = formatMockStatusBadge(status);
+
+      // FEATURE 4: Live Date / Live Time display with safe defaults for old mocks
+      const liveDateLabel = mock.liveDate || 'Not set';
+      const liveTimeLabel = mock.liveTime || 'Not set';
+
+      // FEATURE 5: total attempts, defaults to 0 when no results exist for this mock
+      const attemptCount = mockAttemptCounts[mock.id] ?? 0;
 
       return `
         <article class="mock-card">
@@ -1253,6 +1342,12 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
             <div><strong>Duration:</strong> ${durationMinutes} min</div>
             <div><strong>Passing:</strong> ${passing}</div>
             <div><strong>Total marks:</strong> ${mock.totalMarks ?? 0}</div>
+            <div><strong>Live Date:</strong> ${escapeHtml(liveDateLabel)}</div>
+            <div><strong>Live Time:</strong> ${escapeHtml(liveTimeLabel)}</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            ${statusBadge}
+            <span class="mock-badge">${attemptCount} Attempts</span>
           </div>
           <div class="mock-actions">
             <button type="button" class="button-secondary" data-mock-action="edit" data-id="${mock.id}">Edit</button>
@@ -1275,6 +1370,20 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.totalCategories.textContent = categories.length;
       elements.activeCategories.textContent = categories.filter(category => category.active).length;
       elements.mockTestsCount.textContent = mockTests.length;
+      updateMockDashboardStats();
+    }
+
+    // FEATURE 6: Mock dashboard stats row - totals update automatically after Firestore loads
+    function updateMockDashboardStats() {
+      const totalMocks = mockTests.length;
+      const liveMocks = mockTests.filter(mock => computeMockStatus(mock) === 'live').length;
+      const scheduledMocks = mockTests.filter(mock => computeMockStatus(mock) === 'scheduled').length;
+      const totalAttempts = Object.values(mockAttemptCounts).reduce((sum, count) => sum + (count || 0), 0);
+
+      elements.mockStatTotal.textContent = totalMocks;
+      elements.mockStatLive.textContent = liveMocks;
+      elements.mockStatScheduled.textContent = scheduledMocks;
+      elements.mockStatAttempts.textContent = totalAttempts;
     }
 
     function resetCategoryForm() {
@@ -1313,6 +1422,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockNegative.value = '';
       elements.mockPassingPercentage.value = '';
       elements.mockPremium.value = 'free';
+      // FEATURE 1: clear live date/time fields on reset
+      elements.mockLiveDate.value = '';
+      elements.mockLiveTime.value = '';
       elements.publishMockBtn.textContent = 'Publish Mock Test';
       elements.cancelMockBtn.hidden = true;
       mockFormSubCategories = [];
@@ -1331,6 +1443,10 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockNegative.value = mock.negativeMarks ?? '';
       elements.mockPassingPercentage.value = mock.passingPercentage ?? '';
       elements.mockPremium.value = mock.isFree != null ? (mock.isFree ? 'free' : 'premium') : mock.premium || 'free';
+      // FEATURE 7 & 9: load existing Live Date/Time; old mocks without these fields
+      // safely fall back to empty values instead of crashing.
+      elements.mockLiveDate.value = mock.liveDate || '';
+      elements.mockLiveTime.value = mock.liveTime || '';
       elements.publishMockBtn.textContent = 'Update Mock Test';
       elements.cancelMockBtn.hidden = false;
       await handleMockCategoryChange(mock.subCategoryId || '');
@@ -1353,11 +1469,29 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       }
     }
 
+    // FEATURE 5: Read attempt counts for every mock from the results collection.
+    // If the query fails or no attempts exist, mocks safely default to 0 attempts.
+    async function loadMockAttemptCounts() {
+      const counts = {};
+      await Promise.all(mockTests.map(async mock => {
+        try {
+          const countQuery = query(collection(db, COLLECTIONS.results), where('mockId', '==', mock.id));
+          const snapshot = await getCountFromServer(countQuery);
+          counts[mock.id] = snapshot.data().count;
+        } catch (error) {
+          console.error(error);
+          counts[mock.id] = 0;
+        }
+      }));
+      mockAttemptCounts = counts;
+    }
+
     async function loadMockTests() {
       try {
         const q = query(collection(db, COLLECTIONS.tests), orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
         mockTests = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        await loadMockAttemptCounts();
         renderMockTests();
         renderMockUploadDropdown();
         updateStats();
@@ -1710,6 +1844,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const passingPercentageRaw = elements.mockPassingPercentage.value.trim();
       const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
       const isFree = elements.mockPremium.value === 'free';
+      // FEATURE 1: read Live Date / Live Time from the form
+      const liveDate = elements.mockLiveDate.value;
+      const liveTime = elements.mockLiveTime.value;
 
       if (!categoryId) {
         setMockStatus('Please select a category for the mock test.', 'error');
@@ -1727,6 +1864,15 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         setMockStatus('Passing percentage must be a number between 0 and 100.', 'error');
         return;
       }
+      // FEATURE 1: Live Date and Live Time are required fields
+      if (!liveDate) {
+        setMockStatus('Live Date is required.', 'error');
+        return;
+      }
+      if (!liveTime) {
+        setMockStatus('Live Time is required.', 'error');
+        return;
+      }
 
       const selectedCategory = categories.find(item => item.id === categoryId);
       let subCategoryId = null;
@@ -1738,6 +1884,10 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         }
       }
 
+      // FEATURE 2: combine date + time into a single ISO-like liveDateTime string
+      // e.g. 2026-07-04 + 21:00 -> 2026-07-04T21:00:00
+      const liveDateTime = `${liveDate}T${liveTime}:00`;
+
       const mockPayload = {
         categoryId,
         subCategoryId,
@@ -1748,6 +1898,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
         passingPercentage,
         isFree,
+        liveDate,
+        liveTime,
+        liveDateTime,
         updatedAt: serverTimestamp()
       };
 
