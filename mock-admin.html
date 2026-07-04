@@ -1386,7 +1386,54 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         setStatus('Unable to delete category. See console for details.', 'error');
       }
     }
+function renderSubCategories() {
 
+  if (!subCategories.length) {
+
+    elements.subCategoryRows.innerHTML = `
+      <tr>
+        <td colspan="3" class="empty-state">
+          No Sub Categories Found
+        </td>
+      </tr>`;
+
+    return;
+
+  }
+
+  elements.subCategoryRows.innerHTML = subCategories.map(item => `
+
+    <tr>
+
+      <td>${escapeHtml(item.name)}</td>
+
+      <td>${item.order || 0}</td>
+
+      <td>
+
+        <button
+          class="button-secondary"
+          data-sub-edit="${item.id}">
+
+          Edit
+
+        </button>
+
+        <button
+          class="button-danger"
+          data-sub-delete="${item.id}">
+
+          Delete
+
+        </button>
+
+      </td>
+
+    </tr>
+
+  `).join("");
+
+}
     async function syncMockQuestions(mockId, questionsPayload) {
       if (!questionsPayload.length) {
         return;
