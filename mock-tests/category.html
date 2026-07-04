@@ -35,6 +35,9 @@
     .test-card p { margin: 0; color: #556180; line-height: 1.75; }
     .badge-row { display: flex; flex-wrap: wrap; gap: 10px; }
     .badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; background: #eef4ff; color: #0b4ea2; font-size: 0.95rem; }
+    /* FEATURE 6: status badge colors - LIVE (green), Scheduled/locked (orange) */
+    .badge.badge-live { background: #e6f7ea; color: #1e583a; }
+    .badge.badge-locked { background: #fff4e5; color: #a15c00; }
     .button-primary { border: 0; border-radius: 14px; padding: 12px 18px; background: #0b4ea2; color: #fff; cursor: pointer; }
     .button-primary:hover { background: #0f3c7f; }
     .empty-state { padding: 32px 24px; border-radius: 24px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
@@ -110,6 +113,48 @@
         </div>`;
     }
 
+    // FEATURE 1 & 9: safely read liveDateTime; missing/invalid values mean the mock
+    // is treated as always LIVE, so old mock documents keep working unchanged.
+    function getMockLiveState(test) {
+      if (!test.liveDateTime) {
+        return { locked: false, liveMoment: null };
+      }
+      const liveMoment = new Date(test.liveDateTime);
+      if (Number.isNaN(liveMoment.getTime())) {
+        return { locked: false, liveMoment: null };
+      }
+      // FEATURE 2: locked when current time is before the mock's live date/time
+      return { locked: Date.now() < liveMoment.getTime(), liveMoment };
+    }
+
+    // FEATURE 3 & 8: format a live moment as "04 Jul 2026" / "09:00 PM"
+    function formatLiveMoment(liveMoment) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = String(liveMoment.getDate()).padStart(2, '0');
+      const month = months[liveMoment.getMonth()];
+      const year = liveMoment.getFullYear();
+      let hours = liveMoment.getHours();
+      const minutes = String(liveMoment.getMinutes()).padStart(2, '0');
+      const meridiem = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      const hoursLabel = String(hours).padStart(2, '0');
+      return { dateLabel: `${day} ${month} ${year}`, timeLabel: `${hoursLabel}:${minutes} ${meridiem}` };
+    }
+
+    // FEATURE 7: live mocks first, then upcoming/locked mocks. Firestore query and
+    // existing ordering within each group are untouched; this only re-groups the
+    // already-fetched array using a stable sort.
+    function sortMocksByLiveStatus(tests) {
+      return [...tests].sort((a, b) => {
+        const aLocked = getMockLiveState(a).locked ? 1 : 0;
+        const bLocked = getMockLiveState(b).locked ? 1 : 0;
+        return aLocked - bLocked;
+      });
+    }
+
+    // FEATURE 10: used by both the direct category flow and the sub category flow,
+    // so lock/badge/sort behaviour is automatically identical for both.
     function renderMockTestCards(tests) {
       return tests.map(test => {
         const title = escapeHtml(test.title || test.name || 'Unnamed test');
@@ -117,7 +162,29 @@
         const duration = Number(test.duration ?? test.durationMinutes ?? 0);
         const totalMarks = Number(test.totalMarks ?? test.marks ?? 0);
         const negativeMarks = Number(test.negativeMarks ?? test.penalty ?? 0);
-        const disabled = questions <= 0 ? 'disabled' : '';
+
+        // FEATURE 1, 2, 9: safe lock-state read (defaults to LIVE when data is missing)
+        const liveState = getMockLiveState(test);
+        const locked = liveState.locked;
+
+        // FEATURE 6: LIVE (green) vs Scheduled (orange) badge
+        const statusBadge = locked
+          ? '<span class="badge badge-locked">Scheduled</span>'
+          : '<span class="badge badge-live">LIVE</span>';
+
+        // FEATURE 3 & 8: locked notice with formatted live date/time
+        let lockNotice = '';
+        if (locked && liveState.liveMoment) {
+          const { dateLabel, timeLabel } = formatLiveMoment(liveState.liveMoment);
+          lockNotice = `<p>🔒 Live on<br>${dateLabel}<br>${timeLabel}</p>`;
+        }
+
+        // FEATURE 4 & 5: disable + relabel the button when locked; unchanged when live
+        const questionsUnavailable = questions <= 0;
+        const isDisabled = locked || questionsUnavailable;
+        const buttonLabel = locked ? 'Coming Soon' : (questionsUnavailable ? 'No questions available' : 'Start exam');
+        const onClickAttr = locked ? '' : ` onclick="window.location.href='confirm.html?mockId=${encodeURIComponent(test.id)}';"`;
+
         return `
           <article class="test-card">
             <h3>${title}</h3>
@@ -129,8 +196,12 @@
               <span class="badge">Total Marks: ${totalMarks || 0}</span>
               <span class="badge">Negative: ${negativeMarks || 0}</span>
             </div>
+            <div class="badge-row">
+              ${statusBadge}
+            </div>
             <p>${escapeHtml(test.description || 'Timed practice exam with one question view and live progress tracking.')}</p>
-            <button class="button-primary" type="button" ${disabled} onclick="window.location.href='confirm.html?mockId=${encodeURIComponent(test.id)}';">${questions <= 0 ? 'No questions available' : 'Start exam'}</button>
+            ${lockNotice}
+            <button class="button-primary" type="button" ${isDisabled ? 'disabled' : ''}${onClickAttr}>${buttonLabel}</button>
           </article>`;
       }).join('');
     }
@@ -184,7 +255,8 @@
         return;
       }
 
-      testsGrid.innerHTML = renderMockTestCards(tests);
+      // FEATURE 7: live mocks first, then upcoming/locked mocks (sorted after fetch only)
+      testsGrid.innerHTML = renderMockTestCards(sortMocksByLiveStatus(tests));
       setStatus('Choose a test and confirm your details before starting.');
     }
 
@@ -245,7 +317,8 @@
           return;
         }
 
-        testsGrid.innerHTML = renderMockTestCards(tests);
+        // FEATURE 7 & 10: same live-first sort applied through the shared renderer
+        testsGrid.innerHTML = renderMockTestCards(sortMocksByLiveStatus(tests));
         setStatus('Choose a test and confirm your details before starting.');
       } catch (error) {
         console.error(error);
