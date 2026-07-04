@@ -899,9 +899,20 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           <td>${iconValue}</td>
           <td>
             <div class="category-actions">
-              <button type="button" class="button-secondary" data-action="edit" data-id="${category.id}">Edit</button>
-              <button type="button" class="button-danger" data-action="delete" data-id="${category.id}">Delete</button>
-            </div>
+    ${manageButton}
+    <button type="button" class="button-secondary"
+        data-action="edit"
+        data-id="${category.id}">
+        Edit
+    </button>
+
+    <button type="button"
+        class="button-danger"
+        data-action="delete"
+        data-id="${category.id}">
+        Delete
+    </button>
+</div>
           </td>
         </tr>`;
     }
