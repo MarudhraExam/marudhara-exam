@@ -875,6 +875,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     function formatCategoryRow(category) {
       const activeLabel = category.active ? 'Active' : 'Inactive';
       const subCategoryLabel = category.hasSubCategory ? 'Yes' : 'No';
+      const manageButton = category.hasSubCategory
+    ? `<button type="button" class="button-primary" data-action="manage-sub" data-id="${category.id}">Manage Sub Categories</button>`
+    : '';
       const activeStyle = category.active ? 'color:#116d37;font-weight:700;' : 'color:#8a1f19;font-weight:700;';
       const iconValue = category.icon ? `<a href="${escapeHtml(category.icon)}" target="_blank" rel="noreferrer">Preview</a>` : '—';
 
