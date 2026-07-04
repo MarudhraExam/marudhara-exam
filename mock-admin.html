@@ -1243,6 +1243,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         order: Number.isFinite(orderValue) ? orderValue : 0,
         description: description || null,
         active,
+        hasSubCategory,
         updatedAt: serverTimestamp()
       };
 
