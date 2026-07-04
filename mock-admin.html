@@ -810,10 +810,18 @@ subCategoryRows: document.getElementById('subCategoryRows')
     };
 
     let categories = [];
-    let editingCategoryId = null;
-    let orderAscending = true;
-    let mockTests = [];
-    let editingMockId = null;
+let subCategories = [];
+
+let editingCategoryId = null;
+let editingSubCategoryId = null;
+
+let currentCategoryId = null;
+
+let orderAscending = true;
+
+let mockTests = [];
+
+let editingMockId = null;
     let subCategories = [];
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
