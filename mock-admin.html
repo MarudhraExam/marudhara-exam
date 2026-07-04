@@ -1161,6 +1161,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.order.value = category.order ?? 0;
       elements.description.value = category.description || '';
       elements.active.value = category.active ? 'true' : 'false';
+      elements.hasSubCategory.value = category.hasSubCategory ? 'true' : 'false';
       elements.saveBtn.textContent = 'Update Category';
       elements.cancelBtn.hidden = false;
       setStatus(`Editing "${category.name}". Save to update or cancel to reset.`);
