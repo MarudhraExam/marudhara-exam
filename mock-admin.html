@@ -561,6 +561,8 @@
 
 <p id="selectedCategoryName"></p>
 
+<div class="status-bar" id="subCategoryStatusBar">Ready to manage sub categories.</div>
+
 <div class="form-grid">
 
 <label>
@@ -571,6 +573,14 @@ Sub Category Name
 <label>
 Display Order
 <input type="number" id="subCategoryOrder" value="0">
+</label>
+
+<label>
+Status
+<select id="subCategoryActive">
+  <option value="true">Active</option>
+  <option value="false">Inactive</option>
+</select>
 </label>
 
 </div>
@@ -585,6 +595,10 @@ Save Sub Category
 
 </button>
 
+<button type="button" class="button-secondary" id="cancelSubCategoryBtn" hidden>Cancel</button>
+
+<button type="button" class="button-link" id="closeSubCategoryBtn">Close</button>
+
 </div>
 
 <table class="category-table">
@@ -597,7 +611,9 @@ Save Sub Category
 
 <th>Order</th>
 
-<th>Action</th>
+<th>Status</th>
+
+<th>Actions</th>
 
 </tr>
 
@@ -607,7 +623,7 @@ Save Sub Category
 
 <tr>
 
-<td colspan="3">
+<td colspan="4">
 
 No Sub Categories
 
@@ -631,6 +647,12 @@ No Sub Categories
               Category
               <select id="mockCategorySelect">
                 <option value="">Loading categories ...</option>
+              </select>
+            </label>
+            <label id="mockSubCategoryWrapper" style="display:none;">
+              Sub Category
+              <select id="mockSubCategorySelect">
+                <option value="">Select sub category</option>
               </select>
             </label>
             <label>
@@ -753,13 +775,19 @@ No Sub Categories
       writeBatch
     } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
+    // INTEGRATION POINT (student-facing pages, not part of this file):
+    // - mockCategories docs now expose `hasSubCategory` (boolean, default false).
+    // - When hasSubCategory === true, browse via mockSubCategories (field categoryId)
+    //   before listing mockTests; otherwise keep the existing category -> mock flow.
+    // - mockTests docs now expose `subCategoryId` (string doc id, or null when the
+    //   category has no subcategories). Filter mock lists by subCategoryId when present.
     const COLLECTIONS = {
       categories: 'mockCategories',
       tests: 'mockTests',
       questions: 'mockQuestions',
       purchases: 'mockPurchases',
-      results: 'mockResults'
-      subCategories: 'mockSubCategories',
+      results: 'mockResults',
+      subCategories: 'mockSubCategories'
     };
 
     const elements = {
@@ -796,33 +824,36 @@ No Sub Categories
       mockPassingPercentage: document.getElementById('mockPassingPercentage'),
       publishMockBtn: document.getElementById('publishMockBtn'),
       cancelMockBtn: document.getElementById('cancelMockBtn'),
-    mockPassingPercentage: document.getElementById('mockPassingPercentage'),
-publishMockBtn: document.getElementById('publishMockBtn'),
-cancelMockBtn: document.getElementById('cancelMockBtn'),
-mockTestList: document.getElementById('mockTestList'),
+      mockTestList: document.getElementById('mockTestList'),
+      mockSubCategoryWrapper: document.getElementById('mockSubCategoryWrapper'),
+      mockSubCategorySelect: document.getElementById('mockSubCategorySelect'),
 
-subCategorySection: document.getElementById('subCategorySection'),
-selectedCategoryName: document.getElementById('selectedCategoryName'),
-subCategoryName: document.getElementById('subCategoryName'),
-subCategoryOrder: document.getElementById('subCategoryOrder'),
-saveSubCategoryBtn: document.getElementById('saveSubCategoryBtn'),
-subCategoryRows: document.getElementById('subCategoryRows')
+      subCategorySection: document.getElementById('subCategorySection'),
+      subCategoryStatusBar: document.getElementById('subCategoryStatusBar'),
+      selectedCategoryName: document.getElementById('selectedCategoryName'),
+      subCategoryName: document.getElementById('subCategoryName'),
+      subCategoryOrder: document.getElementById('subCategoryOrder'),
+      subCategoryActive: document.getElementById('subCategoryActive'),
+      saveSubCategoryBtn: document.getElementById('saveSubCategoryBtn'),
+      cancelSubCategoryBtn: document.getElementById('cancelSubCategoryBtn'),
+      closeSubCategoryBtn: document.getElementById('closeSubCategoryBtn'),
+      subCategoryRows: document.getElementById('subCategoryRows')
     };
 
     let categories = [];
-let subCategories = [];
-
-let editingCategoryId = null;
-let editingSubCategoryId = null;
-
-let currentCategoryId = null;
-
-let orderAscending = true;
-
-let mockTests = [];
-
-let editingMockId = null;
     let subCategories = [];
+    let mockFormSubCategories = [];
+
+    let editingCategoryId = null;
+    let editingSubCategoryId = null;
+
+    let currentSubCategoryCategoryId = null;
+
+    let orderAscending = true;
+
+    let mockTests = [];
+
+    let editingMockId = null;
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
       elements.statusBar.className = `status-bar ${type}`.trim();
@@ -1284,10 +1315,13 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockPremium.value = 'free';
       elements.publishMockBtn.textContent = 'Publish Mock Test';
       elements.cancelMockBtn.hidden = true;
+      mockFormSubCategories = [];
+      elements.mockSubCategoryWrapper.style.display = 'none';
+      elements.mockSubCategorySelect.innerHTML = '<option value="">Select sub category</option>';
       setMockStatus('Ready to publish mock tests.');
     }
 
-    function populateMockForm(mock) {
+    async function populateMockForm(mock) {
       editingMockId = mock.id;
       elements.mockCategorySelect.value = mock.categoryId || '';
       elements.mockName.value = mock.title || mock.name || '';
@@ -1299,6 +1333,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockPremium.value = mock.isFree != null ? (mock.isFree ? 'free' : 'premium') : mock.premium || 'free';
       elements.publishMockBtn.textContent = 'Update Mock Test';
       elements.cancelMockBtn.hidden = false;
+      await handleMockCategoryChange(mock.subCategoryId || '');
       setMockStatus(`Editing "${mock.title || mock.name}". Save to update or cancel to reset.`, 'info');
     }
 
@@ -1373,67 +1408,247 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       }
     }
 
+    async function fetchSubCategoriesForCategory(categoryId) {
+      const q = query(
+        collection(db, COLLECTIONS.subCategories),
+        where('categoryId', '==', categoryId),
+        orderBy('order', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+    }
+
+    async function countMockTestsForCategory(categoryId) {
+      const snapshot = await getDocs(query(collection(db, COLLECTIONS.tests), where('categoryId', '==', categoryId)));
+      return snapshot.size;
+    }
+
+    async function countMockTestsForSubCategory(subCategoryId) {
+      const snapshot = await getDocs(query(collection(db, COLLECTIONS.tests), where('subCategoryId', '==', subCategoryId)));
+      return snapshot.size;
+    }
+
     async function deleteCategory(categoryId) {
-      if (!window.confirm('Delete this category? This will remove the category from selection.')) {
-        return;
-      }
       try {
+        const [existingSubCategories, existingMockTests] = await Promise.all([
+          fetchSubCategoriesForCategory(categoryId),
+          countMockTestsForCategory(categoryId)
+        ]);
+
+        let confirmMessage = 'Delete this category? This will remove the category from selection.';
+        if (existingSubCategories.length || existingMockTests) {
+          confirmMessage = `This category has ${existingSubCategories.length} sub categor${existingSubCategories.length === 1 ? 'y' : 'ies'} and ${existingMockTests} mock test${existingMockTests === 1 ? '' : 's'} linked to it. Deleting the category will NOT delete those records, but they will no longer be reachable from this category. Continue?`;
+        }
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+
         await deleteDoc(doc(db, COLLECTIONS.categories, categoryId));
         setStatus('Category deleted.', 'success');
+        if (currentSubCategoryCategoryId === categoryId) {
+          closeSubCategorySection();
+        }
         await loadCategories();
       } catch (error) {
         console.error(error);
         setStatus('Unable to delete category. See console for details.', 'error');
       }
     }
-function renderSubCategories() {
 
-  if (!subCategories.length) {
+    function setSubCategoryStatus(message, type = 'info') {
+      elements.subCategoryStatusBar.textContent = message;
+      elements.subCategoryStatusBar.className = `status-bar ${type}`.trim();
+    }
 
-    elements.subCategoryRows.innerHTML = `
-      <tr>
-        <td colspan="3" class="empty-state">
-          No Sub Categories Found
-        </td>
-      </tr>`;
+    function resetSubCategoryForm() {
+      editingSubCategoryId = null;
+      elements.subCategoryName.value = '';
+      elements.subCategoryOrder.value = '0';
+      elements.subCategoryActive.value = 'true';
+      elements.saveSubCategoryBtn.textContent = 'Save Sub Category';
+      elements.cancelSubCategoryBtn.hidden = true;
+    }
 
-    return;
+    function populateSubCategoryForm(item) {
+      editingSubCategoryId = item.id;
+      elements.subCategoryName.value = item.name || '';
+      elements.subCategoryOrder.value = item.order ?? 0;
+      elements.subCategoryActive.value = item.active === false ? 'false' : 'true';
+      elements.saveSubCategoryBtn.textContent = 'Update Sub Category';
+      elements.cancelSubCategoryBtn.hidden = false;
+      setSubCategoryStatus(`Editing "${item.name}". Save to update or cancel to reset.`);
+    }
 
-  }
+    async function loadSubCategories(categoryId, categoryName) {
+      try {
+        currentSubCategoryCategoryId = categoryId;
+        elements.subCategorySection.style.display = '';
+        elements.selectedCategoryName.textContent = `Managing sub categories for: ${categoryName}`;
+        resetSubCategoryForm();
+        setSubCategoryStatus('Loading sub categories...');
+        subCategories = await fetchSubCategoriesForCategory(categoryId);
+        renderSubCategories();
+        setSubCategoryStatus(`Loaded ${subCategories.length} sub categories.`, 'success');
+        elements.subCategorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Unable to load sub categories. See console for details.', 'error');
+      }
+    }
 
-  elements.subCategoryRows.innerHTML = subCategories.map(item => `
+    function closeSubCategorySection() {
+      currentSubCategoryCategoryId = null;
+      subCategories = [];
+      resetSubCategoryForm();
+      elements.subCategorySection.style.display = 'none';
+    }
 
-    <tr>
+    async function saveSubCategory() {
+      if (!currentSubCategoryCategoryId) {
+        setSubCategoryStatus('No category selected for sub categories.', 'error');
+        return;
+      }
 
-      <td>${escapeHtml(item.name)}</td>
+      const name = elements.subCategoryName.value.trim();
+      const orderValue = Number(elements.subCategoryOrder.value);
+      const active = elements.subCategoryActive.value === 'true';
 
-      <td>${item.order || 0}</td>
+      if (!name) {
+        setSubCategoryStatus('Sub category name is required.', 'error');
+        return;
+      }
 
-      <td>
+      const payload = {
+        categoryId: currentSubCategoryCategoryId,
+        name,
+        description: '',
+        order: Number.isFinite(orderValue) ? orderValue : 0,
+        active,
+        updatedAt: serverTimestamp()
+      };
 
-        <button
-          class="button-secondary"
-          data-sub-edit="${item.id}">
+      try {
+        if (editingSubCategoryId) {
+          await updateDoc(doc(db, COLLECTIONS.subCategories, editingSubCategoryId), payload);
+          setSubCategoryStatus('Sub category updated successfully.', 'success');
+        } else {
+          await addDoc(collection(db, COLLECTIONS.subCategories), {
+            ...payload,
+            createdAt: serverTimestamp()
+          });
+          setSubCategoryStatus('Sub category added successfully.', 'success');
+        }
+        resetSubCategoryForm();
+        subCategories = await fetchSubCategoriesForCategory(currentSubCategoryCategoryId);
+        renderSubCategories();
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Failed to save sub category. Open browser console for details.', 'error');
+      }
+    }
 
-          Edit
+    async function deleteSubCategory(subCategoryId) {
+      try {
+        const linkedMockTests = await countMockTestsForSubCategory(subCategoryId);
+        let confirmMessage = 'Delete this sub category?';
+        if (linkedMockTests) {
+          confirmMessage = `This sub category has ${linkedMockTests} mock test${linkedMockTests === 1 ? '' : 's'} linked to it. Deleting it will NOT delete those mock tests, but they will no longer be reachable from this sub category. Continue?`;
+        }
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+        await deleteDoc(doc(db, COLLECTIONS.subCategories, subCategoryId));
+        setSubCategoryStatus('Sub category deleted.', 'success');
+        if (editingSubCategoryId === subCategoryId) {
+          resetSubCategoryForm();
+        }
+        subCategories = await fetchSubCategoriesForCategory(currentSubCategoryCategoryId);
+        renderSubCategories();
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Unable to delete sub category. See console for details.', 'error');
+      }
+    }
 
-        </button>
+    function attachSubCategoryActions() {
+      document.querySelectorAll('[data-sub-edit]').forEach(button => {
+        button.addEventListener('click', () => {
+          const item = subCategories.find(sub => sub.id === button.dataset.subEdit);
+          if (item) {
+            populateSubCategoryForm(item);
+          }
+        });
+      });
+      document.querySelectorAll('[data-sub-delete]').forEach(button => {
+        button.addEventListener('click', async () => {
+          await deleteSubCategory(button.dataset.subDelete);
+        });
+      });
+    }
 
-        <button
-          class="button-danger"
-          data-sub-delete="${item.id}">
+    function renderSubCategories() {
+      if (!subCategories.length) {
+        elements.subCategoryRows.innerHTML = `
+          <tr>
+            <td colspan="4" class="empty-state">
+              No Sub Categories Found
+            </td>
+          </tr>`;
+        return;
+      }
 
-          Delete
+      elements.subCategoryRows.innerHTML = subCategories.map(item => `
+        <tr>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${item.order || 0}</td>
+          <td>${item.active === false ? 'Inactive' : 'Active'}</td>
+          <td>
+            <button type="button" class="button-secondary" data-sub-edit="${item.id}">Edit</button>
+            <button type="button" class="button-danger" data-sub-delete="${item.id}">Delete</button>
+          </td>
+        </tr>
+      `).join('');
 
-        </button>
+      attachSubCategoryActions();
+    }
 
-      </td>
+    function populateMockSubCategoryDropdown(list, selectedId) {
+      if (!list.length) {
+        elements.mockSubCategorySelect.innerHTML = '<option value="">No sub categories available</option>';
+        return;
+      }
+      const options = ['<option value="">Select sub category</option>'];
+      list.forEach(item => {
+        options.push(`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`);
+      });
+      elements.mockSubCategorySelect.innerHTML = options.join('');
+      if (selectedId) {
+        elements.mockSubCategorySelect.value = selectedId;
+      }
+    }
 
-    </tr>
+    async function handleMockCategoryChange(selectedSubCategoryId) {
+      const categoryId = elements.mockCategorySelect.value;
+      const category = categories.find(item => item.id === categoryId);
 
-  `).join("");
+      if (!category || !category.hasSubCategory) {
+        mockFormSubCategories = [];
+        elements.mockSubCategoryWrapper.style.display = 'none';
+        elements.mockSubCategorySelect.innerHTML = '<option value="">Select sub category</option>';
+        return;
+      }
 
-}
+      elements.mockSubCategoryWrapper.style.display = '';
+      try {
+        mockFormSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        populateMockSubCategoryDropdown(mockFormSubCategories, selectedSubCategoryId || '');
+      } catch (error) {
+        console.error(error);
+        elements.mockSubCategorySelect.innerHTML = '<option value="">Unable to load sub categories</option>';
+      }
+    }
+
     async function syncMockQuestions(mockId, questionsPayload) {
       if (!questionsPayload.length) {
         return;
@@ -1513,8 +1728,19 @@ function renderSubCategories() {
         return;
       }
 
+      const selectedCategory = categories.find(item => item.id === categoryId);
+      let subCategoryId = null;
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        subCategoryId = elements.mockSubCategorySelect.value || '';
+        if (!subCategoryId) {
+          setMockStatus('Please select a sub category for this category.', 'error');
+          return;
+        }
+      }
+
       const mockPayload = {
         categoryId,
+        subCategoryId,
         title,
         totalQuestions,
         totalMarks: totalMarks || 0,
@@ -1570,21 +1796,21 @@ function renderSubCategories() {
           if (!targetCategory) {
             setStatus('Selected category cannot be found.', 'error');
             return;
+          }
+
           if (action === 'edit') {
-    populateCategoryForm(targetCategory);
-}
+            populateCategoryForm(targetCategory);
+            return;
+          }
 
-await loadSubCategories(
-    targetCategory.id,
-    targetCategory.name
-);
+          if (action === 'manage-sub') {
+            await loadSubCategories(targetCategory.id, targetCategory.name);
+            return;
+          }
 
-return;
-}
-
-if (action === 'delete') {
-    await deleteCategory(categoryId);
-}
+          if (action === 'delete') {
+            await deleteCategory(categoryId);
+          }
         });
       });
     }
@@ -1601,7 +1827,7 @@ if (action === 'delete') {
             return;
           }
           if (action === 'edit') {
-            populateMockForm(target);
+            await populateMockForm(target);
           }
           if (action === 'delete') {
             await deleteMockTest(mockId);
@@ -1655,6 +1881,12 @@ if (action === 'delete') {
       });
       elements.publishMockBtn.addEventListener('click', saveMockTest);
       elements.cancelMockBtn.addEventListener('click', resetMockForm);
+      elements.mockCategorySelect.addEventListener('change', () => {
+        handleMockCategoryChange();
+      });
+      elements.saveSubCategoryBtn.addEventListener('click', saveSubCategory);
+      elements.cancelSubCategoryBtn.addEventListener('click', resetSubCategoryForm);
+      elements.closeSubCategoryBtn.addEventListener('click', closeSubCategorySection);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
