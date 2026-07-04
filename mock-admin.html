@@ -1441,13 +1441,18 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           if (!targetCategory) {
             setStatus('Selected category cannot be found.', 'error');
             return;
-          }
           if (action === 'edit') {
-            populateCategoryForm(targetCategory);
-          }
-          if (action === 'delete') {
-            await deleteCategory(categoryId);
-          }
+    populateCategoryForm(targetCategory);
+}
+
+if (action === 'manage-sub') {
+    alert("Sub Category Manager ab next step me banega.");
+    return;
+}
+
+if (action === 'delete') {
+    await deleteCategory(categoryId);
+}
         });
       });
     }
