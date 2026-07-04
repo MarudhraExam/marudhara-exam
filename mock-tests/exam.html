@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -237,6 +237,18 @@
                 grid-template-columns: repeat(4, minmax(44px, 1fr));
             }
         }
+        /* Shown instead of the exam when the mock is not yet live */
+        .lock-box {
+            padding: 28px 22px;
+            border-radius: 12px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #92400e;
+            text-align: center;
+            font-weight: 600;
+            line-height: 1.9;
+            font-size: 1.05rem;
+        }
     </style>
 </head>
 <body>
@@ -258,6 +270,10 @@
 
         <div id="errorMessage" class="error-box hide"></div>
 
+        <!-- Shown only when the mock's live time has not yet arrived -->
+        <div id="lockContainer" class="lock-box hide"></div>
+
+        <div id="examContent">
         <section class="meta-list" id="mockMeta">
             <div class="meta-item"><strong>Mock Name:</strong> <span id="mockTitle">Loading...</span></div>
             <div class="meta-item"><strong>Category:</strong> <span id="mockCategory">Loading...</span></div>
@@ -320,6 +336,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 
     <script type="module">
@@ -356,6 +373,8 @@
         const optionsForm = document.getElementById("optionsForm");
         const languageSelect = document.getElementById("languageSelect");
         const languageKey = "mockExamLanguage";
+        const lockContainer = document.getElementById("lockContainer");
+        const examContent = document.getElementById("examContent");
 
         let questions = [];
         let currentIndex = 0;
@@ -380,6 +399,52 @@
         function getMockId() {
             const params = new URLSearchParams(window.location.search);
             return params.get("mockId") || params.get("id");
+        }
+
+        // Resolves a mock's live date/time into a JS Date, or null if the mock
+        // has no live-date fields at all (backward compatibility: treat as LIVE).
+        function resolveLiveDateTime(mock) {
+            // Preferred: a single combined field.
+            if (mock.liveDateTime) {
+                const d = new Date(mock.liveDateTime);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            // Fallback: separate date + time fields.
+            if (mock.liveDate) {
+                const timePart = mock.liveTime ? mock.liveTime : "00:00";
+                const d = new Date(`${mock.liveDate} ${timePart}`);
+                if (!isNaN(d.getTime())) {
+                    return d;
+                }
+                // Try ISO-style combination as a secondary attempt.
+                const d2 = new Date(`${mock.liveDate}T${timePart}`);
+                return isNaN(d2.getTime()) ? null : d2;
+            }
+
+            // No live-date fields present on this mock at all -> old mock -> live.
+            return null;
+        }
+
+        // Formats a Date for the lock message using readable browser formatting.
+        function formatLiveDateTime(date) {
+            const datePart = date.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+            const timePart = date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+            return { datePart, timePart };
+        }
+
+        // Blocks exam access: hides the exam UI, shows the lock message,
+        // and disables the submit button so no submission can occur.
+        function lockExamAccess(liveDate) {
+            examContent.classList.add("hide");
+            submitBtn.disabled = true;
+            if (liveDate) {
+                const { datePart, timePart } = formatLiveDateTime(liveDate);
+                lockContainer.innerHTML = `🔒 This Mock Test is not Live Yet<br>Live On<br>${datePart}<br>${timePart}`;
+            } else {
+                lockContainer.textContent = "🔒 This Mock Test is not Live Yet";
+            }
+            lockContainer.classList.remove("hide");
         }
 
         function getSessionData() {
@@ -710,6 +775,17 @@ questionTextElement.innerHTML =
                     return;
                 }
                 examMeta = await fetchMockDetails(mockId);
+
+                // --- FEATURE 1 & 2: Final live verification / security check ---
+                // Uses the mock data already fetched above (no duplicate Firestore read).
+                const liveDateTime = resolveLiveDateTime(examMeta);
+                if (liveDateTime && Date.now() < liveDateTime.getTime()) {
+                    // Current time is before the mock's live time: stop execution here.
+                    // Do not load questions, do not start the timer, do not init the exam.
+                    lockExamAccess(liveDateTime);
+                    return;
+                }
+
                 mockTitle.textContent = examMeta.title || examMeta.name || "Untitled mock";
                 mockCategory.textContent = examMeta.categoryName || examMeta.category || "General";
                 candidateName.textContent = sessionData.studentName;
