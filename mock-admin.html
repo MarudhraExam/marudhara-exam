@@ -1231,7 +1231,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const orderValue = Number(elements.order.value);
       const description = elements.description.value.trim();
       const active = elements.active.value === 'true';
-
+      const hasSubCategory = elements.hasSubCategory.value === 'true';
       if (!name) {
         setStatus('Category name is required.', 'error');
         return;
