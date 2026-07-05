@@ -694,25 +694,32 @@ questionTextElement.innerHTML =
             let unattempted = 0;
             const answersList = {};
 
-            questions.forEach((question) => {
-                console.log(question.id, answers[question.id]);
-                const selected = normalizeAnswer(answers[question.id]);
-                console.log("Q:", question.questionNo, "Selected:", selected, "Correct:", correctAnswer);
-                const correctAnswer = normalizeAnswer(question.answer || question.correctAnswer || question.correctOption);
-                answersList[question.id] = answers[question.id] || "";
+            qquestions.forEach((question) => {
+    const selected = normalizeAnswer(answers[question.id]);
+    const correctAnswer = normalizeAnswer(
+        question.answer || question.correctAnswer || question.correctOption
+    );
 
-              if (!selected || selected === "E") {
-    unattempted += 1;
-    return;
-}
+    console.log(
+        "Q:", question.questionNo,
+        "Selected:", selected,
+        "Correct:", correctAnswer
+    );
 
-if (selected === correctAnswer) {
-    correct += 1;
-    return;
-}
+    answersList[question.id] = answers[question.id] || "";
 
-wrong += 1;
-            });
+    // E = Skip / Unattempted
+    if (selected === "" || selected === "E") {
+        unattempted++;
+        return;
+    }
+
+    if (selected === correctAnswer) {
+        correct++;
+    } else {
+        wrong++;
+    }
+});
 
             const attempted = totalQuestions - unattempted;
             const positiveMarks = Number(examMeta.totalMarks) > 0 ? Number(examMeta.totalMarks) / totalQuestions : 1;
