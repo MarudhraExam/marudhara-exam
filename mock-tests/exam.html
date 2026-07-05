@@ -694,7 +694,7 @@ questionTextElement.innerHTML =
             let unattempted = 0;
             const answersList = {};
 
-            qquestions.forEach((question) => {
+            questions.forEach((question) => {
     const selected = normalizeAnswer(answers[question.id]);
     const correctAnswer = normalizeAnswer(
         question.answer || question.correctAnswer || question.correctOption
