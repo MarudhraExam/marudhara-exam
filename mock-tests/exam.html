@@ -141,21 +141,23 @@
         .nav-buttons button:hover:not(:disabled) {
             transform: translateY(-1px);
         }
-        .palette-card {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+       .palette-card{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    position:sticky;
+    top:20px;
+}
         .palette-title {
             margin: 0 0 8px 0;
             font-size: 1rem;
             font-weight: 600;
         }
-       .palette-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 30px);
-    gap: 5px;
-    justify-content: center;
+     .palette-grid{
+    display:grid;
+    grid-template-columns:repeat(10,30px);
+    gap:6px;
+    justify-content:center;
 }
 
 .palette-item {
