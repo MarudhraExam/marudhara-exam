@@ -699,15 +699,17 @@ questionTextElement.innerHTML =
                 const correctAnswer = normalizeAnswer(question.answer || question.correctAnswer || question.correctOption);
                 answersList[question.id] = answers[question.id] || "";
 
-                if (!selected) {
-                    unattempted += 1;
-                    return;
-                }
-                if (selected === correctAnswer) {
-                    correct += 1;
-                    return;
-                }
-                wrong += 1;
+              if (!selected || selected === "E") {
+    unattempted += 1;
+    return;
+}
+
+if (selected === correctAnswer) {
+    correct += 1;
+    return;
+}
+
+wrong += 1;
             });
 
             const attempted = totalQuestions - unattempted;
