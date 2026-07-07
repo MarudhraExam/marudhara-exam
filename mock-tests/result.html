@@ -1284,6 +1284,9 @@ console.log("Children:", printable.children.length);
 
         const fileName = `${sanitizeFilenamePart(meta.mockTitle)}_Question_Paper.pdf`;
 printable.offsetHeight;
+        document.body.appendChild(printable);
+
+await new Promise(r=>setTimeout(r,500));
         await html2pdf()
           .set({
             margin: 0,
