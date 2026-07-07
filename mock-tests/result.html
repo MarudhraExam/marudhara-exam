@@ -589,7 +589,12 @@
     function renderReviewCard(question, index, total, answers) {
       const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
       const correctAnswer = normalizeAnswer(question.answer || '');
-      const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+     const status =
+    (!studentAnswer || studentAnswer === 'E')
+        ? 'Unattempted'
+        : studentAnswer === correctAnswer
+            ? 'Correct'
+            : 'Wrong';
       const optionsHtml = ['A', 'B', 'C', 'D', 'E']
         .map((letter) => {
           const optionText = getLocalizedField(question, `option${letter}`) || '';
