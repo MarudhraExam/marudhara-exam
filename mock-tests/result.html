@@ -1289,7 +1289,10 @@ const answers =
         console.error('Question paper PDF generation failed:', error);
         alert('Unable to generate the question paper PDF. Please try again.');
       } finally {
-        if (printable) printable.innerHTML = '';
+       if (printable) {
+    printable.innerHTML = '';
+    printable.style.opacity = '0.01';
+}
         if (button) {
           button.disabled = false;
           button.textContent = 'Download Question Paper';
