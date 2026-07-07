@@ -1261,8 +1261,7 @@ console.log(printable.innerHTML);
 
 console.log("Children:", printable.children.length);
         
-        pageNodes.forEach((pageEl) => printable.appendChild(pageEl));
-
+      
         // Let the browser actually paint the newly-built DOM before handing it to html2pdf.
         await new Promise((resolve) => {
           requestAnimationFrame(() => {
