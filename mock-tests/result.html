@@ -1253,7 +1253,9 @@ const answers =
         printable.className = 'qp-doc';
         const pageNodes = qpBuildDocumentPages(questionsWithImages, meta, logoSrc);
         console.log("Pages:", pageNodes.length);
-
+console.log(pageNodes);
+console.log(pageNodes[0]);
+console.log(pageNodes[0] instanceof HTMLElement);
 pageNodes.forEach((page) => printable.appendChild(page));
 
 console.log("Printable HTML:");
