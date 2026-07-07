@@ -907,133 +907,236 @@ const answers =
         .filter((opt) => opt.hindi || opt.english);
     }
 
-    // Builds the printable HTML for a single question (question text in both
-    // languages when available, optional image, and its options).
-    function buildQuestionBlockHtml(question, index) {
-      const qField = getBilingualField(question, 'question');
-      const qHindiHtml = escapeHtml(formatQuestionText(qField.hindi)).replace(/\n/g, '<br>');
-      const qEnglishHtml = escapeHtml(formatQuestionText(qField.english)).replace(/\n/g, '<br>');
-      const options = buildBilingualOptions(question);
-
-      let html = '<div class="qp-question-block">';
-      html += `<div class="qp-q-number">Q${index + 1}.</div>`;
-      if (qHindiHtml) html += `<div class="qp-q-text">${qHindiHtml}</div>`;
-      if (qEnglishHtml) html += `<div class="qp-q-text">${qEnglishHtml}</div>`;
-      if (question.imageDataUrl) {
-        html += `<img class="qp-q-image" src="${question.imageDataUrl}" />`;
-      }
-      html += '<div class="qp-options">';
-      options.forEach((opt) => {
-        let text = '';
-        if (opt.hindi) text += escapeHtml(opt.hindi);
-        if (opt.hindi && opt.english) text += ' / ';
-        if (opt.english) text += escapeHtml(opt.english);
-        html += `<div class="qp-option"><b>${opt.letter}.</b><span>${text}</span></div>`;
-      });
-      html += '</div></div>';
-      return html;
+    // Injects the scoped stylesheet for the printable question paper exactly once.
+    // This is CSS only (no document content), so it does not count as building
+    // the printable content via an HTML string — the content itself is built
+    // entirely with createElement()/appendChild()/textContent below.
+    function ensureQuestionPaperStyles() {
+      if (document.getElementById('qp-style')) return;
+      const style = document.createElement('style');
+      style.id = 'qp-style';
+      style.textContent = `
+        .qp-root { font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif; }
+        .qp-root .qp-page { width:210mm; height:297mm; position:relative; background:#fff; color:#000; overflow:hidden; box-sizing:border-box; }
+        .qp-root .qp-page + .qp-page { page-break-before: always; }
+        .qp-root .qp-watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.1; z-index:0; }
+        .qp-root .qp-watermark img { width:55%; }
+        .qp-root .qp-header { position:relative; z-index:1; height:18mm; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:5mm 12mm 3mm; border-bottom:0.6mm solid #0b4ea2; }
+        .qp-root .qp-header-brand { display:flex; align-items:center; gap:3mm; }
+        .qp-root .qp-header-logo { width:10mm; height:10mm; object-fit:contain; }
+        .qp-root .qp-header-title { font-size:14pt; font-weight:800; color:#0b4ea2; }
+        .qp-root .qp-header-url { font-size:8pt; color:#5a647a; }
+        .qp-root .qp-content { position:relative; z-index:1; padding:4mm 12mm; box-sizing:border-box; }
+        .qp-root .qp-footer { position:absolute; left:0; right:0; bottom:0; height:12mm; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:7.5pt; color:#6e768a; z-index:1; }
+        .qp-root .qp-cover-title { font-size:20pt; font-weight:800; margin:8mm 0 4mm; color:#102a52; }
+        .qp-root .qp-cover-row { display:flex; justify-content:space-between; font-size:11pt; padding:2.2mm 0; color:#1c2a44; }
+        .qp-root .qp-cover-row strong { color:#0b4ea2; }
+        .qp-root .qp-cover-sep { border-top:0.6mm solid #0b4ea2; margin:5mm 0; }
+        .qp-root .qp-question-block { margin-bottom:5mm; }
+        .qp-root .qp-q-number { font-weight:800; font-size:11pt; color:#0b4ea2; margin-bottom:1mm; }
+        .qp-root .qp-q-text { font-size:10.5pt; line-height:1.6; margin-bottom:1mm; color:#1c2a44; white-space:pre-wrap; }
+        .qp-root .qp-q-image { max-width:100%; max-height:60mm; display:block; margin:2mm auto; object-fit:contain; }
+        .qp-root .qp-options { display:grid; gap:1.5mm; margin-top:2mm; }
+        .qp-root .qp-option { display:flex; gap:2mm; font-size:10pt; line-height:1.5; padding:1.5mm 2mm; border:0.2mm solid #d7deea; border-radius:2mm; }
+        .qp-root .qp-option b { min-width:5mm; }
+        .qp-root .qp-answerkey-title { font-size:16pt; font-weight:800; color:#0b4ea2; text-align:center; margin:2mm 0 3mm; }
+        .qp-root .qp-answerkey-sep { border-top:0.6mm solid #0b4ea2; margin-bottom:4mm; }
+        .qp-root .qp-ak-row { display:grid; grid-template-columns:repeat(5,1fr); font-size:10pt; padding:1.4mm 0; }
+      `;
+      document.head.appendChild(style);
     }
 
-    // Assembles the full printable question-paper document: measures every
-    // block against the real rendered page geometry so header, footer,
-    // watermark, and "Page X of Y" are correct on every page, then returns
-    // the final HTML string (including its own scoped <style> block) ready
-    // to be dropped into #printQuestionPaper and handed to html2pdf.js.
-    function buildQuestionPaperDocument(questions, meta, logoSrc) {
-      const PAGE_W_MM = 210;
-      const PAGE_H_MM = 297;
-      const HEADER_H_MM = 18;
-      const FOOTER_H_MM = 12;
-      const CONTENT_PAD_MM = 4;
-      const SIDE_PAD_MM = 12;
-      const CONTENT_W_MM = PAGE_W_MM - SIDE_PAD_MM * 2;
-      const CONTENT_AREA_MM = PAGE_H_MM - HEADER_H_MM - FOOTER_H_MM - CONTENT_PAD_MM * 2;
+    // ---- Real DOM node builders (createElement + appendChild + textContent only) ----
 
-      const styleBlock = `
-        <style>
-          .qp-root { font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif; }
-          .qp-root .qp-page { width:${PAGE_W_MM}mm; height:${PAGE_H_MM}mm; position:relative; background:#fff; color:#000; overflow:hidden; box-sizing:border-box; }
-          .qp-root .qp-page + .qp-page { page-break-before: always; }
-          .qp-root .qp-watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.1; z-index:0; }
-          .qp-root .qp-watermark img { width:55%; }
-          .qp-root .qp-header { position:relative; z-index:1; height:${HEADER_H_MM}mm; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:5mm ${SIDE_PAD_MM}mm 3mm; border-bottom:0.6mm solid #0b4ea2; }
-          .qp-root .qp-header-brand { display:flex; align-items:center; gap:3mm; }
-          .qp-root .qp-header-logo { width:10mm; height:10mm; object-fit:contain; }
-          .qp-root .qp-header-title { font-size:14pt; font-weight:800; color:#0b4ea2; }
-          .qp-root .qp-header-url { font-size:8pt; color:#5a647a; }
-          .qp-root .qp-content { position:relative; z-index:1; padding:${CONTENT_PAD_MM}mm ${SIDE_PAD_MM}mm; box-sizing:border-box; }
-          .qp-root .qp-footer { position:absolute; left:0; right:0; bottom:0; height:${FOOTER_H_MM}mm; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:7.5pt; color:#6e768a; z-index:1; }
-          .qp-root .qp-cover-title { font-size:20pt; font-weight:800; margin:8mm 0 4mm; color:#102a52; }
-          .qp-root .qp-cover-row { display:flex; justify-content:space-between; font-size:11pt; padding:2.2mm 0; color:#1c2a44; }
-          .qp-root .qp-cover-row strong { color:#0b4ea2; }
-          .qp-root .qp-cover-sep { border-top:0.6mm solid #0b4ea2; margin:5mm 0; }
-          .qp-root .qp-question-block { margin-bottom:5mm; }
-          .qp-root .qp-q-number { font-weight:800; font-size:11pt; color:#0b4ea2; margin-bottom:1mm; }
-          .qp-root .qp-q-text { font-size:10.5pt; line-height:1.6; margin-bottom:1mm; color:#1c2a44; }
-          .qp-root .qp-q-image { max-width:100%; max-height:60mm; display:block; margin:2mm auto; object-fit:contain; }
-          .qp-root .qp-options { display:grid; gap:1.5mm; margin-top:2mm; }
-          .qp-root .qp-option { display:flex; gap:2mm; font-size:10pt; line-height:1.5; padding:1.5mm 2mm; border:0.2mm solid #d7deea; border-radius:2mm; }
-          .qp-root .qp-option b { min-width:5mm; }
-          .qp-root .qp-answerkey-title { font-size:16pt; font-weight:800; color:#0b4ea2; text-align:center; margin:2mm 0 3mm; }
-          .qp-root .qp-answerkey-sep { border-top:0.6mm solid #0b4ea2; margin-bottom:4mm; }
-          .qp-root .qp-ak-row { display:grid; grid-template-columns:repeat(5,1fr); font-size:10pt; padding:1.4mm 0; }
-        </style>
-      `;
+    function buildCoverNodes(meta) {
+      const nodes = [];
 
-      const headerHtml = `
-        <div class="qp-header">
-          <div class="qp-header-brand">
-            ${logoSrc ? `<img class="qp-header-logo" src="${logoSrc}" />` : ''}
-            <div class="qp-header-title">MARUDHARA EXAM</div>
-          </div>
-          <div class="qp-header-url">www.marudharaexam.in</div>
-        </div>
-      `;
+      const title = document.createElement('div');
+      title.className = 'qp-cover-title';
+      title.textContent = 'MARUDHARA EXAM';
+      nodes.push(title);
 
-      const watermarkHtml = `<div class="qp-watermark">${logoSrc ? `<img src="${logoSrc}" />` : ''}</div>`;
+      const rows = [
+        ['Exam Name', meta.mockTitle],
+        ['Category', meta.categoryName],
+        ['Total Questions', String(meta.totalQuestions)],
+        ['Total Marks', String(meta.totalMarks)],
+        ['Time', meta.time]
+      ];
+      rows.forEach(([label, value]) => {
+        const row = document.createElement('div');
+        row.className = 'qp-cover-row';
+        const strong = document.createElement('strong');
+        strong.textContent = label;
+        const span = document.createElement('span');
+        span.textContent = value;
+        row.appendChild(strong);
+        row.appendChild(span);
+        nodes.push(row);
+      });
 
-      function footerHtml(pageNum, totalPages) {
-        return `
-          <div class="qp-footer">
-            <div>Marudhara Exam</div>
-            <div>www.marudharaexam.in</div>
-            <div>Page ${pageNum} of ${totalPages}</div>
-          </div>
-        `;
+      const sep = document.createElement('div');
+      sep.className = 'qp-cover-sep';
+      nodes.push(sep);
+
+      return nodes;
+    }
+
+    function buildQuestionBlockNode(question, index) {
+      const block = document.createElement('div');
+      block.className = 'qp-question-block';
+
+      const numberEl = document.createElement('div');
+      numberEl.className = 'qp-q-number';
+      numberEl.textContent = `Q${index + 1}.`;
+      block.appendChild(numberEl);
+
+      const qField = getBilingualField(question, 'question');
+      const hindiText = formatQuestionText(qField.hindi);
+      const englishText = formatQuestionText(qField.english);
+
+      if (hindiText) {
+        const hindiEl = document.createElement('div');
+        hindiEl.className = 'qp-q-text';
+        hindiEl.textContent = hindiText;
+        block.appendChild(hindiEl);
+      }
+      if (englishText) {
+        const englishEl = document.createElement('div');
+        englishEl.className = 'qp-q-text';
+        englishEl.textContent = englishText;
+        block.appendChild(englishEl);
       }
 
-      const coverInnerHtml = `
-        <div class="qp-cover-title">MARUDHARA EXAM</div>
-        <div class="qp-cover-row"><strong>Exam Name</strong><span>${escapeHtml(meta.mockTitle)}</span></div>
-        <div class="qp-cover-row"><strong>Category</strong><span>${escapeHtml(meta.categoryName)}</span></div>
-        <div class="qp-cover-row"><strong>Total Questions</strong><span>${meta.totalQuestions}</span></div>
-        <div class="qp-cover-row"><strong>Total Marks</strong><span>${meta.totalMarks}</span></div>
-        <div class="qp-cover-row"><strong>Time</strong><span>${escapeHtml(meta.time)}</span></div>
-        <div class="qp-cover-sep"></div>
-      `;
+      if (question.imageDataUrl) {
+        const img = document.createElement('img');
+        img.className = 'qp-q-image';
+        img.src = question.imageDataUrl;
+        block.appendChild(img);
+      }
 
-      const questionBlockHtmls = questions.map((q, idx) => buildQuestionBlockHtml(q, idx));
+      const optionsWrap = document.createElement('div');
+      optionsWrap.className = 'qp-options';
+      buildBilingualOptions(question).forEach((opt) => {
+        const optEl = document.createElement('div');
+        optEl.className = 'qp-option';
 
-      const answerKeyTitleHtml = '<div class="qp-answerkey-title">ANSWER KEY</div><div class="qp-answerkey-sep"></div>';
-      const columns = 5;
-      const answerRows = [];
-      for (let r = 0; r < Math.ceil(questions.length / columns); r += 1) {
-        let rowHtml = '<div class="qp-ak-row">';
-        for (let c = 0; c < columns; c += 1) {
-          const qIndex = r * columns + c;
-          if (qIndex < questions.length) {
-            const answerLetter = normalizeAnswer(questions[qIndex].answer || '') || '-';
-            rowHtml += `<div>${qIndex + 1}-${answerLetter}</div>`;
-          } else {
-            rowHtml += '<div></div>';
-          }
+        const letterEl = document.createElement('b');
+        letterEl.textContent = `${opt.letter}.`;
+        optEl.appendChild(letterEl);
+
+        const textEl = document.createElement('span');
+        let text = '';
+        if (opt.hindi) text += opt.hindi;
+        if (opt.hindi && opt.english) text += ' / ';
+        if (opt.english) text += opt.english;
+        textEl.textContent = text;
+        optEl.appendChild(textEl);
+
+        optionsWrap.appendChild(optEl);
+      });
+      block.appendChild(optionsWrap);
+
+      return block;
+    }
+
+    function buildAnswerKeyTitleNodes() {
+      const title = document.createElement('div');
+      title.className = 'qp-answerkey-title';
+      title.textContent = 'ANSWER KEY';
+      const sep = document.createElement('div');
+      sep.className = 'qp-answerkey-sep';
+      return [title, sep];
+    }
+
+    function buildAnswerRowNode(questions, rowIndex, columns) {
+      const row = document.createElement('div');
+      row.className = 'qp-ak-row';
+      for (let c = 0; c < columns; c += 1) {
+        const qIndex = rowIndex * columns + c;
+        const cell = document.createElement('div');
+        if (qIndex < questions.length) {
+          const answerLetter = normalizeAnswer(questions[qIndex].answer || '') || '-';
+          cell.textContent = `${qIndex + 1}-${answerLetter}`;
         }
-        rowHtml += '</div>';
-        answerRows.push(rowHtml);
+        row.appendChild(cell);
+      }
+      return row;
+    }
+
+    function buildWatermarkNode(logoSrc) {
+      const wm = document.createElement('div');
+      wm.className = 'qp-watermark';
+      if (logoSrc) {
+        const img = document.createElement('img');
+        img.src = logoSrc;
+        wm.appendChild(img);
+      }
+      return wm;
+    }
+
+    function buildHeaderNode(logoSrc) {
+      const header = document.createElement('div');
+      header.className = 'qp-header';
+
+      const brand = document.createElement('div');
+      brand.className = 'qp-header-brand';
+      if (logoSrc) {
+        const img = document.createElement('img');
+        img.className = 'qp-header-logo';
+        img.src = logoSrc;
+        brand.appendChild(img);
+      }
+      const title = document.createElement('div');
+      title.className = 'qp-header-title';
+      title.textContent = 'MARUDHARA EXAM';
+      brand.appendChild(title);
+      header.appendChild(brand);
+
+      const url = document.createElement('div');
+      url.className = 'qp-header-url';
+      url.textContent = 'www.marudharaexam.in';
+      header.appendChild(url);
+
+      return header;
+    }
+
+    function buildFooterNode(pageNum, totalPages) {
+      const footer = document.createElement('div');
+      footer.className = 'qp-footer';
+      const l1 = document.createElement('div');
+      l1.textContent = 'Marudhara Exam';
+      const l2 = document.createElement('div');
+      l2.textContent = 'www.marudharaexam.in';
+      const l3 = document.createElement('div');
+      l3.textContent = `Page ${pageNum} of ${totalPages}`;
+      footer.appendChild(l1);
+      footer.appendChild(l2);
+      footer.appendChild(l3);
+      return footer;
+    }
+
+    // Measures every content node against the real rendered page geometry (using
+    // real DOM nodes, not an HTML string) and packs them into fixed-size A4 pages,
+    // then returns the finished page elements (header/footer/watermark included,
+    // "Page X of Y" correct on every page) ready to be appended to #printQuestionPaper.
+    function buildQuestionPaperPages(questions, meta, logoSrc) {
+      ensureQuestionPaperStyles();
+
+      const CONTENT_W_MM = 186; // 210mm page width - 12mm side padding * 2
+      const CONTENT_AREA_MM = 259; // 297mm page height - 18mm header - 12mm footer - 4mm content padding * 2
+
+      const coverNodes = buildCoverNodes(meta);
+      const questionNodes = questions.map((q, idx) => buildQuestionBlockNode(q, idx));
+      const columns = 5;
+      const totalRows = Math.ceil(questions.length / columns);
+      const answerKeyTitleNodes = buildAnswerKeyTitleNodes();
+      const answerRowNodes = [];
+      for (let r = 0; r < totalRows; r += 1) {
+        answerRowNodes.push(buildAnswerRowNode(questions, r, columns));
       }
 
-      // ---- Measure every block against the real rendered content width so
-      // pagination matches exactly what html2pdf will later capture. ----
+      // ---- Measure real DOM nodes in a hidden probe with the exact content width. ----
       const probe = document.createElement('div');
       probe.className = 'qp-root';
       probe.style.position = 'fixed';
@@ -1041,7 +1144,6 @@ const answers =
       probe.style.top = '0';
       probe.style.visibility = 'hidden';
       probe.style.width = `${CONTENT_W_MM}mm`;
-      probe.innerHTML = styleBlock;
       document.body.appendChild(probe);
 
       const mmProbe = document.createElement('div');
@@ -1051,97 +1153,85 @@ const answers =
       const pxPerMm = mmProbe.getBoundingClientRect().height / 100;
       probe.removeChild(mmProbe);
 
-      function measure(html) {
-        const wrap = document.createElement('div');
-        wrap.innerHTML = html;
-        probe.appendChild(wrap);
-        const h = wrap.getBoundingClientRect().height;
-        probe.removeChild(wrap);
+      function measureNode(node) {
+        probe.appendChild(node);
+        const h = node.getBoundingClientRect().height;
+        probe.removeChild(node);
         return h;
       }
 
       const contentAreaPx = CONTENT_AREA_MM * pxPerMm;
-      const coverHeightPx = measure(coverInnerHtml);
-      const answerTitleHeightPx = measure(answerKeyTitleHtml);
-      const questionHeights = questionBlockHtmls.map(measure);
-      const answerRowHeights = answerRows.map(measure);
+      coverNodes.forEach(measureNode); // warms up layout; cover always gets its own page
+      const questionHeights = questionNodes.map(measureNode);
+      const answerTitleHeightPx = answerKeyTitleNodes.reduce((sum, n) => sum + measureNode(n), 0);
+      const answerRowHeights = answerRowNodes.map(measureNode);
 
       document.body.removeChild(probe);
 
-      // ---- Pack measured blocks into fixed-size pages. ----
+      // ---- Pack the real nodes into pages. ----
       const pages = [];
 
-      // Page 1 is always a dedicated cover page, even if more would technically fit.
-      pages.push([coverInnerHtml]);
-      void coverHeightPx; // cover always gets its own page regardless of measured height
+      // Page 1 is always a dedicated cover page.
+      pages.push(coverNodes.slice());
 
-      // Question pages: pack greedily, never splitting a question awkwardly across pages.
       let current = [];
       let currentHeight = 0;
-      questionBlockHtmls.forEach((html, idx) => {
+      questionNodes.forEach((node, idx) => {
         const h = questionHeights[idx];
         if (current.length && currentHeight + h > contentAreaPx) {
           pages.push(current);
           current = [];
           currentHeight = 0;
         }
-        current.push(html);
+        current.push(node);
         currentHeight += h;
       });
       if (current.length) pages.push(current);
 
-      // Answer key always starts on a fresh page, then wraps to further pages if needed.
-      let akCurrent = [answerKeyTitleHtml];
+      // Answer key always starts on a fresh page, wrapping to further pages if needed.
+      let akCurrent = answerKeyTitleNodes.slice();
       let akHeight = answerTitleHeightPx;
-      answerRows.forEach((html, idx) => {
+      answerRowNodes.forEach((node, idx) => {
         const h = answerRowHeights[idx];
         if (akHeight + h > contentAreaPx) {
           pages.push(akCurrent);
           akCurrent = [];
           akHeight = 0;
         }
-        akCurrent.push(html);
+        akCurrent.push(node);
         akHeight += h;
       });
       if (akCurrent.length) pages.push(akCurrent);
 
       const totalPages = pages.length;
-      const pagesHtml = pages
-        .map(
-          (blocks, i) => `
-        <div class="qp-page">
-          ${watermarkHtml}
-          ${headerHtml}
-          <div class="qp-content">${blocks.join('')}</div>
-          ${footerHtml(i + 1, totalPages)}
-        </div>
-      `
-        )
-        .join('');
 
-      return styleBlock + pagesHtml;
+      return pages.map((contentNodes, i) => {
+        const pageEl = document.createElement('div');
+        pageEl.className = 'qp-page';
+        pageEl.appendChild(buildWatermarkNode(logoSrc));
+        pageEl.appendChild(buildHeaderNode(logoSrc));
+
+        const contentWrap = document.createElement('div');
+        contentWrap.className = 'qp-content';
+        contentNodes.forEach((node) => contentWrap.appendChild(node));
+        pageEl.appendChild(contentWrap);
+
+        pageEl.appendChild(buildFooterNode(i + 1, totalPages));
+        return pageEl;
+      });
     }
 
     async function generateQuestionPaperPdf() {
       const button = document.getElementById('downloadQuestionPaperBtn');
       const result = pdfPaperState.result;
-      let questions = pdfPaperState.questions;
+      const questions = pdfPaperState.questions;
 
       if (!result) {
         alert('Result data is not loaded yet. Please wait for the page to finish loading.');
         return;
       }
 
-      // Never fetch another copy if the questions are already loaded in memory.
-      if (!Array.isArray(questions) || questions.length === 0) {
-        try {
-          questions = await fetchQuestions(result.mockId);
-          pdfPaperState.questions = questions;
-        } catch (error) {
-          console.error('Question fetch for PDF failed:', error);
-        }
-      }
-
+      // Use only the questions already loaded in memory — never fetch again.
       if (!Array.isArray(questions) || questions.length === 0) {
         alert('No questions are available to generate the question paper.');
         return;
@@ -1191,14 +1281,16 @@ const answers =
           questionsWithImages.push({ ...question, imageDataUrl });
         }
 
-        const documentHtml = buildQuestionPaperDocument(questionsWithImages, meta, logoSrc);
+        // Build the printable document out of real DOM nodes (createElement +
+        // appendChild + textContent + img.src only — no innerHTML string).
+        printable.textContent = '';
         printable.className = 'qp-root';
-        printable.innerHTML = documentHtml;
+        const pageNodes = buildQuestionPaperPages(questionsWithImages, meta, logoSrc);
+        pageNodes.forEach((pageEl) => printable.appendChild(pageEl));
 
-        // Wait for the browser to actually paint the newly-inserted DOM, and for
+        // Wait for the browser to actually paint the newly-built DOM, and for
         // every <img> inside it (logo, watermark, question images) to finish
-        // loading, before handing the element to html2pdf — otherwise html2canvas
-        // can capture an empty/unpainted snapshot.
+        // loading, before handing the element to html2pdf.
         await new Promise((resolve) => {
           requestAnimationFrame(() => {
             requestAnimationFrame(resolve);
@@ -1231,13 +1323,14 @@ const answers =
         console.error('Question paper PDF generation failed:', error);
         alert('Unable to generate the question paper PDF. Please try again.');
       } finally {
-        if (printable) printable.innerHTML = '';
+        if (printable) printable.textContent = '';
         if (button) {
           button.disabled = false;
           button.textContent = 'Download Question Paper';
         }
       }
     }
+
 
 
     function attachDownloadQuestionPaperHandler() {
@@ -1252,19 +1345,12 @@ const answers =
 <!-- Hidden Printable Question Paper -->
 <div id="printQuestionPaper" style="
 position:fixed;
-left:0;
 top:0;
+left:0;
 visibility:hidden;
 pointer-events:none;
-opacity:1;
 width:210mm;
-min-height:297mm;
-background:#ffffff;
-color:#000;
-padding:0;
-margin:0;
-overflow:visible;
-z-index:-1;
+background:#fff;
 ">
 </div>
 </body>
