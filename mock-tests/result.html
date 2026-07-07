@@ -498,12 +498,7 @@
       categoryName: ''
     };
 
-    function getQuestionStatus(question, answers) {
-      const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
-      const correctAnswer = normalizeAnswer(question.answer || '');
-      if (!studentAnswer) return 'Unattempted';
-      return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
-    }function getQuestionStatus(question, answers) {
+  function getQuestionStatus(question, answers) {
   const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
   const correctAnswer = normalizeAnswer(question.answer || '');
 
