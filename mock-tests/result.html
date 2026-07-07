@@ -603,9 +603,9 @@
           const isSelected = studentAnswer === letter;
           const isCorrect = correctAnswer === letter;
 
-          if (!studentAnswer) {
-            optionStatus = 'unattempted';
-          } else if (isCorrect && isSelected) {
+         if (!studentAnswer || studentAnswer === 'E') {
+    optionStatus = 'unattempted';
+}else if (isCorrect && isSelected) {
             optionStatus = 'selected-correct';
           } else if (isCorrect) {
             optionStatus = 'correct';
