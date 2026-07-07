@@ -1319,6 +1319,9 @@ const answers =
           })
           .from(printable)
           .save();
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+printable.offsetHeight;
       } catch (error) {
         console.error('Question paper PDF generation failed:', error);
         alert('Unable to generate the question paper PDF. Please try again.');
