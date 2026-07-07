@@ -1195,6 +1195,25 @@ const answers =
         printable.className = 'qp-root';
         printable.innerHTML = documentHtml;
 
+        // Wait for the browser to actually paint the newly-inserted DOM, and for
+        // every <img> inside it (logo, watermark, question images) to finish
+        // loading, before handing the element to html2pdf — otherwise html2canvas
+        // can capture an empty/unpainted snapshot.
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
+        await Promise.all(
+          Array.from(printable.querySelectorAll('img')).map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            });
+          })
+        );
+
         const fileName = `${sanitizeFilenamePart(meta.mockTitle)}_Question_Paper.pdf`;
 
         await html2pdf()
