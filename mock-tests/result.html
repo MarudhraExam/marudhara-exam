@@ -633,7 +633,7 @@
           ${question.image ? `<img class="question-asset" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
           <div class="options-grid">${optionsHtml}</div>
           <div class="review-stats">
-            <div><strong>Your Answer</strong><span>${studentAnswer || 'Unattempted'}</span></div>
+            <div><strong>Your Answer</strong><span>${(!studentAnswer || studentAnswer === 'E') ? 'Unattempted' : studentAnswer}</span></div>
             <div><strong>Correct Answer</strong><span>${correctAnswer || 'N/A'}</span></div>
             <div><strong>Status</strong><span>${status}</span></div>
           </div>
