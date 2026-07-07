@@ -155,9 +155,6 @@
     <div id="resultContent" class="result-grid"></div>
   </div>
 
-  <!-- ===== Question Paper PDF feature: external libraries (added, nothing existing removed) ===== -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
   <script type="module">
     import { db } from '../firebase.js';
     import {
@@ -849,64 +846,52 @@ const answers =
     });
 
     /* =========================================================================================
-       QUESTION PAPER PDF FEATURE (fully isolated — new code only, nothing above is modified)
-       Rewritten from scratch: fixed question-count-per-page pagination, no DOM measurement,
-       no getBoundingClientRect(), no detached-node reuse, no innerHTML for content building.
+       QUESTION PAPER — NATIVE BROWSER PRINT (rebuilt from scratch)
+       No html2pdf. No html2canvas. No jsPDF text rendering.
+       A complete, self-contained printable HTML document is generated as a string,
+       written into a new hidden window, and printed via the browser's own print engine
+       (window.print()). Choosing "Save as PDF" in that dialog produces the PDF.
        ========================================================================================= */
 
-    function sanitizeFilenamePart(value) {
+    const PP_QUESTIONS_PER_PAGE = 5;
+    const PP_ANSWER_COLUMNS = 5;
+    const PP_ANSWER_ROWS_PER_PAGE = 40;
+    const PP_LOGO_CANDIDATES = [
+      '../images/web logo_11zon.png',
+      '/images/web%20logo_11zon.png'
+    ];
+
+    function ppSanitizeFilenamePart(value) {
       return String(value || 'Mock')
         .replace(/[\\/:*?"<>|]+/g, '')
         .replace(/\s+/g, '_')
         .trim() || 'Mock';
     }
 
-    // Fixed layout constants (no measurement — counts are decided up front).
-    const QP_QUESTIONS_PER_PAGE = 5;
-    const QP_ANSWER_COLUMNS = 5;
-    const QP_ANSWER_ROWS_PER_PAGE = 40;
-    const QP_LOGO_CANDIDATES = [
-      '../images/web logo_11zon.png',
-      '/images/web%20logo_11zon.png'
-    ];
-
-    // Converts an image URL to a data URL (via canvas) so html2pdf/html2canvas can
-    // reliably capture it. Resolves to '' (not an object) on any failure.
-    function qpImageToDataUrl(url) {
-      return new Promise((resolve) => {
-        if (!url) { resolve(''); return; }
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || 1;
-            canvas.height = img.naturalHeight || 1;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg', 0.9));
-          } catch (error) {
-            console.error('qpImageToDataUrl: canvas conversion failed', error);
-            resolve('');
-          }
-        };
-        img.onerror = () => resolve('');
-        img.src = url;
-      });
+    function ppEscapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
-    async function qpResolveLogoDataUrl() {
-      for (const candidate of QP_LOGO_CANDIDATES) {
-        const dataUrl = await qpImageToDataUrl(candidate);
-        if (dataUrl) return dataUrl;
+    // Resolves the project logo to an absolute URL relative to this page.
+    // No canvas conversion is needed since the new print window loads images itself.
+    function ppResolveLogoUrl() {
+      for (const candidate of PP_LOGO_CANDIDATES) {
+        try {
+          return new URL(candidate, window.location.href).href;
+        } catch (error) {
+          // try next candidate
+        }
       }
       return '';
     }
 
-    // Reads the Hindi/English pair for a field base (e.g. "question", "optionA"),
-    // matching the same "{base}Hindi" / "{base}English" convention used elsewhere
-    // on this page, with a plain fallback field for older records.
-    function qpBilingualField(question, base) {
+    // Reads the Hindi/English pair for a field base (e.g. "question", "optionA").
+    function ppBilingualField(question, base) {
       const english = String(question[`${base}English`] || '').trim();
       const hindi = String(question[`${base}Hindi`] || '').trim();
       if (english || hindi) return { hindi, english };
@@ -915,397 +900,277 @@ const answers =
       return getSavedLanguage() === 'en' ? { hindi: '', english: fallback } : { hindi: fallback, english: '' };
     }
 
-    function qpBilingualOptions(question) {
+    function ppBilingualOptions(question) {
       return ['A', 'B', 'C', 'D', 'E']
         .map((letter) => {
-          const field = qpBilingualField(question, `option${letter}`);
+          const field = ppBilingualField(question, `option${letter}`);
           return { letter, hindi: field.hindi, english: field.english };
         })
         .filter((opt) => opt.hindi || opt.english);
     }
 
-    // Injects the scoped stylesheet for the printable question paper exactly once.
-    function qpInjectStyles() {
-      if (document.getElementById('qp-style-v2')) return;
-      const style = document.createElement('style');
-      style.id = 'qp-style-v2';
-      style.textContent = `
-        .qp-doc { font-family: 'Noto Sans', 'Noto Sans Devanagari', Arial, sans-serif; }
-        .qp-doc .qp-page { width:210mm; min-height:297mm; position:relative; background:#fff; color:#000; box-sizing:border-box; break-after:page; page-break-after:always; }
-        .qp-doc .qp-page:last-child { break-after:auto; page-break-after:auto; }
-        .qp-doc .qp-watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.1; z-index:0; pointer-events:none; }
-        .qp-doc .qp-watermark img { width:55%; }
-        .qp-doc .qp-header { position:relative; z-index:1; box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; padding:5mm 12mm 3mm; border-bottom:0.6mm solid #0b4ea2; }
-        .qp-doc .qp-header-brand { display:flex; align-items:center; gap:3mm; }
-        .qp-doc .qp-header-logo { width:10mm; height:10mm; object-fit:contain; }
-        .qp-doc .qp-header-title { font-size:14pt; font-weight:800; color:#0b4ea2; }
-        .qp-doc .qp-header-url { font-size:8pt; color:#5a647a; }
-        .qp-doc .qp-content { position:relative; z-index:1; padding:4mm 12mm; box-sizing:border-box; }
-        .qp-doc .qp-footer { position:relative; z-index:1; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:7.5pt; color:#6e768a; padding:2mm 0 4mm; }
-        .qp-doc .qp-cover-title { font-size:20pt; font-weight:800; margin:8mm 0 4mm; color:#102a52; }
-        .qp-doc .qp-cover-row { display:flex; justify-content:space-between; font-size:11pt; padding:2.2mm 0; color:#1c2a44; }
-        .qp-doc .qp-cover-row strong { color:#0b4ea2; }
-        .qp-doc .qp-cover-sep { border-top:0.6mm solid #0b4ea2; margin:5mm 0; }
-        .qp-doc .qp-question-block { margin-bottom:6mm; }
-        .qp-doc .qp-q-number { font-weight:800; font-size:11pt; color:#0b4ea2; margin-bottom:1mm; }
-        .qp-doc .qp-q-text { font-size:10.5pt; line-height:1.6; margin-bottom:1mm; color:#1c2a44; white-space:pre-wrap; }
-        .qp-doc .qp-q-image { max-width:100%; max-height:60mm; display:block; margin:2mm auto; object-fit:contain; }
-        .qp-doc .qp-options { display:grid; gap:1.5mm; margin-top:2mm; }
-        .qp-doc .qp-option { display:flex; gap:2mm; font-size:10pt; line-height:1.5; padding:1.5mm 2mm; border:0.2mm solid #d7deea; border-radius:2mm; }
-        .qp-doc .qp-option b { min-width:5mm; }
-        .qp-doc .qp-answerkey-title { font-size:16pt; font-weight:800; color:#0b4ea2; text-align:center; margin:2mm 0 3mm; }
-        .qp-doc .qp-answerkey-sep { border-top:0.6mm solid #0b4ea2; margin-bottom:4mm; }
-        .qp-doc .qp-ak-row { display:grid; grid-template-columns:repeat(${QP_ANSWER_COLUMNS},1fr); font-size:10pt; padding:1.4mm 0; }
-      `;
-      document.head.appendChild(style);
+    function ppHeaderHtml(logoUrl) {
+      return `
+        <div class="pp-header">
+          <div class="pp-header-brand">
+            ${logoUrl ? `<img class="pp-header-logo" src="${ppEscapeHtml(logoUrl)}" alt="Logo" />` : ''}
+            <div class="pp-header-title">MARUDHARA EXAM</div>
+          </div>
+          <div class="pp-header-url">www.marudharaexam.in</div>
+        </div>`;
     }
 
-    // ---- Real DOM node builders (createElement + appendChild + textContent only) ----
-
-    function qpCreateWatermark(logoSrc) {
-      const wm = document.createElement('div');
-      wm.className = 'qp-watermark';
-      if (logoSrc) {
-        const img = document.createElement('img');
-        img.src = logoSrc;
-        wm.appendChild(img);
-      }
-      return wm;
+    function ppFooterHtml(pageNum, totalPages) {
+      return `
+        <div class="pp-footer">
+          <div>Marudhara Exam</div>
+          <div>www.marudharaexam.in</div>
+          <div>Page ${pageNum} of ${totalPages}</div>
+        </div>`;
     }
 
-    function qpCreateHeader(logoSrc) {
-      const header = document.createElement('div');
-      header.className = 'qp-header';
-
-      const brand = document.createElement('div');
-      brand.className = 'qp-header-brand';
-      if (logoSrc) {
-        const img = document.createElement('img');
-        img.className = 'qp-header-logo';
-        img.src = logoSrc;
-        brand.appendChild(img);
-      }
-      const title = document.createElement('div');
-      title.className = 'qp-header-title';
-      title.textContent = 'MARUDHARA EXAM';
-      brand.appendChild(title);
-      header.appendChild(brand);
-
-      const url = document.createElement('div');
-      url.className = 'qp-header-url';
-      url.textContent = 'www.marudharaexam.in';
-      header.appendChild(url);
-
-      return header;
+    function ppWatermarkHtml(logoUrl) {
+      return `<div class="pp-watermark">${logoUrl ? `<img src="${ppEscapeHtml(logoUrl)}" alt="" />` : ''}</div>`;
     }
 
-    function qpCreateFooter(pageNum, totalPages) {
-      const footer = document.createElement('div');
-      footer.className = 'qp-footer';
-      const l1 = document.createElement('div');
-      l1.textContent = 'Marudhara Exam';
-      const l2 = document.createElement('div');
-      l2.textContent = 'www.marudharaexam.in';
-      const l3 = document.createElement('div');
-      l3.textContent = `Page ${pageNum} of ${totalPages}`;
-      footer.appendChild(l1);
-      footer.appendChild(l2);
-      footer.appendChild(l3);
-      return footer;
+    function ppCoverPageHtml(meta, logoUrl, pageNum, totalPages) {
+      const rows = [
+        ['Exam Name', meta.mockTitle],
+        ['Category', meta.categoryName],
+        ['Total Questions', String(meta.totalQuestions)],
+        ['Total Marks', String(meta.totalMarks)],
+        ['Time', meta.time]
+      ].map(([label, value]) => `
+          <div class="pp-cover-row"><strong>${ppEscapeHtml(label)}</strong><span>${ppEscapeHtml(value)}</span></div>
+      `).join('');
+
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">
+            <div class="pp-cover-title">MARUDHARA EXAM</div>
+            ${rows}
+            <div class="pp-cover-sep"></div>
+          </div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
     }
 
-    // Wraps header/watermark/content/footer into one finished page element.
-    function qpCreatePageShell(logoSrc, pageNum, totalPages, contentBuilder) {
-      const pageEl = document.createElement('div');
-      pageEl.className = 'qp-page';
-      pageEl.appendChild(qpCreateWatermark(logoSrc));
-      pageEl.appendChild(qpCreateHeader(logoSrc));
+    function ppQuestionBlockHtml(question, index) {
+      const qField = ppBilingualField(question, 'question');
+      const hindiText = ppEscapeHtml(formatQuestionText(qField.hindi)).replace(/\n/g, '<br/>');
+      const englishText = ppEscapeHtml(formatQuestionText(qField.english)).replace(/\n/g, '<br/>');
 
-      const contentWrap = document.createElement('div');
-      contentWrap.className = 'qp-content';
-      contentBuilder(contentWrap);
-      pageEl.appendChild(contentWrap);
-
-      pageEl.appendChild(qpCreateFooter(pageNum, totalPages));
-      return pageEl;
-    }
-
-    function qpCreateCoverPage(meta, logoSrc, pageNum, totalPages) {
-      return qpCreatePageShell(logoSrc, pageNum, totalPages, (contentWrap) => {
-        const title = document.createElement('div');
-        title.className = 'qp-cover-title';
-        title.textContent = 'MARUDHARA EXAM';
-        contentWrap.appendChild(title);
-
-        const rows = [
-          ['Exam Name', meta.mockTitle],
-          ['Category', meta.categoryName],
-          ['Total Questions', String(meta.totalQuestions)],
-          ['Total Marks', String(meta.totalMarks)],
-          ['Time', meta.time]
-        ];
-        rows.forEach(([label, value]) => {
-          const row = document.createElement('div');
-          row.className = 'qp-cover-row';
-          const strong = document.createElement('strong');
-          strong.textContent = label;
-          const span = document.createElement('span');
-          span.textContent = value;
-          row.appendChild(strong);
-          row.appendChild(span);
-          contentWrap.appendChild(row);
-        });
-
-        const sep = document.createElement('div');
-        sep.className = 'qp-cover-sep';
-        contentWrap.appendChild(sep);
-      });
-    }
-
-    function qpAppendQuestionBlock(contentWrap, question, index) {
-      const block = document.createElement('div');
-      block.className = 'qp-question-block';
-
-      const numberEl = document.createElement('div');
-      numberEl.className = 'qp-q-number';
-      numberEl.textContent = `Q${index + 1}.`;
-      block.appendChild(numberEl);
-
-      const qField = qpBilingualField(question, 'question');
-      const hindiText = formatQuestionText(qField.hindi);
-      const englishText = formatQuestionText(qField.english);
-
-      if (hindiText) {
-        const hindiEl = document.createElement('div');
-        hindiEl.className = 'qp-q-text';
-        hindiEl.textContent = hindiText;
-        block.appendChild(hindiEl);
-      }
-      if (englishText) {
-        const englishEl = document.createElement('div');
-        englishEl.className = 'qp-q-text';
-        englishEl.textContent = englishText;
-        block.appendChild(englishEl);
-      }
-
-      if (question.qpImageDataUrl) {
-        const img = document.createElement('img');
-        img.className = 'qp-q-image';
-        img.src = question.qpImageDataUrl;
-        block.appendChild(img);
-      }
-
-      const optionsWrap = document.createElement('div');
-      optionsWrap.className = 'qp-options';
-      qpBilingualOptions(question).forEach((opt) => {
-        const optEl = document.createElement('div');
-        optEl.className = 'qp-option';
-
-        const letterEl = document.createElement('b');
-        letterEl.textContent = `${opt.letter}.`;
-        optEl.appendChild(letterEl);
-
-        const textEl = document.createElement('span');
+      const optionsHtml = ppBilingualOptions(question).map((opt) => {
         let text = '';
         if (opt.hindi) text += opt.hindi;
         if (opt.hindi && opt.english) text += ' / ';
         if (opt.english) text += opt.english;
-        textEl.textContent = text;
-        optEl.appendChild(textEl);
+        return `<div class="pp-option"><b>${opt.letter}.</b><span>${ppEscapeHtml(text)}</span></div>`;
+      }).join('');
 
-        optionsWrap.appendChild(optEl);
-      });
-      block.appendChild(optionsWrap);
-
-      contentWrap.appendChild(block);
+      return `
+        <div class="pp-question-block">
+          <div class="pp-q-number">Q${index + 1}.</div>
+          ${qField.hindi ? `<div class="pp-q-text">${hindiText}</div>` : ''}
+          ${qField.english ? `<div class="pp-q-text">${englishText}</div>` : ''}
+          ${question.image ? `<img class="pp-q-image" src="${ppEscapeHtml(question.image)}" alt="Question image" />` : ''}
+          <div class="pp-options">${optionsHtml}</div>
+        </div>`;
     }
 
-    function qpCreateQuestionPage(questionsChunk, startIndex, logoSrc, pageNum, totalPages) {
-      return qpCreatePageShell(logoSrc, pageNum, totalPages, (contentWrap) => {
-        questionsChunk.forEach((question, i) => {
-          qpAppendQuestionBlock(contentWrap, question, startIndex + i);
-        });
-      });
+    function ppQuestionPageHtml(chunk, startIndex, logoUrl, pageNum, totalPages) {
+      const blocks = chunk.map((q, i) => ppQuestionBlockHtml(q, startIndex + i)).join('');
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">${blocks}</div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
     }
 
-    function qpAppendAnswerRow(contentWrap, questions, rowIndex) {
-      const row = document.createElement('div');
-      row.className = 'qp-ak-row';
-      for (let c = 0; c < QP_ANSWER_COLUMNS; c += 1) {
-        const qIndex = rowIndex * QP_ANSWER_COLUMNS + c;
-        const cell = document.createElement('div');
+    function ppAnswerRowHtml(questions, rowIndex) {
+      let cells = '';
+      for (let c = 0; c < PP_ANSWER_COLUMNS; c += 1) {
+        const qIndex = rowIndex * PP_ANSWER_COLUMNS + c;
         if (qIndex < questions.length) {
           const answerLetter = normalizeAnswer(questions[qIndex].answer || '') || '-';
-          cell.textContent = `${qIndex + 1}-${answerLetter}`;
+          cells += `<div>${qIndex + 1}-${ppEscapeHtml(answerLetter)}</div>`;
+        } else {
+          cells += `<div></div>`;
         }
-        row.appendChild(cell);
       }
-      contentWrap.appendChild(row);
+      return `<div class="pp-ak-row">${cells}</div>`;
     }
 
-    function qpCreateAnswerKeyPage(questions, rowStart, rowEnd, isFirstAnswerPage, logoSrc, pageNum, totalPages) {
-      return qpCreatePageShell(logoSrc, pageNum, totalPages, (contentWrap) => {
-        if (isFirstAnswerPage) {
-          const title = document.createElement('div');
-          title.className = 'qp-answerkey-title';
-          title.textContent = 'ANSWER KEY';
-          contentWrap.appendChild(title);
-
-          const sep = document.createElement('div');
-          sep.className = 'qp-answerkey-sep';
-          contentWrap.appendChild(sep);
-        }
-        for (let r = rowStart; r < rowEnd; r += 1) {
-          qpAppendAnswerRow(contentWrap, questions, r);
-        }
-      });
+    function ppAnswerKeyPageHtml(questions, rowStart, rowEnd, isFirstAnswerPage, logoUrl, pageNum, totalPages) {
+      let rowsHtml = '';
+      for (let r = rowStart; r < rowEnd; r += 1) {
+        rowsHtml += ppAnswerRowHtml(questions, r);
+      }
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">
+            ${isFirstAnswerPage ? `<div class="pp-answerkey-title">ANSWER KEY</div><div class="pp-answerkey-sep"></div>` : ''}
+            ${rowsHtml}
+          </div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
     }
 
-    // Builds the full set of page elements using fixed counts per page decided up
-    // front from simple arithmetic — no getBoundingClientRect(), no hidden probe
-    // container, no reused/detached nodes.
-    function qpBuildDocumentPages(questions, meta, logoSrc) {
-      qpInjectStyles();
+    function ppBuildStyles() {
+      return `
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:'Noto Sans','Noto Sans Devanagari',Arial,sans-serif; color:#000; background:#fff; }
+        .pp-page { width:210mm; min-height:297mm; position:relative; background:#fff; page-break-after:always; break-after:page; }
+        .pp-page:last-child { page-break-after:auto; break-after:auto; }
+        .pp-watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.08; z-index:0; pointer-events:none; }
+        .pp-watermark img { width:55%; }
+        .pp-header { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; padding:5mm 12mm 3mm; border-bottom:0.6mm solid #0b4ea2; }
+        .pp-header-brand { display:flex; align-items:center; gap:3mm; }
+        .pp-header-logo { width:10mm; height:10mm; object-fit:contain; }
+        .pp-header-title { font-size:14pt; font-weight:800; color:#0b4ea2; }
+        .pp-header-url { font-size:8pt; color:#5a647a; }
+        .pp-content { position:relative; z-index:1; padding:4mm 12mm; }
+        .pp-footer { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:7.5pt; color:#6e768a; padding:2mm 0 4mm; }
+        .pp-cover-title { font-size:20pt; font-weight:800; margin:8mm 0 4mm; color:#102a52; }
+        .pp-cover-row { display:flex; justify-content:space-between; font-size:11pt; padding:2.2mm 0; color:#1c2a44; }
+        .pp-cover-row strong { color:#0b4ea2; }
+        .pp-cover-sep { border-top:0.6mm solid #0b4ea2; margin:5mm 0; }
+        .pp-question-block { margin-bottom:6mm; page-break-inside:avoid; break-inside:avoid; }
+        .pp-q-number { font-weight:800; font-size:11pt; color:#0b4ea2; margin-bottom:1mm; }
+        .pp-q-text { font-size:10.5pt; line-height:1.6; margin-bottom:1mm; color:#1c2a44; }
+        .pp-q-image { max-width:100%; max-height:60mm; display:block; margin:2mm auto; object-fit:contain; }
+        .pp-options { display:grid; gap:1.5mm; margin-top:2mm; }
+        .pp-option { display:flex; gap:2mm; font-size:10pt; line-height:1.5; padding:1.5mm 2mm; border:0.2mm solid #d7deea; border-radius:2mm; }
+        .pp-option b { min-width:5mm; }
+        .pp-answerkey-title { font-size:16pt; font-weight:800; color:#0b4ea2; text-align:center; margin:2mm 0 3mm; }
+        .pp-answerkey-sep { border-top:0.6mm solid #0b4ea2; margin-bottom:4mm; }
+        .pp-ak-row { display:grid; grid-template-columns:repeat(${PP_ANSWER_COLUMNS},1fr); font-size:10pt; padding:1.4mm 0; }
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          .pp-page { page-break-after: always; }
+        }
+      `;
+    }
 
+    // Builds the complete printable HTML document (head + styles + every page) as a string.
+    function ppBuildDocument(questions, meta, logoUrl) {
       const totalQuestions = questions.length;
-      const questionPageCount = Math.ceil(totalQuestions / QP_QUESTIONS_PER_PAGE);
-      const totalAnswerRows = Math.ceil(totalQuestions / QP_ANSWER_COLUMNS);
-      const answerPageCount = Math.max(1, Math.ceil(totalAnswerRows / QP_ANSWER_ROWS_PER_PAGE));
-
+      const totalAnswerRows = Math.ceil(totalQuestions / PP_ANSWER_COLUMNS);
+      const questionPageCount = totalQuestions === 0 ? 0 : Math.ceil(totalQuestions / PP_QUESTIONS_PER_PAGE);
+      const answerPageCount = Math.max(1, Math.ceil(totalAnswerRows / PP_ANSWER_ROWS_PER_PAGE));
       const totalPages = 1 + questionPageCount + answerPageCount;
-      const pages = [];
-      let pageNum = 1;
 
-      // Page 1: cover.
-      pages.push(qpCreateCoverPage(meta, logoSrc, pageNum, totalPages));
+      let pageNum = 1;
+      let pagesHtml = ppCoverPageHtml(meta, logoUrl, pageNum, totalPages);
       pageNum += 1;
 
-      // Question pages: fixed QP_QUESTIONS_PER_PAGE questions per page, never split.
-      for (let i = 0; i < totalQuestions; i += QP_QUESTIONS_PER_PAGE) {
-        const chunk = questions.slice(i, i + QP_QUESTIONS_PER_PAGE);
-        pages.push(qpCreateQuestionPage(chunk, i, logoSrc, pageNum, totalPages));
+      for (let i = 0; i < totalQuestions; i += PP_QUESTIONS_PER_PAGE) {
+        const chunk = questions.slice(i, i + PP_QUESTIONS_PER_PAGE);
+        pagesHtml += ppQuestionPageHtml(chunk, i, logoUrl, pageNum, totalPages);
         pageNum += 1;
       }
 
-      // Answer key pages: always start on a new page, fixed rows per page.
-      for (let r = 0; r < totalAnswerRows; r += QP_ANSWER_ROWS_PER_PAGE) {
-        const rowEnd = Math.min(r + QP_ANSWER_ROWS_PER_PAGE, totalAnswerRows);
-        pages.push(qpCreateAnswerKeyPage(questions, r, rowEnd, r === 0, logoSrc, pageNum, totalPages));
-        pageNum += 1;
-      }
-      // Degenerate case (no questions at all): still emit a single empty answer page.
-      if (totalQuestions === 0 && totalAnswerRows === 0) {
-        pages.push(qpCreateAnswerKeyPage([], 0, 0, true, logoSrc, pageNum, totalPages));
+      if (totalAnswerRows === 0) {
+        pagesHtml += ppAnswerKeyPageHtml([], 0, 0, true, logoUrl, pageNum, totalPages);
+      } else {
+        for (let r = 0; r < totalAnswerRows; r += PP_ANSWER_ROWS_PER_PAGE) {
+          const rowEnd = Math.min(r + PP_ANSWER_ROWS_PER_PAGE, totalAnswerRows);
+          pagesHtml += ppAnswerKeyPageHtml(questions, r, rowEnd, r === 0, logoUrl, pageNum, totalPages);
+          pageNum += 1;
+        }
       }
 
-      return pages;
+      const docTitle = `${ppSanitizeFilenamePart(meta.mockTitle)}_Question_Paper`;
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>${ppEscapeHtml(docTitle)}</title>
+<style>${ppBuildStyles()}</style>
+</head>
+<body>
+${pagesHtml}
+</body>
+</html>`;
     }
 
     async function generateQuestionPaperPdf() {
       const button = document.getElementById('downloadQuestionPaperBtn');
       const result = pdfPaperState.result;
-      const questions = pdfPaperState.questions;
+      const questions = pdfPaperState.questions || [];
 
-      if (!result) {
-        alert('Result data is not loaded yet. Please wait for the page to finish loading.');
-        return;
-      }
-
-      // Use only the questions already loaded in memory — never fetch again.
-      if (!Array.isArray(questions) || questions.length === 0) {
+      if (!questions.length) {
         alert('No questions are available to generate the question paper.');
         return;
       }
 
       if (button) {
         button.disabled = true;
-        button.textContent = 'Generating PDF…';
+        button.textContent = 'Preparing…';
       }
-
-      const printable = document.getElementById('printQuestionPaper');
-      printable.style.opacity = '1';
 
       try {
         const totalQuestions = questions.length;
-        const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+        const totalMarks = (result?.positiveMarks || 1) * totalQuestions;
         const meta = {
-          mockTitle: result.mockTitle || 'Mock exam',
+          mockTitle: result?.mockTitle || 'Mock exam',
           categoryName: pdfPaperState.categoryName || 'N/A',
           totalQuestions,
           totalMarks,
-          time: formatSeconds(result.timeTakenSeconds ?? result.duration ?? result.timeRemainingSeconds)
+          time: formatSeconds(result?.timeTakenSeconds ?? result?.duration ?? result?.timeRemainingSeconds)
         };
 
-        // Load the real project logo as a data URL (existing project logo, no placeholder path).
-        const logoSrc = await qpResolveLogoDataUrl();
+        const logoUrl = ppResolveLogoUrl();
+        const docHtml = ppBuildDocument(questions, meta, logoUrl);
 
-        // Preload every question image (if any) as a data URL up front, using the
-        // question data already held in memory — no re-fetching of questions.
-        const questionsWithImages = [];
-        for (let i = 0; i < questions.length; i += 1) {
-          const question = questions[i];
-          const qpImageDataUrl = question.image ? await qpImageToDataUrl(question.image) : '';
-          questionsWithImages.push({ ...question, qpImageDataUrl });
+        // Open a new hidden window and write the complete printable document into it.
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          alert('Please allow pop-ups for this site to download the question paper.');
+          return;
         }
 
-        // Build the printable document out of real DOM nodes only.
-        printable.textContent = '';
-        printable.className = 'qp-doc';
-        const pageNodes = qpBuildDocumentPages(questionsWithImages, meta, logoSrc);
-        console.log("Pages:", pageNodes.length);
-console.log(pageNodes);
-console.log(pageNodes[0]);
-console.log(pageNodes[0] instanceof HTMLElement);
-pageNodes.forEach((page) => printable.appendChild(page));
+        printWindow.document.open();
+        printWindow.document.write(docHtml);
+        printWindow.document.close();
 
-console.log("Printable HTML:");
-console.log(printable.innerHTML);
-
-console.log("Children:", printable.children.length);
-        
-      
-        // Let the browser actually paint the newly-built DOM before handing it to html2pdf.
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
-          });
-        });
-
-        // Wait until every <img> inside the printable document has finished loading.
-        await Promise.all(
-          Array.from(printable.querySelectorAll('img')).map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        const triggerPrint = () => {
+          const images = Array.from(printWindow.document.images || []);
+          const waitForImages = Promise.all(images.map((img) => {
+            if (img.complete) return Promise.resolve();
             return new Promise((resolve) => {
               img.addEventListener('load', resolve, { once: true });
               img.addEventListener('error', resolve, { once: true });
             });
-          })
-        );
+          }));
 
-        const fileName = `${sanitizeFilenamePart(meta.mockTitle)}_Question_Paper.pdf`;
-printable.offsetHeight;
-        document.body.appendChild(printable);
+          waitForImages.then(() => {
+            printWindow.focus();
+            printWindow.print();
+          });
+        };
 
-await new Promise(r=>setTimeout(r,500));
-        await html2pdf()
-          .set({
-            margin: 0,
-            filename: fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css'] }
-          })
-          .from(printable)
-          .save();
+        if (printWindow.document.readyState === 'complete') {
+          triggerPrint();
+        } else {
+          printWindow.addEventListener('load', triggerPrint, { once: true });
+        }
+
+        // Automatically close the print window once printing is done (or cancelled).
+        printWindow.addEventListener('afterprint', () => {
+          printWindow.close();
+        }, { once: true });
       } catch (error) {
-        console.error('Question paper PDF generation failed:', error);
-        alert('Unable to generate the question paper PDF. Please try again.');
+        console.error('Question paper generation failed:', error);
+        alert('Unable to generate the question paper. Please try again.');
       } finally {
-       if (printable) {
-    printable.innerHTML = '';
-    printable.style.opacity = '0.01';
-}
         if (button) {
           button.disabled = false;
           button.textContent = 'Download Question Paper';
@@ -1322,17 +1187,5 @@ await new Promise(r=>setTimeout(r,500));
       });
     }
   </script>
-<!-- Hidden Printable Question Paper -->
-<div id="printQuestionPaper" style="
-position:absolute;
-top:0;
-left:0;
-width:210mm;
-background:#fff;
-opacity:1;
-z-index:999999;
-display:block;
-">
-</div>
 </body>
 </html>
