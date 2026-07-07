@@ -972,6 +972,13 @@ const answers =
     }
 
     async function generateQuestionPaperPdf() {
+      const printable = document.getElementById("printQuestionPaper");
+
+printable.innerHTML = "<h1>Hello PDF</h1><p>Marudhara Exam PDF Test</p>";
+
+await html2pdf().from(printable).save("test.pdf");
+
+return;
       const button = document.getElementById('downloadQuestionPaperBtn');
       const result = pdfPaperState.result;
       let questions = pdfPaperState.questions;
