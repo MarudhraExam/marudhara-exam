@@ -1029,7 +1029,10 @@ const answers =
         }
 
         // Try to load the exam logo for the watermark; fall back to text watermark.
-        const logoCandidates = ['../assets/logo.png', '../logo.png', 'logo.png'];
+       const logoCandidates = [
+    '../images/web logo_11zon.png',
+    '/images/web%20logo_11zon.png'
+];
         let logoImageData = null;
         for (const candidate of logoCandidates) {
           logoImageData = await loadImageAsDataUrl(candidate);
