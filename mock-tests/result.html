@@ -503,7 +503,17 @@
       const correctAnswer = normalizeAnswer(question.answer || '');
       if (!studentAnswer) return 'Unattempted';
       return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
-    }
+    }function getQuestionStatus(question, answers) {
+  const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
+  const correctAnswer = normalizeAnswer(question.answer || '');
+
+  // E means Skip
+  if (!studentAnswer || studentAnswer === 'E') {
+    return 'Unattempted';
+  }
+
+  return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+}
 
     function getPaletteStats(questions, answers) {
       const stats = { total: questions.length, correct: 0, wrong: 0, unattempted: 0 };
