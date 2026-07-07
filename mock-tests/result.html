@@ -1252,6 +1252,15 @@ const answers =
         printable.textContent = '';
         printable.className = 'qp-doc';
         const pageNodes = qpBuildDocumentPages(questionsWithImages, meta, logoSrc);
+        console.log("Pages:", pageNodes.length);
+
+pageNodes.forEach((page) => printable.appendChild(page));
+
+console.log("Printable HTML:");
+console.log(printable.innerHTML);
+
+console.log("Children:", printable.children.length);
+        
         pageNodes.forEach((pageEl) => printable.appendChild(pageEl));
 
         // Let the browser actually paint the newly-built DOM before handing it to html2pdf.
