@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -44,6 +44,7 @@
     .button-secondary { background: #eef2ff; color: #0b4ea2; }
     .button-primary:hover { background: #0f3c7f; }
     .button-secondary:hover { background: #dce6ff; }
+    .button-primary:disabled { opacity: .6; cursor: not-allowed; }
     .button-secondary.active { background: #0b4ea2; color: #fff; }
     .review-section { padding-bottom: 0; }
     .analysis-panel { display: flex; flex-direction: column; gap: 18px; }
@@ -153,6 +154,13 @@
     <div id="statusBar" class="status-bar">Loading result summary…</div>
     <div id="resultContent" class="result-grid"></div>
   </div>
+
+  <!-- ===== Question Paper PDF feature: external libraries (added, nothing existing removed) ===== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Reusable Unicode Hindi (Noto Sans Devanagari) font loader for jsPDF. -->
+  <!-- Exposes window.NotoDevanagariFont.embed(docPdf) for this and any future PDF feature. -->
+  <script src="fonts/noto-devanagari.js"></script>
 
   <script type="module">
     import { db } from '../firebase.js';
@@ -326,6 +334,7 @@
           <div class="action-row">
             <button class="button-primary" type="button" onclick="window.location.href='index.html'">Return to categories</button>
             <button class="button-secondary" type="button" onclick="window.print()">Print result</button>
+            <button class="button-primary" type="button" id="downloadQuestionPaperBtn">Download Question Paper</button>
           </div>
         </div>
         <div class="card">
@@ -485,6 +494,15 @@
       answers: {},
       activeFilter: 'All',
       selectedQuestionIndex: 0
+    };
+
+    // ===== Question Paper PDF feature: state holder (isolated, does not touch pageState) =====
+    // Holds the last-loaded result + questions so the PDF button can reuse
+    // the in-memory data instead of re-fetching from Firestore.
+    const pdfPaperState = {
+      result: null,
+      questions: [],
+      categoryName: ''
     };
 
     function getQuestionStatus(question, answers) {
@@ -811,6 +829,13 @@ const answers =
           ${renderReviewSection(questions, answers, result)}`;
 
         initializeQuestionAnalysis(questions, answers);
+
+        // ===== Question Paper PDF feature: store loaded data for reuse =====
+        // Nothing above this line is affected by this assignment.
+        pdfPaperState.result = result;
+        pdfPaperState.questions = questions;
+        pdfPaperState.categoryName = categoryName;
+        attachDownloadQuestionPaperHandler();
       } catch (error) {
         console.error(error);
         setStatus('Unable to load result data.', 'error');
@@ -826,6 +851,386 @@ const answers =
       });
       loadResult();
     });
+
+    /* =========================================================================================
+       QUESTION PAPER PDF FEATURE (fully isolated — new code only, nothing above is modified)
+       ========================================================================================= */
+
+    // Unicode Hindi font embedding is handled by the reusable
+    // fonts/noto-devanagari.js module (window.NotoDevanagariFont.embed),
+    // loaded via <script src="fonts/noto-devanagari.js"> above. See that
+    // file for details; it is shared and reusable across any future PDF
+    // feature in this project.
+
+    function sanitizeFilenamePart(value) {
+      return String(value || 'Mock')
+        .replace(/[\\/:*?"<>|]+/g, '')
+        .replace(/\s+/g, '_')
+        .trim() || 'Mock';
+    }
+
+    // Loads an image URL into a data URL + returns natural dimensions,
+    // so it can be embedded in the PDF with correct aspect ratio.
+    function loadImageAsDataUrl(url) {
+      return new Promise((resolve) => {
+        if (!url) { resolve(null); return; }
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({ dataUrl, width: img.naturalWidth, height: img.naturalHeight });
+          } catch (error) {
+            console.error('Image canvas conversion failed:', error);
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+    }
+
+    function drawWatermark(docPdf, pageWidth, pageHeight, logoImageData) {
+      docPdf.saveGraphicsState();
+      try {
+        docPdf.setGState(new docPdf.GState({ opacity: 0.1 }));
+      } catch (error) {
+        // GState may be unavailable on some jsPDF builds; continue without it.
+      }
+      if (logoImageData) {
+        const size = Math.min(pageWidth, pageHeight) * 0.55;
+        const x = (pageWidth - size) / 2;
+        const y = (pageHeight - size) / 2;
+        try {
+          docPdf.addImage(logoImageData.dataUrl, 'JPEG', x, y, size, size);
+        } catch (error) {
+          console.error('Watermark logo draw failed:', error);
+        }
+      } else {
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setFontSize(60);
+        docPdf.setTextColor(180, 180, 180);
+        docPdf.text('MARUDHARA EXAM', pageWidth / 2, pageHeight / 2, {
+          align: 'center',
+          angle: 45
+        });
+      }
+      docPdf.restoreGraphicsState();
+    }
+
+    function drawHeader(docPdf, pageWidth, meta, bodyFont) {
+      const margin = 40;
+      let cursorY = 40;
+
+      docPdf.setFont(bodyFont, 'bold');
+      docPdf.setFontSize(16);
+      docPdf.setTextColor(11, 78, 162);
+      docPdf.text('MARUDHARA EXAM', margin, cursorY);
+
+      docPdf.setFont('helvetica', 'normal');
+      docPdf.setFontSize(9);
+      docPdf.setTextColor(90, 100, 120);
+      docPdf.text('www.marudharaexam.in', margin, cursorY + 14);
+
+      docPdf.setFont(bodyFont, 'normal');
+      docPdf.setFontSize(10);
+      docPdf.setTextColor(30, 40, 60);
+      const rightX = pageWidth - margin;
+      let rightY = cursorY - 4;
+      const rightLines = [
+        `Exam: ${meta.mockTitle}`,
+        `Category: ${meta.categoryName}`,
+        `Total Questions: ${meta.totalQuestions}    Total Marks: ${meta.totalMarks}`,
+        `Time: ${meta.time}`
+      ];
+      rightLines.forEach((line) => {
+        docPdf.text(line, rightX, rightY, { align: 'right' });
+        rightY += 12;
+      });
+
+      cursorY = Math.max(cursorY + 22, rightY + 4);
+      docPdf.setDrawColor(11, 78, 162);
+      docPdf.setLineWidth(1);
+      docPdf.line(margin, cursorY, pageWidth - margin, cursorY);
+      return cursorY + 18;
+    }
+
+    function drawFooter(docPdf, pageWidth, pageHeight, pageNum, totalPages) {
+      const centerX = pageWidth / 2;
+      docPdf.setFont('helvetica', 'normal');
+      docPdf.setFontSize(8.5);
+      docPdf.setTextColor(110, 118, 138);
+      docPdf.text('Marudhara Exam', centerX, pageHeight - 28, { align: 'center' });
+      docPdf.text('www.marudharaexam.in', centerX, pageHeight - 18, { align: 'center' });
+      docPdf.text(`Page ${pageNum} of ${totalPages}`, centerX, pageHeight - 8, { align: 'center' });
+    }
+
+    async function generateQuestionPaperPdf() {
+      const button = document.getElementById('downloadQuestionPaperBtn');
+      const result = pdfPaperState.result;
+      let questions = pdfPaperState.questions;
+
+      if (!result) {
+        alert('Result data is not loaded yet. Please wait for the page to finish loading.');
+        return;
+      }
+
+      // Never fetch another copy if the questions are already loaded in memory.
+      if (!Array.isArray(questions) || questions.length === 0) {
+        try {
+          questions = await fetchQuestions(result.mockId);
+          pdfPaperState.questions = questions;
+        } catch (error) {
+          console.error('Question fetch for PDF failed:', error);
+        }
+      }
+
+      if (!Array.isArray(questions) || questions.length === 0) {
+        alert('No questions are available to generate the question paper.');
+        return;
+      }
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Generating PDF…';
+      }
+
+      try {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+          throw new Error('jsPDF library failed to load.');
+        }
+
+        const docPdf = new jsPDF({ unit: 'pt', format: 'a4' });
+        const pageWidth = docPdf.internal.pageSize.getWidth();
+        const pageHeight = docPdf.internal.pageSize.getHeight();
+        const margin = 40;
+        const contentWidth = pageWidth - margin * 2;
+
+        // Embed the Unicode Hindi font (Noto Sans Devanagari) via the
+        // reusable fonts/noto-devanagari.js loader so Devanagari text
+        // renders correctly — never falls back to a jsPDF default font
+        // for Hindi text. This font also covers Latin glyphs, so English
+        // text uses the same embedded font with no visual mismatch.
+        let bodyFont = 'helvetica';
+        if (window.NotoDevanagariFont && typeof window.NotoDevanagariFont.embed === 'function') {
+          try {
+            bodyFont = await window.NotoDevanagariFont.embed(docPdf);
+          } catch (error) {
+            console.error('Noto Sans Devanagari embed failed, falling back to default font:', error);
+          }
+        } else {
+          console.error('fonts/noto-devanagari.js loader was not found on the page.');
+        }
+
+        // Try to load the exam logo for the watermark; fall back to text watermark.
+        const logoCandidates = ['../assets/logo.png', '../logo.png', 'logo.png'];
+        let logoImageData = null;
+        for (const candidate of logoCandidates) {
+          logoImageData = await loadImageAsDataUrl(candidate);
+          if (logoImageData) break;
+        }
+
+        const totalQuestions = questions.length;
+        const totalMarks = (result.positiveMarks || 1) * totalQuestions;
+        const meta = {
+          mockTitle: result.mockTitle || 'Mock exam',
+          categoryName: pdfPaperState.categoryName || 'N/A',
+          totalQuestions,
+          totalMarks,
+          time: formatSeconds(result.timeTakenSeconds ?? result.duration ?? result.timeRemainingSeconds)
+        };
+
+        let pageNum = 1;
+        const footerRegistry = [];
+
+        function startNewPage() {
+          docPdf.addPage();
+          pageNum += 1;
+          drawWatermark(docPdf, pageWidth, pageHeight, logoImageData);
+          const startY = drawHeader(docPdf, pageWidth, meta, bodyFont);
+          footerRegistry.push(pageNum);
+          return startY;
+        }
+
+        // First page setup.
+        drawWatermark(docPdf, pageWidth, pageHeight, logoImageData);
+        let cursorY = drawHeader(docPdf, pageWidth, meta, bodyFont);
+        footerRegistry.push(pageNum);
+
+        const bottomLimit = pageHeight - 50;
+
+        for (let i = 0; i < questions.length; i += 1) {
+          const question = questions[i];
+          const questionText = formatQuestionText(getLocalizedField(question, 'question')) || '';
+          const options = ['A', 'B', 'C', 'D', 'E']
+            .map((letter) => ({ letter, text: getLocalizedField(question, `option${letter}`) }))
+            .filter((opt) => opt.text && String(opt.text).trim() !== '');
+
+          docPdf.setFont(bodyFont, 'normal');
+          docPdf.setFontSize(11);
+          const qHeaderText = `Q${i + 1}. ${questionText}`;
+          const qLines = docPdf.splitTextToSize(qHeaderText, contentWidth);
+
+          // Estimate block height (question + image + options) to decide page break.
+          const lineHeight = 14;
+          let estimatedHeight = qLines.length * lineHeight + 10;
+
+          let imageData = null;
+          let imageDrawHeight = 0;
+          let imageDrawWidth = 0;
+          if (question.image) {
+            imageData = await loadImageAsDataUrl(question.image);
+            if (imageData) {
+              const maxImgWidth = contentWidth;
+              const maxImgHeight = 180;
+              const ratio = Math.min(maxImgWidth / imageData.width, maxImgHeight / imageData.height, 1);
+              imageDrawWidth = imageData.width * ratio;
+              imageDrawHeight = imageData.height * ratio;
+              estimatedHeight += imageDrawHeight + 12;
+            }
+          }
+
+          const optionLineEstimates = options.map((opt) => {
+            const optText = `${opt.letter}. ${opt.text}`;
+            const optLines = docPdf.splitTextToSize(optText, contentWidth - 16);
+            return optLines;
+          });
+          optionLineEstimates.forEach((lines) => {
+            estimatedHeight += lines.length * lineHeight + 6;
+          });
+          estimatedHeight += 20; // spacing after question block
+
+          if (cursorY + estimatedHeight > bottomLimit && cursorY > margin + 40) {
+            cursorY = startNewPage();
+          }
+
+          // Draw question header.
+          docPdf.setFont(bodyFont, 'bold');
+          docPdf.setFontSize(11);
+          docPdf.setTextColor(20, 30, 50);
+          docPdf.text(qLines, margin, cursorY);
+          cursorY += qLines.length * lineHeight + 6;
+
+          // Draw image if present.
+          if (imageData) {
+            if (cursorY + imageDrawHeight > bottomLimit) {
+              cursorY = startNewPage();
+            }
+            const imgX = margin + (contentWidth - imageDrawWidth) / 2;
+            try {
+              docPdf.addImage(imageData.dataUrl, 'JPEG', imgX, cursorY, imageDrawWidth, imageDrawHeight);
+            } catch (error) {
+              console.error('Question image draw failed:', error);
+            }
+            cursorY += imageDrawHeight + 12;
+          }
+
+          // Draw options, never splitting one option awkwardly across a page break.
+          docPdf.setFont(bodyFont, 'normal');
+          docPdf.setFontSize(10.5);
+          docPdf.setTextColor(35, 45, 65);
+          for (let optIndex = 0; optIndex < options.length; optIndex += 1) {
+            const optLines = optionLineEstimates[optIndex];
+            const optHeight = optLines.length * lineHeight + 6;
+            if (cursorY + optHeight > bottomLimit) {
+              cursorY = startNewPage();
+              docPdf.setFont(bodyFont, 'normal');
+              docPdf.setFontSize(10.5);
+              docPdf.setTextColor(35, 45, 65);
+            }
+            docPdf.text(optLines, margin + 16, cursorY);
+            cursorY += optHeight;
+          }
+
+          cursorY += 14; // spacing between questions
+        }
+
+        // ===== ANSWER KEY (new last page, 5-column layout, auto-sized) =====
+        docPdf.addPage();
+        pageNum += 1;
+        footerRegistry.push(pageNum);
+        drawWatermark(docPdf, pageWidth, pageHeight, logoImageData);
+        let akY = 50;
+        docPdf.setFont(bodyFont, 'bold');
+        docPdf.setFontSize(16);
+        docPdf.setTextColor(11, 78, 162);
+        docPdf.text('ANSWER KEY', pageWidth / 2, akY, { align: 'center' });
+        akY += 26;
+        docPdf.setDrawColor(11, 78, 162);
+        docPdf.setLineWidth(1);
+        docPdf.line(margin, akY, pageWidth - margin, akY);
+        akY += 24;
+
+        const columns = 5;
+        const colWidth = contentWidth / columns;
+        const rowHeight = 20;
+        const rows = Math.ceil(totalQuestions / columns);
+        const availableHeight = pageHeight - 60 - akY;
+        const maxRowsPerPage = Math.max(1, Math.floor(availableHeight / rowHeight));
+
+        docPdf.setFont(bodyFont, 'normal');
+        docPdf.setFontSize(10.5);
+        docPdf.setTextColor(30, 40, 60);
+
+        let rowOnPage = 0;
+        for (let r = 0; r < rows; r += 1) {
+          if (rowOnPage >= maxRowsPerPage) {
+            docPdf.addPage();
+            pageNum += 1;
+            footerRegistry.push(pageNum);
+            drawWatermark(docPdf, pageWidth, pageHeight, logoImageData);
+            akY = 50;
+            docPdf.setFont(bodyFont, 'normal');
+            docPdf.setFontSize(10.5);
+            docPdf.setTextColor(30, 40, 60);
+            rowOnPage = 0;
+          }
+          for (let c = 0; c < columns; c += 1) {
+            const qIndex = r * columns + c;
+            if (qIndex >= totalQuestions) continue;
+            const question = questions[qIndex];
+            const answerLetter = normalizeAnswer(question.answer || '') || '-';
+            const cellText = `${qIndex + 1}-${answerLetter}`;
+            const cellX = margin + c * colWidth;
+            docPdf.text(cellText, cellX, akY + rowOnPage * rowHeight);
+          }
+          rowOnPage += 1;
+        }
+
+        // Draw footers on every page now that total page count is known.
+        const totalPages = docPdf.internal.getNumberOfPages();
+        for (let p = 1; p <= totalPages; p += 1) {
+          docPdf.setPage(p);
+          drawFooter(docPdf, pageWidth, pageHeight, p, totalPages);
+        }
+
+        const fileName = `${sanitizeFilenamePart(meta.mockTitle)}_Question_Paper.pdf`;
+        docPdf.save(fileName);
+      } catch (error) {
+        console.error('Question paper PDF generation failed:', error);
+        alert('Unable to generate the question paper PDF. Please try again.');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Download Question Paper';
+        }
+      }
+    }
+
+    function attachDownloadQuestionPaperHandler() {
+      const button = document.getElementById('downloadQuestionPaperBtn');
+      if (!button || button.dataset.bound === '1') return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', () => {
+        generateQuestionPaperPdf();
+      });
+    }
   </script>
 </body>
 </html>
