@@ -17,8 +17,7 @@
  */
 
 import { route } from './router.js';
-import { handlePreflight, corsHeaders } from './lib/cors.js';
-
+import { handlePreflight, corsHeaders } from './cors.js';
 export default {
   async fetch(request, env, ctx) {
     const preflight = handlePreflight(request, env);
