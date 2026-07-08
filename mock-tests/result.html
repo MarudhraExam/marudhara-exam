@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -44,6 +44,7 @@
     .button-secondary { background: #eef2ff; color: #0b4ea2; }
     .button-primary:hover { background: #0f3c7f; }
     .button-secondary:hover { background: #dce6ff; }
+    .button-primary:disabled { opacity: .6; cursor: not-allowed; }
     .button-secondary.active { background: #0b4ea2; color: #fff; }
     .review-section { padding-bottom: 0; }
     .analysis-panel { display: flex; flex-direction: column; gap: 18px; }
@@ -326,6 +327,7 @@
           <div class="action-row">
             <button class="button-primary" type="button" onclick="window.location.href='index.html'">Return to categories</button>
             <button class="button-secondary" type="button" onclick="window.print()">Print result</button>
+            <button class="button-primary" type="button" id="downloadQuestionPaperBtn">Download Question Paper</button>
           </div>
         </div>
         <div class="card">
@@ -487,12 +489,26 @@
       selectedQuestionIndex: 0
     };
 
-    function getQuestionStatus(question, answers) {
-      const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
-      const correctAnswer = normalizeAnswer(question.answer || '');
-      if (!studentAnswer) return 'Unattempted';
-      return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
-    }
+    // ===== Question Paper PDF feature: state holder (isolated, does not touch pageState) =====
+    // Holds the last-loaded result + questions so the PDF button can reuse
+    // the in-memory data instead of re-fetching from Firestore.
+    const pdfPaperState = {
+      result: null,
+      questions: [],
+      categoryName: ''
+    };
+
+  function getQuestionStatus(question, answers) {
+  const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
+  const correctAnswer = normalizeAnswer(question.answer || '');
+
+  // E means Skip
+  if (!studentAnswer || studentAnswer === 'E') {
+    return 'Unattempted';
+  }
+
+  return studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+}
 
     function getPaletteStats(questions, answers) {
       const stats = { total: questions.length, correct: 0, wrong: 0, unattempted: 0 };
@@ -568,7 +584,12 @@
     function renderReviewCard(question, index, total, answers) {
       const studentAnswer = normalizeAnswer(answers?.[question.id] ?? '');
       const correctAnswer = normalizeAnswer(question.answer || '');
-      const status = !studentAnswer ? 'Unattempted' : studentAnswer === correctAnswer ? 'Correct' : 'Wrong';
+     const status =
+    (!studentAnswer || studentAnswer === 'E')
+        ? 'Unattempted'
+        : studentAnswer === correctAnswer
+            ? 'Correct'
+            : 'Wrong';
       const optionsHtml = ['A', 'B', 'C', 'D', 'E']
         .map((letter) => {
           const optionText = getLocalizedField(question, `option${letter}`) || '';
@@ -577,9 +598,9 @@
           const isSelected = studentAnswer === letter;
           const isCorrect = correctAnswer === letter;
 
-          if (!studentAnswer) {
-            optionStatus = 'unattempted';
-          } else if (isCorrect && isSelected) {
+         if (!studentAnswer || studentAnswer === 'E') {
+    optionStatus = 'unattempted';
+}else if (isCorrect && isSelected) {
             optionStatus = 'selected-correct';
           } else if (isCorrect) {
             optionStatus = 'correct';
@@ -607,7 +628,7 @@
           ${question.image ? `<img class="question-asset" src="${escapeHtml(question.image)}" alt="Question ${index + 1} image">` : ''}
           <div class="options-grid">${optionsHtml}</div>
           <div class="review-stats">
-            <div><strong>Your Answer</strong><span>${studentAnswer || 'Unattempted'}</span></div>
+            <div><strong>Your Answer</strong><span>${(!studentAnswer || studentAnswer === 'E') ? 'Unattempted' : studentAnswer}</span></div>
             <div><strong>Correct Answer</strong><span>${correctAnswer || 'N/A'}</span></div>
             <div><strong>Status</strong><span>${status}</span></div>
           </div>
@@ -811,6 +832,13 @@ const answers =
           ${renderReviewSection(questions, answers, result)}`;
 
         initializeQuestionAnalysis(questions, answers);
+
+        // ===== Question Paper PDF feature: store loaded data for reuse =====
+        // Nothing above this line is affected by this assignment.
+        pdfPaperState.result = result;
+        pdfPaperState.questions = questions;
+        pdfPaperState.categoryName = categoryName;
+        attachDownloadQuestionPaperHandler();
       } catch (error) {
         console.error(error);
         setStatus('Unable to load result data.', 'error');
@@ -826,6 +854,348 @@ const answers =
       });
       loadResult();
     });
+
+    /* =========================================================================================
+       QUESTION PAPER — NATIVE BROWSER PRINT (rebuilt from scratch)
+       No html2pdf. No html2canvas. No jsPDF text rendering.
+       A complete, self-contained printable HTML document is generated as a string,
+       written into a new hidden window, and printed via the browser's own print engine
+       (window.print()). Choosing "Save as PDF" in that dialog produces the PDF.
+       ========================================================================================= */
+
+    const PP_QUESTIONS_PER_PAGE = 5;
+    const PP_ANSWER_COLUMNS = 5;
+    const PP_ANSWER_ROWS_PER_PAGE = 40;
+    const PP_LOGO_CANDIDATES = [
+      '../images/web logo_11zon.png',
+      '/images/web%20logo_11zon.png'
+    ];
+
+    function ppSanitizeFilenamePart(value) {
+      return String(value || 'Mock')
+        .replace(/[\\/:*?"<>|]+/g, '')
+        .replace(/\s+/g, '_')
+        .trim() || 'Mock';
+    }
+
+    function ppEscapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Resolves the project logo to an absolute URL relative to this page.
+    // No canvas conversion is needed since the new print window loads images itself.
+    function ppResolveLogoUrl() {
+      for (const candidate of PP_LOGO_CANDIDATES) {
+        try {
+          return new URL(candidate, window.location.href).href;
+        } catch (error) {
+          // try next candidate
+        }
+      }
+      return '';
+    }
+
+    // Reads the Hindi/English pair for a field base (e.g. "question", "optionA").
+    function ppBilingualField(question, base) {
+      const english = String(question[`${base}English`] || '').trim();
+      const hindi = String(question[`${base}Hindi`] || '').trim();
+      if (english || hindi) return { hindi, english };
+      const fallback = String(question[base] || '').trim();
+      if (!fallback) return { hindi: '', english: '' };
+      return getSavedLanguage() === 'en' ? { hindi: '', english: fallback } : { hindi: fallback, english: '' };
+    }
+
+    function ppBilingualOptions(question) {
+      return ['A', 'B', 'C', 'D', 'E']
+        .map((letter) => {
+          const field = ppBilingualField(question, `option${letter}`);
+          return { letter, hindi: field.hindi, english: field.english };
+        })
+        .filter((opt) => opt.hindi || opt.english);
+    }
+
+    function ppHeaderHtml(logoUrl) {
+      return `
+        <div class="pp-header">
+          <div class="pp-header-brand">
+            ${logoUrl ? `<img class="pp-header-logo" src="${ppEscapeHtml(logoUrl)}" alt="Logo" />` : ''}
+            <div class="pp-header-title">MARUDHARA EXAM</div>
+          </div>
+          <div class="pp-header-url">www.marudharaexam.in</div>
+        </div>`;
+    }
+
+    function ppFooterHtml(pageNum, totalPages) {
+      return `
+        <div class="pp-footer">
+          <div>Marudhara Exam</div>
+          <div>www.marudharaexam.in</div>
+          <div>Page ${pageNum} of ${totalPages}</div>
+        </div>`;
+    }
+
+    function ppWatermarkHtml(logoUrl) {
+      return `<div class="pp-watermark">${logoUrl ? `<img src="${ppEscapeHtml(logoUrl)}" alt="" />` : ''}</div>`;
+    }
+
+    function ppCoverPageHtml(meta, logoUrl, pageNum, totalPages) {
+      const rows = [
+        ['Exam Name', meta.mockTitle],
+        ['Category', meta.categoryName],
+        ['Total Questions', String(meta.totalQuestions)],
+        ['Total Marks', String(meta.totalMarks)],
+        ['Time', meta.time]
+      ].map(([label, value]) => `
+          <div class="pp-cover-row"><strong>${ppEscapeHtml(label)}</strong><span>${ppEscapeHtml(value)}</span></div>
+      `).join('');
+
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">
+            <div class="pp-cover-title">MARUDHARA EXAM</div>
+            ${rows}
+            <div class="pp-cover-sep"></div>
+          </div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
+    }
+
+    function ppQuestionBlockHtml(question, index) {
+      const qField = ppBilingualField(question, 'question');
+      const hindiText = ppEscapeHtml(formatQuestionText(qField.hindi)).replace(/\n/g, '<br/>');
+      const englishText = ppEscapeHtml(formatQuestionText(qField.english)).replace(/\n/g, '<br/>');
+
+      const optionsHtml = ppBilingualOptions(question).map((opt) => {
+        let text = '';
+        if (opt.hindi) text += opt.hindi;
+        if (opt.hindi && opt.english) text += ' / ';
+        if (opt.english) text += opt.english;
+        return `<div class="pp-option"><b>${opt.letter}.</b><span>${ppEscapeHtml(text)}</span></div>`;
+      }).join('');
+
+      return `
+        <div class="pp-question-block">
+          <div class="pp-q-number">Q${index + 1}.</div>
+          ${qField.hindi ? `<div class="pp-q-text">${hindiText}</div>` : ''}
+          ${qField.english ? `<div class="pp-q-text">${englishText}</div>` : ''}
+          ${question.image ? `<img class="pp-q-image" src="${ppEscapeHtml(question.image)}" alt="Question image" />` : ''}
+          <div class="pp-options">${optionsHtml}</div>
+        </div>`;
+    }
+
+    function ppQuestionPageHtml(chunk, startIndex, logoUrl, pageNum, totalPages) {
+      const blocks = chunk.map((q, i) => ppQuestionBlockHtml(q, startIndex + i)).join('');
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">${blocks}</div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
+    }
+
+    function ppAnswerRowHtml(questions, rowIndex) {
+      let cells = '';
+      for (let c = 0; c < PP_ANSWER_COLUMNS; c += 1) {
+        const qIndex = rowIndex * PP_ANSWER_COLUMNS + c;
+        if (qIndex < questions.length) {
+          const answerLetter = normalizeAnswer(questions[qIndex].answer || '') || '-';
+          cells += `<div>${qIndex + 1}-${ppEscapeHtml(answerLetter)}</div>`;
+        } else {
+          cells += `<div></div>`;
+        }
+      }
+      return `<div class="pp-ak-row">${cells}</div>`;
+    }
+
+    function ppAnswerKeyPageHtml(questions, rowStart, rowEnd, isFirstAnswerPage, logoUrl, pageNum, totalPages) {
+      let rowsHtml = '';
+      for (let r = rowStart; r < rowEnd; r += 1) {
+        rowsHtml += ppAnswerRowHtml(questions, r);
+      }
+      return `
+        <div class="pp-page">
+          ${ppWatermarkHtml(logoUrl)}
+          ${ppHeaderHtml(logoUrl)}
+          <div class="pp-content">
+            ${isFirstAnswerPage ? `<div class="pp-answerkey-title">ANSWER KEY</div><div class="pp-answerkey-sep"></div>` : ''}
+            ${rowsHtml}
+          </div>
+          ${ppFooterHtml(pageNum, totalPages)}
+        </div>`;
+    }
+
+    function ppBuildStyles() {
+      return `
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:'Noto Sans','Noto Sans Devanagari',Arial,sans-serif; color:#000; background:#fff; }
+        .pp-page { width:210mm; min-height:297mm; position:relative; background:#fff; page-break-after:always; break-after:page; }
+        .pp-page:last-child { page-break-after:auto; break-after:auto; }
+        .pp-watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.08; z-index:0; pointer-events:none; }
+        .pp-watermark img { width:55%; }
+        .pp-header { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; padding:5mm 12mm 3mm; border-bottom:0.6mm solid #0b4ea2; }
+        .pp-header-brand { display:flex; align-items:center; gap:3mm; }
+        .pp-header-logo { width:10mm; height:10mm; object-fit:contain; }
+        .pp-header-title { font-size:14pt; font-weight:800; color:#0b4ea2; }
+        .pp-header-url { font-size:8pt; color:#5a647a; }
+        .pp-content { position:relative; z-index:1; padding:4mm 12mm; }
+        .pp-footer { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-size:7.5pt; color:#6e768a; padding:2mm 0 4mm; }
+        .pp-cover-title { font-size:20pt; font-weight:800; margin:8mm 0 4mm; color:#102a52; }
+        .pp-cover-row { display:flex; justify-content:space-between; font-size:11pt; padding:2.2mm 0; color:#1c2a44; }
+        .pp-cover-row strong { color:#0b4ea2; }
+        .pp-cover-sep { border-top:0.6mm solid #0b4ea2; margin:5mm 0; }
+        .pp-question-block { margin-bottom:6mm; page-break-inside:avoid; break-inside:avoid; }
+        .pp-q-number { font-weight:800; font-size:11pt; color:#0b4ea2; margin-bottom:1mm; }
+        .pp-q-text { font-size:10.5pt; line-height:1.6; margin-bottom:1mm; color:#1c2a44; }
+        .pp-q-image { max-width:100%; max-height:60mm; display:block; margin:2mm auto; object-fit:contain; }
+        .pp-options { display:grid; gap:1.5mm; margin-top:2mm; }
+        .pp-option { display:flex; gap:2mm; font-size:10pt; line-height:1.5; padding:1.5mm 2mm; border:0.2mm solid #d7deea; border-radius:2mm; }
+        .pp-option b { min-width:5mm; }
+        .pp-answerkey-title { font-size:16pt; font-weight:800; color:#0b4ea2; text-align:center; margin:2mm 0 3mm; }
+        .pp-answerkey-sep { border-top:0.6mm solid #0b4ea2; margin-bottom:4mm; }
+        .pp-ak-row { display:grid; grid-template-columns:repeat(${PP_ANSWER_COLUMNS},1fr); font-size:10pt; padding:1.4mm 0; }
+        @media print {
+          @page { size: A4; margin: 12mm; }
+          .pp-page { page-break-after: always; }
+        }
+      `;
+    }
+
+    // Builds the complete printable HTML document (head + styles + every page) as a string.
+    function ppBuildDocument(questions, meta, logoUrl) {
+      const totalQuestions = questions.length;
+      const totalAnswerRows = Math.ceil(totalQuestions / PP_ANSWER_COLUMNS);
+      const questionPageCount = totalQuestions === 0 ? 0 : Math.ceil(totalQuestions / PP_QUESTIONS_PER_PAGE);
+      const answerPageCount = Math.max(1, Math.ceil(totalAnswerRows / PP_ANSWER_ROWS_PER_PAGE));
+      const totalPages = 1 + questionPageCount + answerPageCount;
+
+      let pageNum = 1;
+      let pagesHtml = ppCoverPageHtml(meta, logoUrl, pageNum, totalPages);
+      pageNum += 1;
+
+      for (let i = 0; i < totalQuestions; i += PP_QUESTIONS_PER_PAGE) {
+        const chunk = questions.slice(i, i + PP_QUESTIONS_PER_PAGE);
+        pagesHtml += ppQuestionPageHtml(chunk, i, logoUrl, pageNum, totalPages);
+        pageNum += 1;
+      }
+
+      if (totalAnswerRows === 0) {
+        pagesHtml += ppAnswerKeyPageHtml([], 0, 0, true, logoUrl, pageNum, totalPages);
+      } else {
+        for (let r = 0; r < totalAnswerRows; r += PP_ANSWER_ROWS_PER_PAGE) {
+          const rowEnd = Math.min(r + PP_ANSWER_ROWS_PER_PAGE, totalAnswerRows);
+          pagesHtml += ppAnswerKeyPageHtml(questions, r, rowEnd, r === 0, logoUrl, pageNum, totalPages);
+          pageNum += 1;
+        }
+      }
+
+      const docTitle = `${ppSanitizeFilenamePart(meta.mockTitle)}_Question_Paper`;
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>${ppEscapeHtml(docTitle)}</title>
+<style>${ppBuildStyles()}</style>
+</head>
+<body>
+${pagesHtml}
+</body>
+</html>`;
+    }
+
+    async function generateQuestionPaperPdf() {
+      const button = document.getElementById('downloadQuestionPaperBtn');
+      const result = pdfPaperState.result;
+      const questions = pdfPaperState.questions || [];
+
+      if (!questions.length) {
+        alert('No questions are available to generate the question paper.');
+        return;
+      }
+
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Preparing…';
+      }
+
+      try {
+        const totalQuestions = questions.length;
+        const totalMarks = (result?.positiveMarks || 1) * totalQuestions;
+        const meta = {
+          mockTitle: result?.mockTitle || 'Mock exam',
+          categoryName: pdfPaperState.categoryName || 'N/A',
+          totalQuestions,
+          totalMarks,
+          time: formatSeconds(result?.timeTakenSeconds ?? result?.duration ?? result?.timeRemainingSeconds)
+        };
+
+        const logoUrl = ppResolveLogoUrl();
+        const docHtml = ppBuildDocument(questions, meta, logoUrl);
+
+        // Open a new hidden window and write the complete printable document into it.
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          alert('Please allow pop-ups for this site to download the question paper.');
+          return;
+        }
+
+        printWindow.document.open();
+        printWindow.document.write(docHtml);
+        printWindow.document.close();
+
+        const triggerPrint = () => {
+          const images = Array.from(printWindow.document.images || []);
+          const waitForImages = Promise.all(images.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.addEventListener('load', resolve, { once: true });
+              img.addEventListener('error', resolve, { once: true });
+            });
+          }));
+
+          waitForImages.then(() => {
+            printWindow.focus();
+            printWindow.print();
+          });
+        };
+
+        if (printWindow.document.readyState === 'complete') {
+          triggerPrint();
+        } else {
+          printWindow.addEventListener('load', triggerPrint, { once: true });
+        }
+
+        // Automatically close the print window once printing is done (or cancelled).
+        printWindow.addEventListener('afterprint', () => {
+          printWindow.close();
+        }, { once: true });
+      } catch (error) {
+        console.error('Question paper generation failed:', error);
+        alert('Unable to generate the question paper. Please try again.');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Download Question Paper';
+        }
+      }
+    }
+
+    function attachDownloadQuestionPaperHandler() {
+      const button = document.getElementById('downloadQuestionPaperBtn');
+      if (!button || button.dataset.bound === '1') return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', () => {
+        generateQuestionPaperPdf();
+      });
+    }
   </script>
 </body>
 </html>

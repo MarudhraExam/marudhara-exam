@@ -163,7 +163,13 @@ let html = `
 <h2>PDF Notes</h2>
 `;
 
-topicsSnap.forEach(topicDoc=>{
+const topics = topicsSnap.docs.sort((a,b)=>{
+    const n1 = parseInt(a.data().topicName.match(/\d+/)?.[0] || 0);
+    const n2 = parseInt(b.data().topicName.match(/\d+/)?.[0] || 0);
+    return n1 - n2;
+});
+
+topics.forEach(topicDoc=>{
 
 const topic = topicDoc.data();
 

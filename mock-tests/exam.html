@@ -72,11 +72,12 @@
             border-radius: 8px;
             font-size: 0.95rem;
         }
-        .exam-grid {
-            display: grid;
-            grid-template-columns: 1fr 260px;
-            gap: 20px;
-        }
+      .exam-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+}
         .question-card, .palette-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -140,46 +141,58 @@
         .nav-buttons button:hover:not(:disabled) {
             transform: translateY(-1px);
         }
-        .palette-card {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+       .palette-card{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    position:sticky;
+    top:20px;
+}
         .palette-title {
             margin: 0 0 8px 0;
             font-size: 1rem;
             font-weight: 600;
         }
-        .palette-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(44px, 1fr));
-            gap: 10px;
-        }
-        .palette-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px;
-            border-radius: 50%;
-            border: 1px solid #cbd5e1;
-            background: #f8fafc;
-            color: #111827;
-            cursor: pointer;
-            transition: transform 0.1s ease, border-color 0.2s;
-        }
-        .palette-item.selected {
-            background: #2563eb;
-            border-color: #1d4ed8;
-            color: white;
-        }
-        .palette-item.answered {
-            background: #0f766e;
-            border-color: #0f766e;
-            color: white;
-        }
-        .palette-item:hover {
-            transform: translateY(-1px);
-        }
+     .palette-grid{
+    display:grid;
+    grid-template-columns:repeat(10,30px);
+    gap:6px;
+    justify-content:center;
+}
+
+.palette-item {
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #111827;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0;
+    transition: transform 0.1s ease, border-color 0.2s;
+}
+
+.palette-item.selected {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #fff;
+}
+
+.palette-item.answered {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
+}
+
+.palette-item:hover {
+    transform: scale(1.05);
+}
         .timer-box {
             padding: 14px 16px;
             border-radius: 12px;
@@ -695,20 +708,25 @@ questionTextElement.innerHTML =
             const answersList = {};
 
             questions.forEach((question) => {
-                const selected = normalizeAnswer(answers[question.id]);
-                const correctAnswer = normalizeAnswer(question.answer || question.correctAnswer || question.correctOption);
-                answersList[question.id] = answers[question.id] || "";
+    const selected = normalizeAnswer(answers[question.id]);
+    const correctAnswer = normalizeAnswer(
+        question.answer || question.correctAnswer || question.correctOption
+    );
 
-                if (!selected) {
-                    unattempted += 1;
-                    return;
-                }
-                if (selected === correctAnswer) {
-                    correct += 1;
-                    return;
-                }
-                wrong += 1;
-            });
+    answersList[question.id] = answers[question.id] || "";
+
+    // E = Skip / Unattempted
+    if (selected === "" || selected === "E") {
+        unattempted++;
+        return;
+    }
+
+    if (selected === correctAnswer) {
+        correct++;
+    } else {
+        wrong++;
+    }
+});
 
             const attempted = totalQuestions - unattempted;
             const positiveMarks = Number(examMeta.totalMarks) > 0 ? Number(examMeta.totalMarks) / totalQuestions : 1;
