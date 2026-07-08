@@ -1,0 +1,23 @@
+name = "marudhara-payments-worker"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# ---------------------------------------------------------------------------
+# Non-secret configuration (safe to keep in source control).
+# ---------------------------------------------------------------------------
+[vars]
+FIREBASE_PROJECT_ID = "marudhara-exam"
+ALLOWED_ORIGIN = "https://YOUR_GITHUB_USERNAME.github.io"
+PREMIUM_PACK_AMOUNT_PAISE = "4900"
+PREMIUM_PACK_TEST_COUNT = "10"
+
+# ---------------------------------------------------------------------------
+# Secrets — NEVER put real values here. Set them with `wrangler secret put`.
+# Listed here only as documentation of what the Worker expects to exist:
+#
+#   RAZORPAY_KEY_ID          Razorpay public key id (already bound per setup)
+#   RAZORPAY_KEY_SECRET      Razorpay secret key     (already bound per setup)
+#   RAZORPAY_WEBHOOK_SECRET  Secret configured on the Razorpay webhook
+#   FIREBASE_CLIENT_EMAIL    Service account "client_email"
+#   FIREBASE_PRIVATE_KEY     Service account "private_key" (PEM, \n-escaped)
+# ---------------------------------------------------------------------------

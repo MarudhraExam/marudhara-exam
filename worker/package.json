@@ -1,0 +1,16 @@
+{
+  "name": "marudhara-payments-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker: Razorpay payment verification + Firestore-backed premium mock test unlock for Marudhara Exam.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
