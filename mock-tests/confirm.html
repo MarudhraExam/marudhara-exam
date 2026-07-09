@@ -682,11 +682,11 @@ const isFree = category.isFree === true;
               // charge them again.
               setStatus('Unlocking this test using your available credit…');
               const unlockRes = await unlockTest({
-                mockId,
-                mobile: trimmedMobile,
-                studentName: trimmedName,
-                source: 'credit'
-              });
+    mockId,
+    mobile: trimmedMobile,
+    studentName: trimmedName,
+    source: 'credit'
+});
 
               if (!unlockRes || unlockRes.success !== true) {
                 throw new Error('Unable to unlock this test with your available credit. Please try again.');
