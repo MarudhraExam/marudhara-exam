@@ -686,36 +686,6 @@ const statusRes = await fetchPurchaseStatus(
     return;
 }
 
-            if (alreadyUnlockedThisTest) {
-              // This exact mock is already unlocked for this student. No
-              // credit to spend, no payment needed — go straight in.
-              saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
-              navigateToExam(mockId);
-              return;
-            }
-
-            if (creditsRemaining > 0) {
-              // Student has spare credits but this specific mock isn't
-              // unlocked yet. Spend a credit to unlock THIS mock — do not
-              // charge them again.
-              setStatus('Unlocking this test using your available credit…');
-              const unlockRes = await unlockTest({
-    mockId,
-    categoryId: mock.categoryId,
-    mobile: trimmedMobile,
-    studentName: trimmedName,
-    source: 'credit'
-});
-
-              if (!unlockRes || unlockRes.success !== true) {
-                throw new Error('Unable to unlock this test with your available credit. Please try again.');
-              }
-
-              saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
-              navigateToExam(mockId);
-              return;
-            }
-
             // No existing unlock and no spare credits: must pay.
             setStatus('Preparing payment…');
             await loadRazorpayScript();
