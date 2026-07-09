@@ -216,10 +216,91 @@
       font-size: 1rem;
     }
 
-    @media (max-width: 740px) {
-      header { flex-direction: column; align-items: stretch; }
-      .details { flex-direction: column; align-items: flex-start; }
-    }
+   @media (max-width:768px){
+
+  .page-shell{
+      padding:12px;
+  }
+
+  header{
+      flex-direction:column;
+      align-items:stretch;
+      gap:10px;
+      margin-bottom:15px;
+  }
+
+  .brand h1{
+      font-size:22px;
+  }
+
+  .brand small{
+      font-size:13px;
+  }
+
+  .grid{
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+  }
+
+  .card{
+      min-height:auto;
+      border-radius:16px;
+  }
+
+  .hero{
+      height:110px;
+  }
+
+  .hero img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+  }
+
+  .card-body{
+      padding:10px;
+      gap:8px;
+  }
+
+  .card-body h2{
+      font-size:15px;
+      line-height:1.3;
+      min-height:38px;
+      overflow:hidden;
+  }
+
+  /* Description hide */
+  .card-body p{
+      display:none;
+  }
+
+  .details{
+      justify-content:center;
+      gap:6px;
+  }
+
+  /* Category badge hide */
+  .details .badge:first-child{
+      display:none;
+  }
+
+  .badge{
+      padding:5px 10px;
+      font-size:11px;
+  }
+
+  .card-footer{
+      padding:0 10px 10px;
+  }
+
+  .button-primary{
+      width:100%;
+      padding:10px;
+      font-size:13px;
+      border-radius:10px;
+  }
+
+}
   </style>
 </head>
 <body>
