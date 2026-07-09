@@ -631,8 +631,7 @@ if (!categorySnap.exists()) {
 }
 
 const category = categorySnap.data();
-          const isFree = mock.isFree === true;
-
+const isFree = category.isFree === true;
           if (!isFree && !mobile.trim()) {
             setStatus('Mobile number is required to verify purchase for this paid mock test.', 'error');
             return;
