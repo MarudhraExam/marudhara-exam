@@ -313,13 +313,6 @@
     // Defaults to false until verification completes (fail-safe).
     let isMockLive = false;
 
-    // CATEGORY-LEVEL PREMIUM SYSTEM: a mock has no Free/Premium field of its
-    // own anymore. Access is decided entirely by the mock's Category —
-    // loaded once here and reused for the isFree check and the payment
-    // handoff below.
-    let currentCategory = null;
-    let currentCategoryId = null;
-
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
       statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
@@ -410,29 +403,154 @@
       }
     }
 
+    function validateInput(name, roll) {
+      if (!name.trim()) {
+        setStatus('Student name is required.', 'error');
+        return false;
+      }
+      if (!roll.trim()) {
+        setStatus('Roll number is required.', 'error');
+        return false;
+      }
+      return true;
+    }
+
     function navigateToExam(mockId) {
       window.location.href = `exam.html?mockId=${encodeURIComponent(mockId)}`;
     }
 
-    // Hands off to the dedicated Payment Page (category image, name,
-    // original/offer price, Unlock button). It creates the order, opens
-    // Razorpay checkout, verifies the payment and — only once the category
-    // is actually unlocked server-side — sends the student back here.
-    function navigateToPayment(mockId, categoryId) {
-      window.location.href = `payment.html?mockId=${encodeURIComponent(mockId)}&categoryId=${encodeURIComponent(categoryId)}`;
-    }
-
     // ---- Payment backend helpers (Cloudflare Worker) ----
 
-    // Category-level purchase check: does this mobile number already have
-    // paid access to the mock's CATEGORY? Buying one category (e.g. "RSSB
-    // CET") never unlocks another (e.g. "REET") — each is checked separately.
-    async function fetchPurchaseStatus(mobile, categoryId) {
-      const res = await fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}&categoryId=${encodeURIComponent(categoryId)}`);
+    async function fetchPurchaseStatus(mobile) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}`);
       if (!res.ok) {
         throw new Error('Unable to verify purchase status. Please try again.');
       }
       return res.json();
+    }
+
+    async function createOrder(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error('Unable to create payment order. Please try again.');
+      }
+      return res.json();
+    }
+
+    async function verifyPayment(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/verify-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error('Payment verification failed. Please try again.');
+      }
+      return res.json();
+    }
+
+    // Grants access to this specific mock test. Must succeed before the
+    // student is ever allowed to navigate to exam.html, whether they paid
+    // just now or are spending an already-purchased credit.
+    async function unlockTest(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/unlock-test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error('Unable to unlock this test. Please try again.');
+      }
+      return res.json();
+    }
+
+    function loadRazorpayScript() {
+      return new Promise((resolve, reject) => {
+        if (window.Razorpay) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector('script[data-razorpay-checkout]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('Unable to load payment gateway.')));
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.dataset.razorpayCheckout = 'true';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Unable to load payment gateway.'));
+        document.body.appendChild(script);
+      });
+    }
+
+    // orderRes is the full response from POST /api/create-order, e.g.
+    // { success: true, key: "rzp_xxx", order: { id, amount, currency } }.
+    // The Razorpay key must come from the Worker response itself, never
+    // hardcoded or assumed, so checkout always matches the account that
+    // actually created the order.
+    function openRazorpayCheckout(orderRes, mock, mockId, name, mobile) {
+      return new Promise((resolve, reject) => {
+        const order = orderRes.order || {};
+        const razorpayKey = orderRes.key || order.key;
+
+        if (!razorpayKey || !order.id || !order.amount) {
+          reject(new Error('Payment order details are incomplete. Please try again.'));
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          name: 'Marudhara Exam',
+          description: mock.title || mock.name || 'Mock Test Access',
+          order_id: order.id,
+          prefill: {
+            name: name,
+            contact: mobile
+          },
+          theme: {
+            color: '#0b4ea2'
+          },
+          modal: {
+            ondismiss: function () {
+              reject(new Error('Payment was cancelled.'));
+            }
+          },
+          handler: async function (response) {
+            try {
+              setStatus('Verifying payment…');
+              const verifyRes = await verifyPayment({
+                mockId,
+                mobile,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              });
+
+              if (verifyRes && verifyRes.success) {
+                resolve(verifyRes);
+              } else {
+                reject(new Error('Payment verification failed.'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function () {
+          reject(new Error('Payment failed. Please try again.'));
+        });
+        rzp.open();
+      });
     }
 
     async function loadMockDetails() {
@@ -461,38 +579,13 @@
         }
 
         const mock = { id: snap.id, ...snap.data() };
-
-        // ---- Load the mock's CATEGORY (access + pricing live here now) ----
-        currentCategoryId = mock.categoryId || null;
-        currentCategory = null;
-        if (currentCategoryId) {
-          try {
-            const categorySnap = await getDoc(doc(db, 'mockCategories', currentCategoryId));
-            if (categorySnap.exists()) {
-              currentCategory = { id: categorySnap.id, ...categorySnap.data() };
-            }
-          } catch (err) {
-            console.error('Failed to load category for this mock:', err);
-          }
-        }
-
-        // Missing isFree (category not yet migrated/configured) safely
-        // defaults to Free, matching this app's existing backward-compatible
-        // conventions elsewhere (e.g. liveDateTime).
-        const isFree = !currentCategory || currentCategory.isFree !== false;
-
         const summaryItems = [
-          { label: 'Category', value: currentCategory ? (currentCategory.name || 'Unknown') : 'Unknown category' },
           { label: 'Mock title', value: mock.title || mock.name || 'Untitled test' },
           { label: 'Questions', value: String(mock.totalQuestions ?? mock.questions ?? 0) },
           { label: 'Total marks', value: String(mock.totalMarks ?? mock.marks ?? 0) },
           { label: 'Duration', value: `${String(mock.duration ?? mock.durationMinutes ?? 0)} min` },
-          { label: 'Negative marks', value: String(mock.negativeMarks ?? mock.negativeMark ?? mock.negative ?? 0) },
-          { label: 'Access', value: isFree ? 'Free' : 'Premium' }
+          { label: 'Negative marks', value: String(mock.negativeMarks ?? mock.negativeMark ?? mock.negative ?? 0) }
         ];
-        if (!isFree && currentCategory) {
-          summaryItems.push({ label: 'Price', value: `₹${currentCategory.offerPrice ?? '—'}` });
-        }
 
         setSummary(summaryItems);
         setStatus('Enter your details and start the exam.');
@@ -531,8 +624,10 @@
        
           const mobile = studentMobile.value;
 
+          const isFree = mock.isFree === true;
+
           if (!isFree && !mobile.trim()) {
-            setStatus('Mobile number is required to verify purchase for this paid category.', 'error');
+            setStatus('Mobile number is required to verify purchase for this paid mock test.', 'error');
             return;
           }
 
@@ -542,7 +637,7 @@
           startExamBtn.textContent = 'Please wait…';
 
           try {
-            // Free category: keep existing flow completely unchanged.
+            // Free mock: keep existing flow completely unchanged.
             if (isFree) {
               saveSession({ mockId, studentName: name.trim(), studentMobile: mobile.trim() });
               navigateToExam(mockId);
@@ -552,35 +647,92 @@
             const trimmedMobile = mobile.trim();
             const trimmedName = name.trim();
 
-            // Premium category: never bypass payment. Check whether this
-            // student's mobile number already has paid access to the
-            // mock's CATEGORY — not just this one mock. Any other mock
-            // inside the same category is unlocked the same way; mocks in
-            // a different category are never affected.
+            // Paid mock: never bypass payment. Check exactly what access
+            // this student already has for THIS mock, not just whether they
+            // have premium access in general.
             setStatus('Checking purchase status…');
-            const statusRes = await fetchPurchaseStatus(trimmedMobile, currentCategoryId);
+            const statusRes = await fetchPurchaseStatus(trimmedMobile);
 
             if (!statusRes || statusRes.success !== true) {
               throw new Error('Unable to verify purchase status. Please try again.');
             }
 
-            if (statusRes.paid === true) {
-              // This category is already unlocked for this student. Go straight in.
+            const unlockedTestIds = Array.isArray(statusRes.unlockedTestIds) ? statusRes.unlockedTestIds : [];
+            const creditsRemaining = Number(statusRes.creditsRemaining) || 0;
+            const alreadyUnlockedThisTest = unlockedTestIds.includes(mockId);
+
+            if (alreadyUnlockedThisTest) {
+              // This exact mock is already unlocked for this student. No
+              // credit to spend, no payment needed — go straight in.
               saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
               navigateToExam(mockId);
               return;
             }
 
-            // Category not yet purchased: hand off to the dedicated Payment
-            // Page (category image, name, original/offer price, Unlock
-            // button). It is the only place that creates the Razorpay order
-            // and verifies payment.
+            if (creditsRemaining > 0) {
+              // Student has spare credits but this specific mock isn't
+              // unlocked yet. Spend a credit to unlock THIS mock — do not
+              // charge them again.
+              setStatus('Unlocking this test using your available credit…');
+              const unlockRes = await unlockTest({
+                mockId,
+                mobile: trimmedMobile,
+                studentName: trimmedName,
+                source: 'credit'
+              });
+
+              if (!unlockRes || unlockRes.success !== true) {
+                throw new Error('Unable to unlock this test with your available credit. Please try again.');
+              }
+
+              saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
+              navigateToExam(mockId);
+              return;
+            }
+
+            // No existing unlock and no spare credits: must pay.
+            setStatus('Preparing payment…');
+            await loadRazorpayScript();
+
+            const orderRes = await createOrder({
+              mockId,
+              mobile: trimmedMobile,
+              studentName: trimmedName
+            });
+
+            if (!orderRes || orderRes.success !== true || !orderRes.order) {
+              throw new Error('Unable to create payment order. Please try again.');
+            }
+
+            setStatus('Opening payment window…');
+            const verifyRes = await openRazorpayCheckout(orderRes, mock, mockId, trimmedName, trimmedMobile);
+
+            if (!verifyRes || verifyRes.success !== true) {
+              throw new Error('Payment verification failed. Please try again.');
+            }
+
+            // Payment verified — now actually grant access to THIS mock.
+            // Exam must never open unless this call succeeds.
+            setStatus('Unlocking your test…');
+            const unlockRes = await unlockTest({
+              mockId,
+              mobile: trimmedMobile,
+              studentName: trimmedName,
+              source: 'payment',
+              razorpay_order_id: verifyRes.razorpay_order_id,
+              razorpay_payment_id: verifyRes.razorpay_payment_id
+            });
+
+            if (!unlockRes || unlockRes.success !== true) {
+              throw new Error('Payment succeeded but unlocking the test failed. Please contact support before retrying.');
+            }
+
             saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
-            setStatus('Redirecting to payment…');
-            navigateToPayment(mockId, currentCategoryId);
+            setStatus('Test unlocked. Starting exam…');
+            navigateToExam(mockId);
 
           } catch (error) {
-            console.error('Start flow error:', error);
+            console.error('Payment/start flow error:', error);
             setStatus(error && error.message ? error.message : 'Unable to start exam. Please try again.', 'error');
           } finally {
             startExamBtn.dataset.processing = 'false';
