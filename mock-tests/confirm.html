@@ -421,13 +421,17 @@
 
     // ---- Payment backend helpers (Cloudflare Worker) ----
 
-    async function fetchPurchaseStatus(mobile) {
-      const res = await fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}`);
-      if (!res.ok) {
-        throw new Error('Unable to verify purchase status. Please try again.');
-      }
-      return res.json();
-    }
+   async function fetchPurchaseStatus(mobile, categoryId) {
+  const res = await fetch(
+    `${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}&categoryId=${encodeURIComponent(categoryId)}`
+  );
+
+  if (!res.ok) {
+    throw new Error('Unable to verify purchase status. Please try again.');
+  }
+
+  return res.json();
+}
 
     async function createOrder(payload) {
       const res = await fetch(`${PAYMENT_API_BASE}/api/create-order`, {
