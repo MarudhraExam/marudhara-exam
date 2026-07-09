@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -261,7 +261,290 @@
       return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    function buildCard(category) {
+    // Cloudflare Worker payment backend base URL (same Worker used by
+    // confirm.html). Backend/router/Firestore are unchanged — this page
+    // calls the exact same endpoints confirm.html already uses, just scoped
+    // to a category instead of a specific mock.
+    const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
+
+    // Student details (name/mobile), if known. confirm.html saves these to
+    // localStorage under "mockExamSession" whenever a student enters them,
+    // so a returning student is recognised here across visits/tabs without
+    // any login system or new UI on this page.
+    function getStoredStudent() {
+      try {
+        const raw = localStorage.getItem('mockExamSession') || sessionStorage.getItem('mockExamSession');
+        const session = raw ? JSON.parse(raw) : null;
+        return {
+          studentName: session && session.studentName ? String(session.studentName).trim() : '',
+          studentMobile: session && session.studentMobile ? String(session.studentMobile).trim() : ''
+        };
+      } catch {
+        return { studentName: '', studentMobile: '' };
+      }
+    }
+
+    function saveStoredStudent(details) {
+      const existingRaw = localStorage.getItem('mockExamSession') || sessionStorage.getItem('mockExamSession');
+      let merged = {};
+      try {
+        merged = existingRaw ? JSON.parse(existingRaw) : {};
+      } catch {
+        merged = {};
+      }
+      merged = { ...merged, ...details };
+      const payload = JSON.stringify(merged);
+      sessionStorage.setItem('mockExamSession', payload);
+      try {
+        localStorage.setItem('mockExamSession', payload);
+      } catch {
+        // localStorage may be unavailable (e.g. private browsing); the
+        // session still works for the current tab via sessionStorage above.
+      }
+    }
+
+    function getStoredMobile() {
+      return getStoredStudent().studentMobile;
+    }
+
+    // One payment unlocks the ENTIRE category (all mocks inside it), never
+    // just a single mock. This checks whether the current student has
+    // already purchased a given (premium) category.
+    async function fetchPurchaseStatus(mobile, categoryId) {
+      try {
+        const res = await fetch(
+          `${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}&categoryId=${encodeURIComponent(categoryId)}`
+        );
+        if (!res.ok) return false;
+        const data = await res.json();
+        return !!(data && data.success === true && data.paid === true);
+      } catch (error) {
+        console.error('Error checking purchase status:', error);
+        // Fail closed: if status can't be verified, treat as not purchased
+        // so the student is never shown "View Tests" for a locked category.
+        return false;
+      }
+    }
+
+    async function createOrder(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error('Unable to create payment order. Please try again.');
+      }
+      return res.json();
+    }
+
+    async function verifyPayment(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/verify-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error('Payment verification failed. Please try again.');
+      }
+      return res.json();
+    }
+
+    function loadRazorpayScript() {
+      return new Promise((resolve, reject) => {
+        if (window.Razorpay) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector('script[data-razorpay-checkout]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('Unable to load payment gateway.')));
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.dataset.razorpayCheckout = 'true';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Unable to load payment gateway.'));
+        document.body.appendChild(script);
+      });
+    }
+
+    // orderRes is the full response from POST /api/create-order, e.g.
+    // { success: true, key: "rzp_xxx", order: { id, amount, currency } }.
+    // The Razorpay key must come from the Worker response itself, never
+    // hardcoded or assumed, so checkout always matches the account that
+    // actually created the order.
+    function openRazorpayCheckout(orderRes, category, name, mobile) {
+      return new Promise((resolve, reject) => {
+        const order = { id: orderRes.orderId, amount: orderRes.amount, currency: orderRes.currency };
+        const razorpayKey = orderRes.keyId;
+
+        if (!razorpayKey || !order.id || !order.amount) {
+          reject(new Error('Payment order details are incomplete. Please try again.'));
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: order.amount,
+          currency: order.currency || 'INR',
+          name: 'Marudhara Exam',
+          description: category.name ? `${category.name} — full category access` : 'Category access',
+          order_id: order.id,
+          prefill: {
+            name: name,
+            contact: mobile
+          },
+          theme: {
+            color: '#0b4ea2'
+          },
+          modal: {
+            ondismiss: function () {
+              reject(new Error('Payment was cancelled.'));
+            }
+          },
+          handler: async function (response) {
+            try {
+              setStatus('Verifying payment…');
+              const verifyRes = await verifyPayment({
+                categoryId: category.id,
+                mobile: mobile,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              });
+
+              if (verifyRes && verifyRes.success) {
+                resolve(verifyRes);
+              } else {
+                reject(new Error('Payment verification failed.'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function () {
+          reject(new Error('Payment failed. Please try again.'));
+        });
+        rzp.open();
+      });
+    }
+
+    // Collects name/mobile if not already known. Uses simple prompts rather
+    // than new form fields so the existing page layout/CSS stays untouched.
+    function ensureStudentDetails() {
+      let { studentName, studentMobile } = getStoredStudent();
+
+      if (!studentName) {
+        const name = window.prompt('Enter your full name to continue with the purchase:', '');
+        if (!name || !name.trim()) return null;
+        studentName = name.trim();
+      }
+
+      if (!studentMobile) {
+        const mobile = window.prompt('Enter your mobile number to continue with the purchase:', '');
+        if (!mobile || !mobile.trim()) return null;
+        studentMobile = mobile.trim();
+      }
+
+      saveStoredStudent({ studentName, studentMobile });
+      return { studentName, studentMobile };
+    }
+
+    // Marks a category's card as unlocked in place (no page reload), so the
+    // button becomes "View tests" immediately after a successful payment.
+    function markCategoryUnlocked(category, buttonEl) {
+      buttonEl.textContent = 'View tests';
+      buttonEl.onclick = () => {
+        window.location.href = `category.html?id=${encodeURIComponent(category.id)}`;
+      };
+    }
+
+    // Starts the purchase flow for an entire category directly from the
+    // category card — no intermediate navigation to category.html. Only
+    // after payment is verified does the button turn into "View Tests".
+    async function startCategoryPurchase(category, buttonEl) {
+      if (buttonEl.dataset.processing === 'true') return;
+
+      const details = ensureStudentDetails();
+      if (!details) {
+        setStatus('Name and mobile number are required to purchase this category.', 'error');
+        return;
+      }
+      const { studentName, studentMobile } = details;
+
+      buttonEl.dataset.processing = 'true';
+      const previousLabel = buttonEl.textContent;
+      buttonEl.disabled = true;
+      buttonEl.textContent = 'Please wait…';
+
+      try {
+        // Guard against a purchase already completed elsewhere (e.g. another
+        // tab, or an earlier payment for this mobile number).
+        setStatus('Checking purchase status…');
+        const alreadyPaid = await fetchPurchaseStatus(studentMobile, category.id);
+        if (alreadyPaid) {
+          markCategoryUnlocked(category, buttonEl);
+          setStatus('Select a category to view mock tests.');
+          return;
+        }
+
+        setStatus('Preparing payment…');
+        await loadRazorpayScript();
+
+        const orderRes = await createOrder({
+          categoryId: category.id,
+          mobile: studentMobile,
+          studentName: studentName
+        });
+        if (!orderRes || orderRes.success !== true || !orderRes.orderId) {
+          throw new Error('Unable to create payment order. Please try again.');
+        }
+
+        setStatus('Opening payment window…');
+        const verifyRes = await openRazorpayCheckout(orderRes, category, studentName, studentMobile);
+        if (!verifyRes || verifyRes.success !== true) {
+          throw new Error('Payment verification failed. Please try again.');
+        }
+
+        // Payment verified — the whole category is now unlocked for this
+        // mobile number, so the card turns into "View Tests" immediately.
+        markCategoryUnlocked(category, buttonEl);
+        setStatus('Payment successful. Category unlocked.');
+      } catch (error) {
+        console.error('Category purchase error:', error);
+        setStatus(error && error.message ? error.message : 'Unable to complete purchase. Please try again.', 'error');
+      } finally {
+        buttonEl.dataset.processing = 'false';
+        buttonEl.disabled = false;
+        if (buttonEl.textContent === 'Please wait…') {
+          buttonEl.textContent = previousLabel;
+        }
+      }
+    }
+
+    // categoryId -> category doc, so the inline button handler (which can
+    // only pass an id through the HTML attribute) can look up the full
+    // category object needed to create an order.
+    let categoriesById = {};
+
+    window.handleCategoryButtonClick = function (categoryId, buttonEl) {
+      const category = categoriesById[categoryId];
+      if (!category) return;
+      const isFree = category.isFree !== false;
+      if (isFree) {
+        window.location.href = `category.html?id=${encodeURIComponent(categoryId)}`;
+        return;
+      }
+      startCategoryPurchase(category, buttonEl);
+    };
+
+    function buildCard(category, paid) {
       const icon = (category.image || category.icon) ? `<img src="${escapeHtml(category.image || category.icon)}" alt="${escapeHtml(category.name)} icon" />` : '<div class="fallback-icon">📚</div>';
       const description = escapeHtml(category.description || 'Browse mock tests in this category.');
       // Category-level Premium system: access/price is a property of the
@@ -270,6 +553,13 @@
       const accessBadge = isFree
         ? '<span class="badge">Free</span>'
         : `<span class="badge">Premium ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
+      // Free categories, and premium categories this student has already
+      // purchased, open straight to the tests. A premium category the
+      // student hasn't purchased shows a Purchase button that starts the
+      // payment flow immediately — it never navigates to category.html
+      // first, so premium mocks can never be reached without paying.
+      const unlocked = isFree || paid === true;
+      const ctaLabel = unlocked ? 'View tests' : `Purchase ₹${escapeHtml(category.offerPrice ?? '—')}`;
       return `
         <article class="card">
           <div class="hero">${icon}</div>
@@ -282,7 +572,7 @@
             </div>
           </div>
           <div class="card-footer">
-            <button class="button-primary" type="button" onclick="window.location.href='category.html?id=${encodeURIComponent(category.id)}'">View tests</button>
+            <button class="button-primary" type="button" onclick="window.handleCategoryButtonClick('${category.id}', this)">${ctaLabel}</button>
           </div>
         </article>`;
     }
@@ -300,7 +590,19 @@
           return;
         }
 
-        categoryGrid.innerHTML = categories.map(buildCard).join('');
+        categoriesById = Object.fromEntries(categories.map(category => [category.id, category]));
+
+        // Check purchase status for every premium category before rendering,
+        // so each card renders once with the correct button ("View tests"
+        // vs "Purchase ₹X") instead of flipping after the fact.
+        const mobile = getStoredMobile();
+        const paidFlags = await Promise.all(categories.map(category => {
+          const isFree = category.isFree !== false;
+          if (isFree || !mobile) return Promise.resolve(false);
+          return fetchPurchaseStatus(mobile, category.id);
+        }));
+
+        categoryGrid.innerHTML = categories.map((category, i) => buildCard(category, paidFlags[i])).join('');
         setStatus('Select a category to view mock tests.');
       } catch (error) {
         console.error('Error loading categories from Firestore:', error);
