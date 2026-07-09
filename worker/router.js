@@ -2,13 +2,11 @@ import { errorResponse } from './lib/response.js';
 import { handleCreateOrder } from './handlers/createOrder.js';
 import { handleVerifyPayment } from './handlers/verifyPayment.js';
 import { handleWebhook } from './handlers/webhook.js';
-import { handleUnlockTest } from './handlers/unlockTest.js';
 import { handlePurchaseStatus } from './handlers/purchaseStatus.js';
 
 const routes = [
   { method: 'POST', path: '/api/create-order', handler: handleCreateOrder },
   { method: 'POST', path: '/api/verify-payment', handler: handleVerifyPayment },
-  { method: 'POST', path: '/api/unlock-test', handler: handleUnlockTest },
   { method: 'GET', path: '/api/purchase-status', handler: handlePurchaseStatus },
   { method: 'POST', path: '/api/webhook', handler: handleWebhook }
 ];

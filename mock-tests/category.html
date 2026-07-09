@@ -103,12 +103,17 @@
     }
 
     function renderCategoryHeader(category) {
+      const isFree = category.isFree !== false;
+      const accessBadge = isFree
+        ? '<span class="badge badge-live">Free</span>'
+        : `<span class="badge">Premium — <s>₹${escapeHtml(category.originalPrice ?? '')}</s> ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
       categoryHeader.innerHTML = `
         <div class="category-summary">
-          <div class="icon">${category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
+          <div class="icon">${(category.image || category.icon) ? `<img src="${escapeHtml(category.image || category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
           <div class="details">
             <h2>${escapeHtml(category.name)}</h2>
             <p>${escapeHtml(category.description || 'Browse available mock tests for this category and begin your practice session.')}</p>
+            <div class="badge-row">${accessBadge}</div>
           </div>
         </div>`;
     }

@@ -306,9 +306,19 @@
     const backBtn = document.getElementById('backBtn');
     const lockMessage = document.getElementById('lockMessage');
 
+    // Cloudflare Worker payment backend base URL.
+    const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
+
     // Tracks whether the currently loaded mock is allowed to start.
     // Defaults to false until verification completes (fail-safe).
     let isMockLive = false;
+
+    // CATEGORY-LEVEL PREMIUM SYSTEM: a mock has no Free/Premium field of its
+    // own anymore. Access is decided entirely by the mock's Category —
+    // loaded once here and reused for the isFree check and the payment
+    // handoff below.
+    let currentCategory = null;
+    let currentCategoryId = null;
 
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
@@ -400,20 +410,29 @@
       }
     }
 
-    function validateInput(name, roll) {
-      if (!name.trim()) {
-        setStatus('Student name is required.', 'error');
-        return false;
-      }
-      if (!roll.trim()) {
-        setStatus('Roll number is required.', 'error');
-        return false;
-      }
-      return true;
-    }
-
     function navigateToExam(mockId) {
       window.location.href = `exam.html?mockId=${encodeURIComponent(mockId)}`;
+    }
+
+    // Hands off to the dedicated Payment Page (category image, name,
+    // original/offer price, Unlock button). It creates the order, opens
+    // Razorpay checkout, verifies the payment and — only once the category
+    // is actually unlocked server-side — sends the student back here.
+    function navigateToPayment(mockId, categoryId) {
+      window.location.href = `payment.html?mockId=${encodeURIComponent(mockId)}&categoryId=${encodeURIComponent(categoryId)}`;
+    }
+
+    // ---- Payment backend helpers (Cloudflare Worker) ----
+
+    // Category-level purchase check: does this mobile number already have
+    // paid access to the mock's CATEGORY? Buying one category (e.g. "RSSB
+    // CET") never unlocks another (e.g. "REET") — each is checked separately.
+    async function fetchPurchaseStatus(mobile, categoryId) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}&categoryId=${encodeURIComponent(categoryId)}`);
+      if (!res.ok) {
+        throw new Error('Unable to verify purchase status. Please try again.');
+      }
+      return res.json();
     }
 
     async function loadMockDetails() {
@@ -442,13 +461,38 @@
         }
 
         const mock = { id: snap.id, ...snap.data() };
+
+        // ---- Load the mock's CATEGORY (access + pricing live here now) ----
+        currentCategoryId = mock.categoryId || null;
+        currentCategory = null;
+        if (currentCategoryId) {
+          try {
+            const categorySnap = await getDoc(doc(db, 'mockCategories', currentCategoryId));
+            if (categorySnap.exists()) {
+              currentCategory = { id: categorySnap.id, ...categorySnap.data() };
+            }
+          } catch (err) {
+            console.error('Failed to load category for this mock:', err);
+          }
+        }
+
+        // Missing isFree (category not yet migrated/configured) safely
+        // defaults to Free, matching this app's existing backward-compatible
+        // conventions elsewhere (e.g. liveDateTime).
+        const isFree = !currentCategory || currentCategory.isFree !== false;
+
         const summaryItems = [
+          { label: 'Category', value: currentCategory ? (currentCategory.name || 'Unknown') : 'Unknown category' },
           { label: 'Mock title', value: mock.title || mock.name || 'Untitled test' },
           { label: 'Questions', value: String(mock.totalQuestions ?? mock.questions ?? 0) },
           { label: 'Total marks', value: String(mock.totalMarks ?? mock.marks ?? 0) },
           { label: 'Duration', value: `${String(mock.duration ?? mock.durationMinutes ?? 0)} min` },
-          { label: 'Negative marks', value: String(mock.negativeMarks ?? mock.negativeMark ?? mock.negative ?? 0) }
+          { label: 'Negative marks', value: String(mock.negativeMarks ?? mock.negativeMark ?? mock.negative ?? 0) },
+          { label: 'Access', value: isFree ? 'Free' : 'Premium' }
         ];
+        if (!isFree && currentCategory) {
+          summaryItems.push({ label: 'Price', value: `₹${currentCategory.offerPrice ?? '—'}` });
+        }
 
         setSummary(summaryItems);
         setStatus('Enter your details and start the exam.');
@@ -471,19 +515,82 @@
           unlockExamStart();
         }
 
-        startExamBtn.addEventListener('click', () => {
+        startExamBtn.addEventListener('click', async () => {
           // Security check: even if the button was somehow enabled/clicked,
           // never allow navigation to exam.html before the mock is live.
           if (!isMockLive) {
             return;
           }
 
+          // Prevent duplicate clicks while a purchase/payment flow is in progress.
+          if (startExamBtn.dataset.processing === 'true') {
+            return;
+          }
+
           const name = studentName.value;
        
           const mobile = studentMobile.value;
-      
-          saveSession({ mockId, studentName: name.trim(), studentMobile: mobile.trim() });
-          navigateToExam(mockId);
+
+          if (!isFree && !mobile.trim()) {
+            setStatus('Mobile number is required to verify purchase for this paid category.', 'error');
+            return;
+          }
+
+          startExamBtn.dataset.processing = 'true';
+          startExamBtn.disabled = true;
+          const previousLabel = startExamBtn.textContent;
+          startExamBtn.textContent = 'Please wait…';
+
+          try {
+            // Free category: keep existing flow completely unchanged.
+            if (isFree) {
+              saveSession({ mockId, studentName: name.trim(), studentMobile: mobile.trim() });
+              navigateToExam(mockId);
+              return;
+            }
+
+            const trimmedMobile = mobile.trim();
+            const trimmedName = name.trim();
+
+            // Premium category: never bypass payment. Check whether this
+            // student's mobile number already has paid access to the
+            // mock's CATEGORY — not just this one mock. Any other mock
+            // inside the same category is unlocked the same way; mocks in
+            // a different category are never affected.
+            setStatus('Checking purchase status…');
+            const statusRes = await fetchPurchaseStatus(trimmedMobile, currentCategoryId);
+
+            if (!statusRes || statusRes.success !== true) {
+              throw new Error('Unable to verify purchase status. Please try again.');
+            }
+
+            if (statusRes.paid === true) {
+              // This category is already unlocked for this student. Go straight in.
+              saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
+              navigateToExam(mockId);
+              return;
+            }
+
+            // Category not yet purchased: hand off to the dedicated Payment
+            // Page (category image, name, original/offer price, Unlock
+            // button). It is the only place that creates the Razorpay order
+            // and verifies payment.
+            saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
+            setStatus('Redirecting to payment…');
+            navigateToPayment(mockId, currentCategoryId);
+
+          } catch (error) {
+            console.error('Start flow error:', error);
+            setStatus(error && error.message ? error.message : 'Unable to start exam. Please try again.', 'error');
+          } finally {
+            startExamBtn.dataset.processing = 'false';
+            if (isMockLive) {
+              startExamBtn.disabled = false;
+              startExamBtn.textContent = 'Start exam';
+            } else {
+              startExamBtn.textContent = previousLabel;
+            }
+          }
         });
       } catch (error) {
         console.error('Failed to load mock details:', error);

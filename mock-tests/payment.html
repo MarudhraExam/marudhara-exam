@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | Unlock Category</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1f324f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf2f8 100%);
+    }
+
+    body, button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page-shell {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: #0b4ea2;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.7rem;
+      line-height: 1.1;
+    }
+
+    .brand small {
+      display: block;
+      color: #5f6f8f;
+      margin-top: 2px;
+      font-size: 0.94rem;
+    }
+
+    .top-actions a {
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: #eef4ff;
+      color: #0b4ea2;
+      font-weight: 700;
+    }
+
+    .status-bar {
+      padding: 14px 18px;
+      border-radius: 18px;
+      background: #eef4ff;
+      color: #102a52;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .status-bar.error {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .status-bar.success {
+      background: #e6f7ea;
+      color: #1e583a;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(35, 49, 79, 0.1);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 18px 40px rgba(23, 42, 77, 0.06);
+      display: grid;
+      gap: 20px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .category-image {
+      width: 140px;
+      height: 140px;
+      border-radius: 28px;
+      background: #eef4ff;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .category-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .category-image .fallback-icon {
+      font-size: 3rem;
+      color: #0b4ea2;
+    }
+
+    .category-name {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #102a52;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .original-price {
+      color: #9aa8c4;
+      text-decoration: line-through;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .offer-price {
+      color: #0b4ea2;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .savings-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: #e6f7ea;
+      color: #1e583a;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .unlock-note {
+      margin: 0;
+      color: #556180;
+      line-height: 1.7;
+    }
+
+    .button-primary,
+    .button-secondary {
+      border: 0;
+      border-radius: 14px;
+      padding: 16px 24px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.05rem;
+      width: 100%;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .button-primary {
+      background: #0b4ea2;
+      color: white;
+    }
+
+    .button-primary:hover {
+      background: #0f3c7f;
+    }
+
+    .button-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .button-secondary {
+      background: #eef4ff;
+      color: #0b4ea2;
+    }
+
+    .empty-state {
+      padding: 32px 24px;
+      border-radius: 24px;
+      background: #fff;
+      border: 1px dashed rgba(35, 49, 79, 0.15);
+      color: #556180;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>Unlock Category</h1>
+          <small>One payment unlocks every mock test in this category.</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a href="index.html">Back to categories</a>
+      </div>
+    </header>
+
+    <div id="statusBar" class="status-bar">Loading category details…</div>
+
+    <div id="paymentCard"></div>
+  </div>
+
+  <script type="module">
+    import { db } from '../firebase.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    const statusBar = document.getElementById('statusBar');
+    const paymentCard = document.getElementById('paymentCard');
+
+    // Cloudflare Worker payment backend base URL (same backend as confirm.html).
+    const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : (type === 'success' ? 'status-bar success' : 'status-bar');
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function getParam(name) {
+      return new URLSearchParams(location.search).get(name);
+    }
+
+    function loadSession() {
+      try {
+        const raw = sessionStorage.getItem('mockExamSession');
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveSession(details) {
+      sessionStorage.setItem('mockExamSession', JSON.stringify(details));
+    }
+
+    function navigateToExam(mockId) {
+      window.location.href = `exam.html?mockId=${encodeURIComponent(mockId)}`;
+    }
+
+    function navigateToConfirm(mockId) {
+      window.location.href = `confirm.html?mockId=${encodeURIComponent(mockId)}`;
+    }
+
+    function loadRazorpayScript() {
+      return new Promise((resolve, reject) => {
+        if (window.Razorpay) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector('script[data-razorpay-checkout]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('Unable to load payment gateway.')));
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.dataset.razorpayCheckout = 'true';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Unable to load payment gateway.'));
+        document.body.appendChild(script);
+      });
+    }
+
+    // ---- Payment backend helpers (Cloudflare Worker) ----
+
+    async function createOrder(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error((data && data.message) || 'Unable to create payment order. Please try again.');
+      }
+      return data;
+    }
+
+    async function verifyPayment(payload) {
+      const res = await fetch(`${PAYMENT_API_BASE}/api/verify-payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data) {
+        throw new Error((data && data.message) || 'Payment verification failed. Please try again.');
+      }
+      return data;
+    }
+
+    // orderRes is the full response from POST /api/create-order, e.g.
+    // { success: true, keyId: "rzp_xxx", orderId, amount, currency, categoryId }.
+    // The Razorpay key and amount always come from the Worker response
+    // itself (never hardcoded or client-computed), so checkout always
+    // matches the account/price that actually created the order and the
+    // Payment amount always uses the category's offerPrice.
+    function openRazorpayCheckout(orderRes, category, name, mobile) {
+      return new Promise((resolve, reject) => {
+        const razorpayKey = orderRes.keyId;
+
+        if (!razorpayKey || !orderRes.orderId || !orderRes.amount) {
+          reject(new Error('Payment order details are incomplete. Please try again.'));
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: orderRes.amount,
+          currency: orderRes.currency || 'INR',
+          name: 'Marudhara Exam',
+          description: `Unlock ${category.name || 'category'} — all mock tests`,
+          order_id: orderRes.orderId,
+          prefill: {
+            name: name,
+            contact: mobile
+          },
+          theme: {
+            color: '#0b4ea2'
+          },
+          modal: {
+            ondismiss: function () {
+              reject(new Error('Payment was cancelled.'));
+            }
+          },
+          handler: async function (response) {
+            try {
+              setStatus('Verifying payment…');
+              const verifyRes = await verifyPayment({
+                mobile,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              });
+
+              if (verifyRes && verifyRes.success && verifyRes.paid === true) {
+                resolve(verifyRes);
+              } else {
+                reject(new Error('Payment verification failed.'));
+              }
+            } catch (err) {
+              reject(err);
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function () {
+          reject(new Error('Payment failed. Please try again.'));
+        });
+        rzp.open();
+      });
+    }
+
+    function renderCategoryCard(category, mockId) {
+      const image = category.image || category.icon;
+      const imageMarkup = image
+        ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(category.name)}" />`
+        : '<div class="fallback-icon">📚</div>';
+
+      const originalPrice = Number(category.originalPrice);
+      const offerPrice = Number(category.offerPrice);
+      const hasDiscount = Number.isFinite(originalPrice) && originalPrice > offerPrice;
+      const savingsPercent = hasDiscount ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100) : 0;
+
+      paymentCard.innerHTML = `
+        <div class="card">
+          <div class="category-image">${imageMarkup}</div>
+          <h2 class="category-name">${escapeHtml(category.name || 'Category')}</h2>
+          <div class="price-row">
+            ${hasDiscount ? `<span class="original-price">₹${escapeHtml(originalPrice)}</span>` : ''}
+            <span class="offer-price">₹${escapeHtml(Number.isFinite(offerPrice) ? offerPrice : '—')}</span>
+          </div>
+          ${hasDiscount ? `<span class="savings-badge">Save ${savingsPercent}%</span>` : ''}
+          <p class="unlock-note">Unlocking <strong>${escapeHtml(category.name || 'this category')}</strong> gives you access to every mock test inside it. This payment does not unlock any other category.</p>
+          <button type="button" class="button-primary" id="unlockBtn">Unlock for ₹${escapeHtml(Number.isFinite(offerPrice) ? offerPrice : '—')}</button>
+          <button type="button" class="button-secondary" id="backBtn">Back</button>
+        </div>`;
+
+      document.getElementById('backBtn').addEventListener('click', () => navigateToConfirm(mockId));
+    }
+
+    async function init() {
+      const mockId = getParam('mockId');
+      const categoryId = getParam('categoryId');
+
+      if (!mockId || !categoryId) {
+        setStatus('Missing exam or category information.', 'error');
+        paymentCard.innerHTML = '<div class="empty-state">Invalid payment link. Return to the test selection page and try again.</div>';
+        return;
+      }
+
+      const session = loadSession() || {};
+      const studentNameValue = session.studentName || '';
+      const studentMobileValue = session.studentMobile || '';
+
+      if (!studentMobileValue) {
+        setStatus('Mobile number is missing. Please go back and enter your details.', 'error');
+        paymentCard.innerHTML = `<div class="empty-state">We couldn't find your mobile number for this session. <a href="confirm.html?mockId=${encodeURIComponent(mockId)}">Go back and enter your details</a>.</div>`;
+        return;
+      }
+
+      let category;
+      try {
+        setStatus('Loading category details…');
+        const categorySnap = await getDoc(doc(db, 'mockCategories', categoryId));
+        if (!categorySnap.exists()) {
+          setStatus('Category not found.', 'error');
+          paymentCard.innerHTML = '<div class="empty-state">Selected category does not exist.</div>';
+          return;
+        }
+        category = { id: categorySnap.id, ...categorySnap.data() };
+      } catch (error) {
+        console.error('Failed to load category:', error);
+        setStatus('Unable to load category details.', 'error');
+        paymentCard.innerHTML = '<div class="empty-state">Unable to fetch category information.</div>';
+        return;
+      }
+
+      if (category.isFree === true) {
+        // Free categories never need payment — send the student straight in.
+        setStatus('This category is free — no payment needed.', 'success');
+        navigateToExam(mockId);
+        return;
+      }
+
+      renderCategoryCard(category, mockId);
+      setStatus('Review the price and unlock this category to start your exam.');
+
+      const unlockBtn = document.getElementById('unlockBtn');
+      unlockBtn.addEventListener('click', async () => {
+        if (unlockBtn.dataset.processing === 'true') return;
+        unlockBtn.dataset.processing = 'true';
+        unlockBtn.disabled = true;
+        const previousLabel = unlockBtn.textContent;
+        unlockBtn.textContent = 'Please wait…';
+
+        try {
+          setStatus('Preparing payment…');
+          await loadRazorpayScript();
+
+          const orderRes = await createOrder({
+            categoryId,
+            mobile: studentMobileValue,
+            studentName: studentNameValue
+          });
+
+          if (!orderRes || orderRes.success !== true) {
+            throw new Error('Unable to create payment order. Please try again.');
+          }
+
+          setStatus('Opening payment window…');
+          const verifyRes = await openRazorpayCheckout(orderRes, category, studentNameValue, studentMobileValue);
+
+          if (!verifyRes || verifyRes.success !== true || verifyRes.paid !== true) {
+            throw new Error('Payment verification failed. Please try again.');
+          }
+
+          saveSession({ mockId, studentName: studentNameValue, studentMobile: studentMobileValue });
+          setStatus('Category unlocked! Starting exam…', 'success');
+          navigateToExam(mockId);
+        } catch (error) {
+          console.error('Payment flow error:', error);
+          setStatus(error && error.message ? error.message : 'Unable to complete payment. Please try again.', 'error');
+        } finally {
+          unlockBtn.dataset.processing = 'false';
+          unlockBtn.disabled = false;
+          unlockBtn.textContent = previousLabel;
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

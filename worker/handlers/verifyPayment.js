@@ -9,10 +9,12 @@ import { grantPurchaseForVerifiedOrder } from '../lib/grantPurchase.js';
  * Body: { razorpay_order_id, razorpay_payment_id, razorpay_signature, mobile }
  *
  * This is the primary place (the webhook in webhook.js is the fallback)
- * that grants premium credits. The signature is ALWAYS recomputed
+ * that grants category access. The signature is ALWAYS recomputed
  * server-side with RAZORPAY_KEY_SECRET — values supplied by the browser
  * are never trusted on their own, no matter what Razorpay Checkout
- * reported client-side as "success".
+ * reported client-side as "success". The categoryId being unlocked comes
+ * from the server-recorded paymentOrders/{orderId} document (set at
+ * /api/create-order time), never from the client, so it can't be tampered with.
  */
 export async function handleVerifyPayment(request, env) {
   let body;
@@ -52,13 +54,13 @@ export async function handleVerifyPayment(request, env) {
     return errorResponse(env, 400, 'SIGNATURE_INVALID', 'Payment signature verification failed.');
   }
 
-  // 2. Credit the account (idempotent, cross-checks mobile ownership of the order).
+  // 2. Grant category access (idempotent, cross-checks mobile ownership of the order).
   let result;
   try {
     result = await grantPurchaseForVerifiedOrder(env, { orderId, paymentId, expectedMobile: mobile });
   } catch (err) {
     console.error('grantPurchaseForVerifiedOrder failed:', err.message);
-    return errorResponse(env, 500, 'CREDIT_FAILED', 'Payment verified but unlocking credits failed. Please contact support or retry.');
+    return errorResponse(env, 500, 'ACCESS_GRANT_FAILED', 'Payment verified but unlocking category access failed. Please contact support or retry.');
   }
 
   if (result.status === 'not_found') {
@@ -71,7 +73,7 @@ export async function handleVerifyPayment(request, env) {
   return json(env, {
     success: true,
     alreadyVerified: result.status === 'already_verified',
-    hasPremiumAccess: true,
-    creditsRemaining: result.creditsRemaining
+    categoryId: result.categoryId,
+    paid: result.paid
   });
 }

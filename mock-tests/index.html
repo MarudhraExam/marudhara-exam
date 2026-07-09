@@ -262,8 +262,14 @@
     }
 
     function buildCard(category) {
-      const icon = category.icon ? `<img src="${escapeHtml(category.icon)}" alt="${escapeHtml(category.name)} icon" />` : '<div class="fallback-icon">📚</div>';
+      const icon = (category.image || category.icon) ? `<img src="${escapeHtml(category.image || category.icon)}" alt="${escapeHtml(category.name)} icon" />` : '<div class="fallback-icon">📚</div>';
       const description = escapeHtml(category.description || 'Browse mock tests in this category.');
+      // Category-level Premium system: access/price is a property of the
+      // category, not of any individual mock inside it.
+      const isFree = category.isFree !== false;
+      const accessBadge = isFree
+        ? '<span class="badge">Free</span>'
+        : `<span class="badge">Premium ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
       return `
         <article class="card">
           <div class="hero">${icon}</div>
@@ -272,6 +278,7 @@
             <p>${description}</p>
             <div class="details">
               <span class="badge">Category</span>
+              ${accessBadge}
             </div>
           </div>
           <div class="card-footer">

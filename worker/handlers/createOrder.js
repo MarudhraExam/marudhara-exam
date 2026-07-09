@@ -1,15 +1,22 @@
 import { json, errorResponse } from '../lib/response.js';
-import { normalizeMobile } from '../lib/validate.js';
+import { normalizeMobile, isValidDocId } from '../lib/validate.js';
 import { createRazorpayOrder } from '../lib/razorpay.js';
 import { getDocument, setDocument } from '../lib/firestore.js';
 
 /**
  * POST /api/create-order
- * Body: { mobile: string }
+ * Body: { mobile: string, categoryId: string }
  *
- * Creates a Razorpay order for the premium pack and records it in
- * `paymentOrders/{razorpayOrderId}` with status "created". The actual
- * grant of access happens later in /api/verify-payment, never here.
+ * Category-level Premium system: a student purchases access to ONE
+ * category (e.g. "RSSB CET"). This creates a Razorpay order for that
+ * category's offerPrice and records it in `paymentOrders/{razorpayOrderId}`
+ * with status "created". The actual grant of access happens later in
+ * /api/verify-payment (or the webhook fallback), never here.
+ *
+ * Pricing always comes from the category document in Firestore
+ * (`mockCategories/{categoryId}.offerPrice`) so that changing a category's
+ * price in the admin panel automatically affects payment amount here —
+ * no Worker redeploy required, and no per-mock pricing anywhere.
  */
 export async function handleCreateOrder(request, env) {
   let body;
@@ -20,26 +27,38 @@ export async function handleCreateOrder(request, env) {
   }
 
   const mobile = normalizeMobile(body.mobile);
+  const categoryId = body.categoryId;
+
   if (!mobile) {
     return errorResponse(env, 400, 'INVALID_MOBILE', 'A valid 10-digit mobile number is required.');
   }
-
-  // Pull pricing from Firestore so it can be changed from the admin panel
-  // without redeploying the Worker. Falls back to safe defaults.
-  let amountPaise = parseInt(env.PREMIUM_PACK_AMOUNT_PAISE || '4900', 10);
-  let packSize = parseInt(env.PREMIUM_PACK_TEST_COUNT || '10', 10);
-  try {
-    const pricing = await getDocument(env, 'pricingConfig', 'premiumPack');
-    if (pricing && pricing.active !== false) {
-      if (typeof pricing.amountPaise === 'number') amountPaise = pricing.amountPaise;
-      if (typeof pricing.testsIncluded === 'number') packSize = pricing.testsIncluded;
-    }
-  } catch (err) {
-    // Non-fatal: proceed with env-based defaults if pricingConfig is unreachable.
-    console.error('pricingConfig lookup failed, using defaults:', err.message);
+  if (!isValidDocId(categoryId)) {
+    return errorResponse(env, 400, 'INVALID_CATEGORY_ID', 'A valid categoryId is required.');
   }
 
-  const receipt = `pack_${mobile}_${Date.now()}`;
+  let category;
+  try {
+    category = await getDocument(env, 'mockCategories', categoryId);
+  } catch (err) {
+    console.error('mockCategories lookup failed:', err.message);
+    return errorResponse(env, 502, 'CATEGORY_LOOKUP_FAILED', 'Unable to verify the category right now.');
+  }
+
+  if (!category) {
+    return errorResponse(env, 404, 'CATEGORY_NOT_FOUND', 'Category not found.');
+  }
+  if (category.isFree === true) {
+    return errorResponse(env, 400, 'CATEGORY_IS_FREE', 'This category is free and does not require payment.');
+  }
+
+  const offerPrice = Number(category.offerPrice);
+  if (!Number.isFinite(offerPrice) || offerPrice <= 0) {
+    return errorResponse(env, 400, 'INVALID_CATEGORY_PRICE', 'This category does not have a valid offer price configured. Please contact support.');
+  }
+
+  // Payment amount must always use offerPrice, converted to paise (Razorpay's smallest unit).
+  const amountPaise = Math.round(offerPrice * 100);
+  const receipt = `cat_${mobile}_${Date.now()}`.slice(0, 40);
 
   let order;
   try {
@@ -47,7 +66,7 @@ export async function handleCreateOrder(request, env) {
       amountPaise,
       currency: 'INR',
       receipt,
-      notes: { mobile, purpose: 'premium_mock_pack' }
+      notes: { mobile, categoryId, purpose: 'category_unlock' }
     });
   } catch (err) {
     console.error('createRazorpayOrder failed:', err.message);
@@ -57,12 +76,12 @@ export async function handleCreateOrder(request, env) {
   try {
     await setDocument(env, 'paymentOrders', order.id, {
       mobile,
+      categoryId,
       razorpayOrderId: order.id,
       razorpayPaymentId: null,
       status: 'created',
       amount: amountPaise,
       currency: 'INR',
-      packSize,
       verified: false,
       createdAt: new Date(),
       verifiedAt: null
@@ -78,6 +97,6 @@ export async function handleCreateOrder(request, env) {
     amount: amountPaise,
     currency: 'INR',
     keyId: env.RAZORPAY_KEY_ID,
-    packSize
+    categoryId
   });
 }

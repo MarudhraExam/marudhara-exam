@@ -1,7 +1,9 @@
 # Marudhara Exam — Payments Worker
 
-Cloudflare Worker backend for Razorpay payments + Firestore-backed premium
-mock test unlocking. See `src/index.js` for the endpoint summary.
+Cloudflare Worker backend for Razorpay payments + Firestore-backed
+CATEGORY-level premium mock test unlocking. Purchasing a category (e.g.
+"RSSB CET") unlocks every mock inside it; other categories stay locked
+until purchased separately. See `index.js` for the endpoint summary.
 
 **This package is backend-only.** No frontend files are included or modified.
 
@@ -34,7 +36,12 @@ npm install
 Open `wrangler.toml` and set:
 - `FIREBASE_PROJECT_ID` — your Firebase project id (e.g. `marudhara-exam`).
 - `ALLOWED_ORIGIN` — your exact GitHub Pages origin, e.g. `https://yourusername.github.io` (no trailing slash, no path). This is required for the browser to be allowed to call the Worker.
-- `PREMIUM_PACK_AMOUNT_PAISE` / `PREMIUM_PACK_TEST_COUNT` — defaults only; real values can also be managed later via a `pricingConfig/premiumPack` Firestore document, which takes priority when present.
+
+Category pricing (`isFree`, `originalPrice`, `offerPrice`) is managed entirely
+in the `mockCategories/{categoryId}` Firestore documents via the admin panel
+(`mock-admin.html` → Category Manager). There are no pricing environment
+variables to configure — changing a category's price there automatically
+affects every mock inside it and the amount charged at checkout.
 
 ---
 
@@ -84,25 +91,18 @@ credited even if the student's browser closes before that call completes.
 
 ## 6. Firestore setup
 
-No manual collection creation is required — `paymentOrders`, `purchases`,
-and `pricingConfig` are created on first use by the Worker itself.
-
-Optional but recommended: create `pricingConfig/premiumPack` up front via
-the Firebase Console with:
-```
-amountPaise: 4900
-testsIncluded: 10
-active: true
-```
-If this document doesn't exist, `/api/create-order` silently falls back to
-the `PREMIUM_PACK_AMOUNT_PAISE` / `PREMIUM_PACK_TEST_COUNT` vars in
-`wrangler.toml`.
+No manual collection creation is required — `paymentOrders` and
+`userCategoryAccess` are created on first use by the Worker itself.
+Pricing lives on the categories you already manage in `mockCategories`
+via the admin panel (`isFree`, `originalPrice`, `offerPrice`) — there is
+no separate pricing collection.
 
 **Security rules reminder:** the Worker authenticates to Firestore via the
 service account (full access, bypassing security rules). Make sure your
-Firestore Security Rules **deny direct client access** to the `purchases`
-and `paymentOrders` collections, since all reads/writes to them should go
-through this Worker's endpoints, never straight from the browser SDK.
+Firestore Security Rules **deny direct client access** to the
+`userCategoryAccess` and `paymentOrders` collections, since all
+reads/writes to them should go through this Worker's endpoints, never
+straight from the browser SDK.
 
 ---
 
@@ -123,13 +123,13 @@ scope for this task, per your instructions).
 ## 8. Smoke-test the endpoints
 
 ```bash
-# Create an order
+# Create an order (categoryId must reference a Premium — isFree:false — category)
 curl -X POST https://<worker-url>/api/create-order \
   -H "Content-Type: application/json" \
-  -d '{"mobile":"9876543210"}'
+  -d '{"mobile":"9876543210","categoryId":"rssb_cet"}'
 
-# Purchase status (should show no access before any payment)
-curl "https://<worker-url>/api/purchase-status?mobile=9876543210"
+# Purchase status for a specific category (should show paid:false before any payment)
+curl "https://<worker-url>/api/purchase-status?mobile=9876543210&categoryId=rssb_cet"
 ```
 
 `/api/verify-payment` and `/api/webhook` can only be exercised meaningfully

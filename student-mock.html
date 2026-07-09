@@ -475,11 +475,17 @@
       elements.statusBar.className = `status-bar ${type}`.trim();
     }
 
+    // CATEGORY-LEVEL PREMIUM SYSTEM: a mock has no Free/Premium field of its
+    // own. Access is decided entirely by the category it belongs to. Missing
+    // isFree on a category (not yet configured) safely defaults to Free.
+    function isFreeCategory(category) {
+      if (!category) return true;
+      return category.isFree !== false;
+    }
+
     function isFreeTest(mock) {
-      if (mock.isFree != null) {
-        return mock.isFree === true;
-      }
-      return String(mock.premium || '').toLowerCase() !== 'premium';
+      const category = categories.find(item => item.id === (mock.categoryId || selectedCategoryId));
+      return isFreeCategory(category);
     }
 
     function formatBadge(mock) {
@@ -505,7 +511,7 @@
       }
 
       elements.categoryGrid.innerHTML = categories.map(category => {
-        const icon = category.icon ? `<img src="${category.icon}" alt="${category.name} icon" />` : '<span style="font-size:1.6rem; color:#0b4ea2;">✓</span>';
+        const icon = (category.image || category.icon) ? `<img src="${category.image || category.icon}" alt="${category.name} icon" />` : '<span style="font-size:1.6rem; color:#0b4ea2;">✓</span>';
         const active = selectedCategoryId === category.id ? 'style="outline: 2px solid #0b4ea2;"' : '';
         return `
           <article class="category-card" ${active}>
@@ -529,6 +535,12 @@
       });
     }
 
+    function categoryPriceLabel(mock) {
+      const category = categories.find(item => item.id === (mock.categoryId || selectedCategoryId));
+      const price = category && category.offerPrice != null ? category.offerPrice : '—';
+      return `₹${price}`;
+    }
+
     function renderMockTests() {
       if (!selectedCategoryId) {
         elements.mockSectionDescription.textContent = 'Select a category to view tests.';
@@ -548,7 +560,7 @@
         const questions = getTestValue(mock, 'totalQuestions', getTestValue(mock, 'questions', 0));
         const marks = getTestValue(mock, 'totalMarks', 0);
         const duration = getTestValue(mock, 'duration', getTestValue(mock, 'durationMinutes', 0));
-        const buttonLabel = free ? 'Start Test' : 'Unlock for ₹11';
+        const buttonLabel = free ? 'Start Test' : `Unlock for ${categoryPriceLabel(mock)}`;
         return `
           <article class="mock-card">
             <div class="mock-content">
@@ -577,7 +589,7 @@
             setStatus('Selected mock test could not be found.', 'error');
             return;
           }
-          activeMock = { ...mock, isFree: free };
+          activeMock = mock;
           openConfirmModal(mock, free);
         });
       });
@@ -599,7 +611,7 @@
       elements.confirmTitle.textContent = free ? 'Start Free Test' : 'Unlock Premium Test';
       elements.confirmSubtitle.textContent = free
         ? 'You are about to begin a free mock test. Confirm to continue.'
-        : 'This premium test requires unlocking for ₹11. Confirm to proceed.';
+        : `This test is part of a premium category and requires unlocking for ${categoryPriceLabel(mock)}. Confirm to proceed.`;
       elements.confirmStartBtn.textContent = free ? 'Confirm Start' : 'Confirm Unlock';
       elements.confirmOverlay.classList.add('active');
       elements.confirmOverlay.setAttribute('aria-hidden', 'false');
@@ -650,7 +662,7 @@
       const free = isFreeTest(activeMock);
       const message = free
         ? `Starting "${getMockTitle(activeMock)}" now.`
-        : `Unlocking "${getMockTitle(activeMock)}" for ₹11.`;
+        : `Unlocking "${getMockTitle(activeMock)}" for ${categoryPriceLabel(activeMock)}.`;
       setStatus(message, 'success');
       closeConfirmModal();
     }

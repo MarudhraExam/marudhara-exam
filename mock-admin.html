@@ -536,6 +536,21 @@
     <option value="true">Yes</option>
   </select>
 </label>
+            <label>
+              Access
+              <select id="categoryIsFree">
+                <option value="true">Free</option>
+                <option value="false">Premium</option>
+              </select>
+            </label>
+            <label id="categoryOriginalPriceWrapper" style="display:none;">
+              Original Price (₹)
+              <input type="number" id="categoryOriginalPrice" min="0" step="0.01" placeholder="e.g. 199" />
+            </label>
+            <label id="categoryOfferPriceWrapper" style="display:none;">
+              Offer Price (₹)
+              <input type="number" id="categoryOfferPrice" min="0" step="0.01" placeholder="e.g. 99" />
+            </label>
           </div>
 
           <div class="action-group">
@@ -561,12 +576,13 @@
                   <th>Name</th>
                   <th>Order</th>
                   <th>Status</th>
+                  <th>Access</th>
                   <th>Icon</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="categoryRows">
-                <tr><td colspan="5" class="empty-state">Loading categories…</td></tr>
+                <tr><td colspan="6" class="empty-state">Loading categories…</td></tr>
               </tbody>
             </table>
           </div>
@@ -677,6 +693,7 @@ No Sub Categories
           </section>
 
           <div class="status-bar" id="mockStatusBar">Ready to publish mock tests.</div>
+          <p style="margin:-10px 0 18px;color:#5f6f8f;font-size:0.92rem;">Free/Premium access and pricing are controlled entirely by the mock's <strong>Category</strong> (see Category Manager above). There is no per-mock pricing anymore.</p>
 
           <div class="form-grid">
             <label>
@@ -714,13 +731,6 @@ No Sub Categories
             <label>
               Passing Percentage
               <input type="number" id="mockPassingPercentage" min="0" max="100" step="0.1" placeholder="Passing percentage" />
-            </label>
-            <label>
-              Access
-              <select id="mockPremium">
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-              </select>
             </label>
             <!-- FEATURE 1: Live Date & Live Time fields (required) -->
             <label>
@@ -816,6 +826,7 @@ No Sub Categories
       query,
       updateDoc,
       serverTimestamp,
+      deleteField,
       where,
       writeBatch,
       getCountFromServer
@@ -831,7 +842,6 @@ No Sub Categories
       categories: 'mockCategories',
       tests: 'mockTests',
       questions: 'mockQuestions',
-      purchases: 'mockPurchases',
       results: 'mockResults',
       subCategories: 'mockSubCategories'
     };
@@ -843,6 +853,11 @@ No Sub Categories
       order: document.getElementById('categoryOrder'),
       description: document.getElementById('categoryDescription'),
       active: document.getElementById('categoryActive'),
+      isFree: document.getElementById('categoryIsFree'),
+      originalPrice: document.getElementById('categoryOriginalPrice'),
+      offerPrice: document.getElementById('categoryOfferPrice'),
+      originalPriceWrapper: document.getElementById('categoryOriginalPriceWrapper'),
+      offerPriceWrapper: document.getElementById('categoryOfferPriceWrapper'),
       saveBtn: document.getElementById('saveCategoryBtn'),
       hasSubCategory: document.getElementById('categoryHasSubCategory'),
       cancelBtn: document.getElementById('cancelEditBtn'),
@@ -866,7 +881,6 @@ No Sub Categories
       mockMarks: document.getElementById('mockMarks'),
       mockDuration: document.getElementById('mockDuration'),
       mockNegative: document.getElementById('mockNegative'),
-      mockPremium: document.getElementById('mockPremium'),
       mockPassingPercentage: document.getElementById('mockPassingPercentage'),
       publishMockBtn: document.getElementById('publishMockBtn'),
       cancelMockBtn: document.getElementById('cancelMockBtn'),
@@ -914,6 +928,15 @@ No Sub Categories
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
       elements.statusBar.className = `status-bar ${type}`.trim();
+    }
+
+    // Category-level Premium system: when a category is marked Free, its price
+    // fields are irrelevant and hidden; when Premium, Original/Offer price are
+    // required so the payment page can display and charge the correct amount.
+    function updateCategoryPriceFieldsVisibility() {
+      const isFree = elements.isFree.value === 'true';
+      elements.originalPriceWrapper.style.display = isFree ? 'none' : '';
+      elements.offerPriceWrapper.style.display = isFree ? 'none' : '';
     }
 
     function setMockStatus(message, type = 'info') {
@@ -1049,7 +1072,13 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     ? `<button type="button" class="button-primary" data-action="manage-sub" data-id="${category.id}">Manage Sub Categories</button>`
     : '';
       const activeStyle = category.active ? 'color:#116d37;font-weight:700;' : 'color:#8a1f19;font-weight:700;';
-      const iconValue = category.icon ? `<a href="${escapeHtml(category.icon)}" target="_blank" rel="noreferrer">Preview</a>` : '—';
+      const iconValue = (category.image || category.icon) ? `<a href="${escapeHtml(category.image || category.icon)}" target="_blank" rel="noreferrer">Preview</a>` : '—';
+
+      // Missing isFree (older categories not yet migrated) safely defaults to Free.
+      const isFree = category.isFree !== false;
+      const accessLabel = isFree
+        ? '<span style="color:#116d37;font-weight:700;">Free</span>'
+        : `<span style="color:#a15c00;font-weight:700;">Premium</span><br><span style="font-size:0.85rem;color:#5f6f8f;"><s>₹${escapeHtml(category.originalPrice ?? '—')}</s> ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
 
       return `
         <tr class="category-row">
@@ -1064,8 +1093,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         Sub Category : ${subCategoryLabel}
     </div>
 </td>
-          <td>${category.order ?? 0}</td>
+          <td>${category.displayOrder ?? category.order ?? 0}</td>
           <td style="${activeStyle}">${activeLabel}</td>
+          <td>${accessLabel}</td>
           <td>${iconValue}</td>
           <td>
             <div class="category-actions">
@@ -1095,7 +1125,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       });
 
       if (!filtered.length) {
-        elements.categoryRows.innerHTML = '<tr><td colspan="5" class="empty-state">No categories found. Use the form above to add a new category.</td></tr>';
+        elements.categoryRows.innerHTML = '<tr><td colspan="6" class="empty-state">No categories found. Use the form above to add a new category.</td></tr>';
         return;
       }
 
@@ -1111,7 +1141,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
       const options = ['<option value="">Select category</option>'];
       categories.forEach(category => {
-        const label = `${category.name}${category.active ? '' : ' (inactive)'}`;
+        const isFree = category.isFree !== false;
+        const accessTag = isFree ? '' : ` (Premium ₹${category.offerPrice ?? '—'})`;
+        const label = `${category.name}${accessTag}${category.active ? '' : ' (inactive)'}`;
         options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(label)}</option>`);
       });
 
@@ -1309,9 +1341,12 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     function formatMockRow(mock) {
       const category = categories.find(category => category.id === mock.categoryId);
       const categoryLabel = category ? category.name : 'Unknown category';
-      const isFree = mock.isFree != null ? mock.isFree : mock.premium !== 'premium';
+      // Category-level Premium system: a mock has no access field of its own —
+      // access (Free/Premium) is entirely inherited from its Category. Missing
+      // isFree on an older/unconfigured category safely defaults to Free.
+      const isFree = !category || category.isFree !== false;
       const badgeClass = isFree ? 'mock-badge' : 'mock-badge premium';
-      const accessLabel = isFree ? 'Free' : 'Premium';
+      const accessLabel = isFree ? 'Free' : `Premium (₹${category?.offerPrice ?? '—'})`;
       const totalQuestions = mock.totalQuestions ?? mock.questions ?? 0;
       const durationMinutes = mock.duration ?? mock.durationMinutes ?? 0;
       const passing = mock.passingPercentage != null ? `${mock.passingPercentage}%` : 'N/A';
@@ -1394,6 +1429,10 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.description.value = '';
       elements.active.value = 'true';
       elements.hasSubCategory.value = 'false';
+      elements.isFree.value = 'true';
+      elements.originalPrice.value = '';
+      elements.offerPrice.value = '';
+      updateCategoryPriceFieldsVisibility();
       elements.saveBtn.textContent = 'Add Category';
       elements.cancelBtn.hidden = true;
       setStatus('Ready to manage categories.');
@@ -1402,11 +1441,17 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     function populateCategoryForm(category) {
       editingCategoryId = category.id;
       elements.title.value = category.name;
-      elements.icon.value = category.icon || '';
-      elements.order.value = category.order ?? 0;
+      elements.icon.value = category.image || category.icon || '';
+      elements.order.value = category.displayOrder ?? category.order ?? 0;
       elements.description.value = category.description || '';
       elements.active.value = category.active ? 'true' : 'false';
       elements.hasSubCategory.value = category.hasSubCategory ? 'true' : 'false';
+      // Missing isFree (older categories not yet migrated) safely defaults to Free.
+      const isFree = category.isFree !== false;
+      elements.isFree.value = isFree ? 'true' : 'false';
+      elements.originalPrice.value = category.originalPrice ?? '';
+      elements.offerPrice.value = category.offerPrice ?? '';
+      updateCategoryPriceFieldsVisibility();
       elements.saveBtn.textContent = 'Update Category';
       elements.cancelBtn.hidden = false;
       setStatus(`Editing "${category.name}". Save to update or cancel to reset.`);
@@ -1421,7 +1466,6 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockDuration.value = '';
       elements.mockNegative.value = '';
       elements.mockPassingPercentage.value = '';
-      elements.mockPremium.value = 'free';
       // FEATURE 1: clear live date/time fields on reset
       elements.mockLiveDate.value = '';
       elements.mockLiveTime.value = '';
@@ -1442,7 +1486,6 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockDuration.value = mock.duration ?? mock.durationMinutes ?? '';
       elements.mockNegative.value = mock.negativeMarks ?? '';
       elements.mockPassingPercentage.value = mock.passingPercentage ?? '';
-      elements.mockPremium.value = mock.isFree != null ? (mock.isFree ? 'free' : 'premium') : mock.premium || 'free';
       // FEATURE 7 & 9: load existing Live Date/Time; old mocks without these fields
       // safely fall back to empty values instead of crashing.
       elements.mockLiveDate.value = mock.liveDate || '';
@@ -1508,18 +1551,49 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const description = elements.description.value.trim();
       const active = elements.active.value === 'true';
       const hasSubCategory = elements.hasSubCategory.value === 'true';
+      const isFree = elements.isFree.value === 'true';
       if (!name) {
         setStatus('Category name is required.', 'error');
         return;
       }
 
+      let originalPrice = null;
+      let offerPrice = null;
+      if (!isFree) {
+        originalPrice = Number(elements.originalPrice.value);
+        offerPrice = Number(elements.offerPrice.value);
+        if (!Number.isFinite(originalPrice) || originalPrice <= 0) {
+          setStatus('Original Price is required for a Premium category.', 'error');
+          return;
+        }
+        if (!Number.isFinite(offerPrice) || offerPrice <= 0) {
+          setStatus('Offer Price is required for a Premium category.', 'error');
+          return;
+        }
+        if (offerPrice > originalPrice) {
+          setStatus('Offer Price cannot be greater than Original Price.', 'error');
+          return;
+        }
+      }
+
+      const normalizedOrder = Number.isFinite(orderValue) ? orderValue : 0;
+
       const newCategory = {
         name,
+        // `image` is the field name going forward; `icon` is mirrored for any
+        // reader that hasn't been migrated yet (safe, non-breaking dual-write).
+        image: icon || null,
         icon: icon || null,
-        order: Number.isFinite(orderValue) ? orderValue : 0,
+        // `displayOrder` is the field name going forward; `order` is mirrored
+        // because existing Firestore queries still orderBy('order').
+        displayOrder: normalizedOrder,
+        order: normalizedOrder,
         description: description || null,
         active,
         hasSubCategory,
+        isFree,
+        originalPrice,
+        offerPrice,
         updatedAt: serverTimestamp()
       };
 
@@ -1536,6 +1610,8 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         }
         resetCategoryForm();
         await loadCategories();
+        // Mock list badges reflect the category's access/price, so refresh it too.
+        await loadMockTests();
       } catch (error) {
         console.error(error);
         setStatus('Failed to save category. Open browser console for details.', 'error');
@@ -1843,7 +1919,6 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const negativeMarks = Number(elements.mockNegative.value);
       const passingPercentageRaw = elements.mockPassingPercentage.value.trim();
       const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
-      const isFree = elements.mockPremium.value === 'free';
       // FEATURE 1: read Live Date / Live Time from the form
       const liveDate = elements.mockLiveDate.value;
       const liveTime = elements.mockLiveTime.value;
@@ -1897,7 +1972,6 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         duration: duration || 0,
         negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
         passingPercentage,
-        isFree,
         liveDate,
         liveTime,
         liveDateTime,
@@ -1906,7 +1980,16 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
       try {
         if (editingMockId) {
-          await updateDoc(doc(db, COLLECTIONS.tests, editingMockId), mockPayload);
+          // CLEANUP: Mock-level Premium is removed. Access is now controlled
+          // entirely by the mock's Category, so strip any legacy fields left
+          // over from the old per-mock Free/Premium system. deleteField() is
+          // only valid on update()/merge-set(), never on a brand-new document,
+          // so this only applies when editing an existing mock.
+          await updateDoc(doc(db, COLLECTIONS.tests, editingMockId), {
+            ...mockPayload,
+            isFree: deleteField(),
+            premium: deleteField()
+          });
           setMockStatus('Mock test updated successfully.', 'success');
         } else {
           await addDoc(collection(db, COLLECTIONS.tests), {
@@ -1993,6 +2076,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.saveBtn.addEventListener('click', saveCategory);
       elements.cancelBtn.addEventListener('click', resetCategoryForm);
       elements.clearBtn.addEventListener('click', resetCategoryForm);
+      elements.isFree.addEventListener('change', updateCategoryPriceFieldsVisibility);
       elements.searchInput.addEventListener('input', renderCategories);
       elements.refreshButton.addEventListener('click', loadCategories);
       elements.sortByOrderBtn.addEventListener('click', async () => {
@@ -2044,6 +2128,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
     document.addEventListener('DOMContentLoaded', async () => {
       attachListeners();
+      updateCategoryPriceFieldsVisibility();
       await loadCategories();
       await loadMockTests();
     });

@@ -68,11 +68,12 @@ export async function handleWebhook(request, env) {
     return json(env, {
       success: true,
       status: result.status,
-      creditsRemaining: result.creditsRemaining
+      categoryId: result.categoryId,
+      paid: result.paid
     });
   } catch (err) {
     console.error('Webhook grantPurchaseForVerifiedOrder failed:', err.message);
     // Return 500 so Razorpay retries delivery later.
-    return errorResponse(env, 500, 'CREDIT_FAILED', 'Failed to process webhook payment credit.');
+    return errorResponse(env, 500, 'ACCESS_GRANT_FAILED', 'Failed to process webhook payment grant.');
   }
 }
