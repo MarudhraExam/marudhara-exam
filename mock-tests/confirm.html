@@ -707,10 +707,9 @@ const isFree = category.isFree === true;
     mobile: trimmedMobile,
     studentName: trimmedName
 });
-            if (!orderRes || orderRes.success !== true || !orderRes.order) {
-              throw new Error('Unable to create payment order. Please try again.');
-            }
-
+           if (!orderRes || orderRes.success !== true || !orderRes.orderId) {
+    throw new Error('Unable to create payment order. Please try again.');
+}
             setStatus('Opening payment window…');
             const verifyRes = await openRazorpayCheckout(orderRes, mock, mockId, trimmedName, trimmedMobile);
 
