@@ -725,20 +725,14 @@ const isFree = category.isFree === true;
 
             // Payment verified — now actually grant access to THIS mock.
             // Exam must never open unless this call succeeds.
-            setStatus('Unlocking your test…');
-            const unlockRes = await unlockTest({
+            saveSession({
     mockId,
-    categoryId: mock.categoryId,
-    mobile: trimmedMobile,
     studentName: trimmedName,
-    source: 'payment',
-    razorpay_order_id: verifyRes.razorpay_order_id,
-    razorpay_payment_id: verifyRes.razorpay_payment_id
+    studentMobile: trimmedMobile
 });
 
-            if (!unlockRes || unlockRes.success !== true) {
-              throw new Error('Payment succeeded but unlocking the test failed. Please contact support before retrying.');
-            }
+setStatus('Payment verified. Starting exam...');
+navigateToExam(mockId);
 
             saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
             setStatus('Test unlocked. Starting exam…');
