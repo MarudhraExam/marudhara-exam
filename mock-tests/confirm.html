@@ -688,6 +688,7 @@ const isFree = category.isFree === true;
               setStatus('Unlocking this test using your available credit…');
               const unlockRes = await unlockTest({
     mockId,
+    categoryId: mock.categoryId,
     mobile: trimmedMobile,
     studentName: trimmedName,
     source: 'credit'
