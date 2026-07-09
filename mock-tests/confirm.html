@@ -531,10 +531,10 @@ if (!razorpayKey || !order.id || !order.amount) {
           handler: async function (response) {
             try {
               setStatus('Verifying payment…');
-              const verifyRes = await verifyPayment({
+            const verifyRes = await verifyPayment({
     mockId,
     categoryId: mock.categoryId,
-    mobile: trimmedMobile,
+    mobile: mobile,
     razorpay_order_id: response.razorpay_order_id,
     razorpay_payment_id: response.razorpay_payment_id,
     razorpay_signature: response.razorpay_signature
