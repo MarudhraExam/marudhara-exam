@@ -722,13 +722,14 @@ const isFree = category.isFree === true;
             // Exam must never open unless this call succeeds.
             setStatus('Unlocking your test…');
             const unlockRes = await unlockTest({
-              mockId,
-              mobile: trimmedMobile,
-              studentName: trimmedName,
-              source: 'payment',
-              razorpay_order_id: verifyRes.razorpay_order_id,
-              razorpay_payment_id: verifyRes.razorpay_payment_id
-            });
+    mockId,
+    categoryId: mock.categoryId,
+    mobile: trimmedMobile,
+    studentName: trimmedName,
+    source: 'payment',
+    razorpay_order_id: verifyRes.razorpay_order_id,
+    razorpay_payment_id: verifyRes.razorpay_payment_id
+});
 
             if (!unlockRes || unlockRes.success !== true) {
               throw new Error('Payment succeeded but unlocking the test failed. Please contact support before retrying.');
