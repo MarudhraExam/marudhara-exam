@@ -675,9 +675,16 @@ const statusRes = await fetchPurchaseStatus(
               throw new Error('Unable to verify purchase status. Please try again.');
             }
 
-            const unlockedTestIds = Array.isArray(statusRes.unlockedTestIds) ? statusRes.unlockedTestIds : [];
-            const creditsRemaining = Number(statusRes.creditsRemaining) || 0;
-            const alreadyUnlockedThisTest = unlockedTestIds.includes(mockId);
+           if (statusRes.paid === true) {
+    saveSession({
+        mockId,
+        studentName: trimmedName,
+        studentMobile: trimmedMobile
+    });
+
+    navigateToExam(mockId);
+    return;
+}
 
             if (alreadyUnlockedThisTest) {
               // This exact mock is already unlocked for this student. No
