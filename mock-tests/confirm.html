@@ -623,7 +623,14 @@
           const name = studentName.value;
        
           const mobile = studentMobile.value;
+const categoryRef = doc(db, 'mockCategories', mock.categoryId);
+const categorySnap = await getDoc(categoryRef);
 
+if (!categorySnap.exists()) {
+  throw new Error('Mock category not found.');
+}
+
+const category = categorySnap.data();
           const isFree = mock.isFree === true;
 
           if (!isFree && !mobile.trim()) {
