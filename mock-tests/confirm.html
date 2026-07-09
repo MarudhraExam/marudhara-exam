@@ -390,13 +390,25 @@
         </div>`).join('');
     }
 
+    // Persisted to both sessionStorage (existing behaviour, unchanged) and
+    // localStorage. localStorage lets the category listing page recognise a
+    // returning, already-paid student across visits/tabs so it can show
+    // "View Tests" instead of "Purchase" for a category this student has
+    // already unlocked, without introducing any new UI or login system.
     function saveSession(details) {
-      sessionStorage.setItem('mockExamSession', JSON.stringify(details));
+      const payload = JSON.stringify(details);
+      sessionStorage.setItem('mockExamSession', payload);
+      try {
+        localStorage.setItem('mockExamSession', payload);
+      } catch {
+        // localStorage may be unavailable (e.g. private browsing); session
+        // still works for the current tab via sessionStorage above.
+      }
     }
 
     function loadSession() {
       try {
-        const raw = sessionStorage.getItem('mockExamSession');
+        const raw = sessionStorage.getItem('mockExamSession') || localStorage.getItem('mockExamSession');
         return raw ? JSON.parse(raw) : null;
       } catch {
         return null;
@@ -453,21 +465,6 @@
       });
       if (!res.ok) {
         throw new Error('Payment verification failed. Please try again.');
-      }
-      return res.json();
-    }
-
-    // Grants access to this specific mock test. Must succeed before the
-    // student is ever allowed to navigate to exam.html, whether they paid
-    // just now or are spending an already-purchased credit.
-    async function unlockTest(payload) {
-      const res = await fetch(`${PAYMENT_API_BASE}/api/unlock-test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        throw new Error('Unable to unlock this test. Please try again.');
       }
       return res.json();
     }
@@ -686,7 +683,9 @@ const statusRes = await fetchPurchaseStatus(
     return;
 }
 
-            // No existing unlock and no spare credits: must pay.
+            // Category not purchased yet by this mobile number: must pay.
+            // Paying here unlocks every mock in mock.categoryId, not just
+            // this one.
             setStatus('Preparing payment…');
             await loadRazorpayScript();
 
@@ -706,8 +705,8 @@ const statusRes = await fetchPurchaseStatus(
               throw new Error('Payment verification failed. Please try again.');
             }
 
-            // Payment verified — now actually grant access to THIS mock.
-            // Exam must never open unless this call succeeds.
+            // Payment verified — the whole category (mock.categoryId) is now
+            // unlocked for this mobile number, not just this one mock.
             saveSession({
     mockId,
     studentName: trimmedName,
@@ -716,10 +715,6 @@ const statusRes = await fetchPurchaseStatus(
 
 setStatus('Payment verified. Starting exam...');
 navigateToExam(mockId);
-
-            saveSession({ mockId, studentName: trimmedName, studentMobile: trimmedMobile });
-            setStatus('Test unlocked. Starting exam…');
-            navigateToExam(mockId);
 
           } catch (error) {
             console.error('Payment/start flow error:', error);
