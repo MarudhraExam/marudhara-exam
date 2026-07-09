@@ -701,11 +701,11 @@ const isFree = category.isFree === true;
             await loadRazorpayScript();
 
             const orderRes = await createOrder({
-              mockId,
-              mobile: trimmedMobile,
-              studentName: trimmedName
-            });
-
+    mockId,
+    categoryId: mock.categoryId,
+    mobile: trimmedMobile,
+    studentName: trimmedName
+});
             if (!orderRes || orderRes.success !== true || !orderRes.order) {
               throw new Error('Unable to create payment order. Please try again.');
             }
