@@ -667,8 +667,10 @@ const isFree = category.isFree === true;
             // this student already has for THIS mock, not just whether they
             // have premium access in general.
             setStatus('Checking purchase status…');
-            const statusRes = await fetchPurchaseStatus(trimmedMobile);
-
+const statusRes = await fetchPurchaseStatus(
+    trimmedMobile,
+    mock.categoryId
+);
             if (!statusRes || statusRes.success !== true) {
               throw new Error('Unable to verify purchase status. Please try again.');
             }
