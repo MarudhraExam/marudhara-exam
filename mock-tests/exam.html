@@ -681,6 +681,14 @@ questionTextElement.innerHTML =
                     mockId: data.mockId || mockId
                 });
             });
+            console.log("===== QUESTIONS =====");
+console.table(items.map(q => ({
+  no: q.questionNo,
+  question: q.question,
+  questionHindi: q.questionHindi,
+  optionA: q.optionA,
+  optionB: q.optionB
+})));
             return items;
         }
 
