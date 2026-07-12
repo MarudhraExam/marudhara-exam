@@ -303,7 +303,29 @@ document.getElementById(
 "todayVisitors"
 ).innerText =
 todayData.data()?.count || 0;
+// ===== Offer Banners =====
 
+const offerSnap = await getDoc(
+doc(db,"offerBanners","homeOffers")
+);
+
+if(offerSnap.exists()){
+
+const data = offerSnap.data();
+
+document.getElementById("offer1Image").src =
+data.banner1Image;
+
+document.getElementById("offer1Link").href =
+data.banner1Link;
+
+document.getElementById("offer2Image").src =
+data.banner2Image;
+
+document.getElementById("offer2Link").href =
+data.banner2Link;
+
+}
 </script>
 </body>
 </html>
