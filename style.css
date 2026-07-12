@@ -126,3 +126,76 @@ font-size:32px;
 }
 
 }
+/* ===== Offer Banner Section ===== */
+
+.offer-section{
+    max-width:1200px;
+    margin:25px auto;
+    display:flex;
+    gap:20px;
+    padding:0 15px;
+}
+
+.offer-card{
+    flex:1;
+    position:relative;
+}
+
+.offer-card img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+    border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,.2);
+    transition:.3s;
+    cursor:pointer;
+}
+
+.offer-card img:hover{
+    transform:scale(1.03);
+}
+
+.offer-tag{
+    position:absolute;
+    top:-12px;
+    left:15px;
+    background:#ff0000;
+    color:#fff;
+    font-size:14px;
+    font-weight:bold;
+    padding:6px 15px;
+    border-radius:30px;
+    z-index:10;
+    animation:newOffer 1s infinite;
+}
+
+@keyframes newOffer{
+
+0%{
+transform:scale(1);
+box-shadow:0 0 5px red;
+}
+
+50%{
+transform:scale(1.12);
+box-shadow:0 0 20px red;
+}
+
+100%{
+transform:scale(1);
+box-shadow:0 0 5px red;
+}
+
+}
+
+@media(max-width:768px){
+
+.offer-section{
+flex-direction:column;
+}
+
+.offer-card img{
+height:auto;
+}
+
+}
