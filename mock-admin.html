@@ -1044,7 +1044,10 @@ No Sub Categories
         throw new Error('Excel must contain at least one sheet.');
       }
       const sheet = workbook.Sheets[sheetName];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+const rawRows = XLSX.utils.sheet_to_json(sheet, {
+    defval: "",
+    raw: false
+});
       console.log("RAW QUESTION:");
 console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       if (!rawRows.length) {
