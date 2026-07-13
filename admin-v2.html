@@ -1598,6 +1598,92 @@ alert(error.message);
 }
 
 }
+async function loadOffers(){
+
+const list =
+document.getElementById("offerList");
+
+if(!list) return;
+
+list.innerHTML="";
+
+const snapshot =
+await getDocs(collection(db,"offerBanners"));
+
+const banners=[];
+
+snapshot.forEach((docItem)=>{
+
+banners.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+banners.sort((a,b)=>a.order-b.order);
+
+banners.forEach((banner)=>{
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:10px;
+">
+
+<img
+src="${banner.image}"
+style="
+width:220px;
+border-radius:8px;
+display:block;
+margin-bottom:10px;
+">
+
+<b>Order :</b> ${banner.order}
+
+<br><br>
+
+<a href="${banner.link}" target="_blank">
+🔗 Open Link
+</a>
+
+<br><br>
+
+<button
+onclick="deleteOffer('${banner.id}')"
+style="
+background:red;
+padding:8px 15px;
+">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+  window.deleteOffer = async function(id){
+
+if(!confirm("Banner Delete करना है?"))
+return;
+
+await deleteDoc(
+doc(db,"offerBanners",id)
+);
+
+alert("Banner Deleted ✅");
+
+loadOffers();
+
+}
+  
 </script>
 <script>
 
