@@ -289,29 +289,55 @@ document.getElementById(
 "todayVisitors"
 ).innerText =
 todayData.data()?.count || 0;
-// ===== Offer Banners =====
+// ===== Dynamic Offer Banners =====
 
-const offerSnap = await getDoc(
-doc(db,"offerBanners","homeOffers")
-);
+const offerContainer =
+document.getElementById("offerContainer");
 
-if(offerSnap.exists()){
+const snapshot =
+await getDocs(collection(db,"offerBanners"));
 
-const data = offerSnap.data();
+const banners=[];
 
-document.getElementById("offer1Image").src =
-data.banner1Image;
+snapshot.forEach((docItem)=>{
 
-document.getElementById("offer1Link").href =
-data.banner1Link;
+const data = docItem.data();
 
-document.getElementById("offer2Image").src =
-data.banner2Image;
+if(data.active){
 
-document.getElementById("offer2Link").href =
-data.banner2Link;
+banners.push(data);
 
 }
+
+});
+
+banners.sort((a,b)=>a.order-b.order);
+
+offerContainer.innerHTML="";
+
+banners.forEach((banner)=>{
+
+offerContainer.innerHTML += `
+
+<div class="offer-card">
+
+<div class="offer-tag">
+🔥 NEW OFFER
+</div>
+
+<a href="${banner.link}" target="_blank">
+
+<img
+src="${banner.image}"
+style="width:100%;border-radius:15px;">
+
+</a>
+
+</div>
+
+`;
+
+});
 </script>
 </body>
 </html>
