@@ -201,3 +201,39 @@ box-shadow:0 0 5px red;
 }
 
 }
+/* ===== Banner Slider ===== */
+
+#offerContainer{
+display:flex;
+overflow-x:auto;
+scroll-snap-type:x mandatory;
+gap:20px;
+scroll-behavior:smooth;
+-webkit-overflow-scrolling:touch;
+}
+
+#offerContainer::-webkit-scrollbar{
+display:none;
+}
+
+.offer-slide{
+min-width:100%;
+scroll-snap-align:center;
+flex-shrink:0;
+position:relative;
+}
+
+.offer-image{
+width:100%;
+display:block;
+border-radius:12px;
+box-shadow:0 4px 15px rgba(0,0,0,.2);
+}
+
+@media(min-width:769px){
+
+.offer-slide{
+min-width:100%;
+}
+
+}
