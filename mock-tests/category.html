@@ -274,8 +274,12 @@
       }
 
       // FEATURE 7: live mocks first, then upcoming/locked mocks (sorted after fetch only)
-      testsGrid.innerHTML = renderMockTestCards(sortMocksByLiveStatus(tests));
-      setStatus('Choose a test and confirm your details before starting.');
+testsGrid.innerHTML =
+    renderMockTestCards(
+        sortMocksByLiveStatus(
+            sortMocksBySeries(tests)
+        )
+    );      setStatus('Choose a test and confirm your details before starting.');
     }
 
     async function loadSubCategoryList(categoryId) {
