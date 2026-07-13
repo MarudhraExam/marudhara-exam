@@ -732,6 +732,13 @@ No Sub Categories
               Passing Percentage
               <input type="number" id="mockPassingPercentage" min="0" max="100" step="0.1" placeholder="Passing percentage" />
             </label>
+            <!-- Secure Question Paper PDF Download feature: optional GitHub PDF link.
+                 Saved as `pdfLink` on the mock document. Never read by the frontend —
+                 only the backend Worker (/api/download-question-paper) reads it. -->
+            <label>
+              Question Paper PDF Link
+              <input type="url" id="mockPdfLink" placeholder="https://raw.githubusercontent.com/... (optional)" />
+            </label>
             <!-- FEATURE 1: Live Date & Live Time fields (required) -->
             <label>
               Live Date
@@ -886,6 +893,7 @@ No Sub Categories
       mockDuration: document.getElementById('mockDuration'),
       mockNegative: document.getElementById('mockNegative'),
       mockPassingPercentage: document.getElementById('mockPassingPercentage'),
+      mockPdfLink: document.getElementById('mockPdfLink'),
       publishMockBtn: document.getElementById('publishMockBtn'),
       cancelMockBtn: document.getElementById('cancelMockBtn'),
       mockTestList: document.getElementById('mockTestList'),
@@ -1474,6 +1482,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockDuration.value = '';
       elements.mockNegative.value = '';
       elements.mockPassingPercentage.value = '';
+      elements.mockPdfLink.value = '';
       // FEATURE 1: clear live date/time fields on reset
       elements.mockLiveDate.value = '';
       elements.mockLiveTime.value = '';
@@ -1494,6 +1503,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockDuration.value = mock.duration ?? mock.durationMinutes ?? '';
       elements.mockNegative.value = mock.negativeMarks ?? '';
       elements.mockPassingPercentage.value = mock.passingPercentage ?? '';
+      elements.mockPdfLink.value = mock.pdfLink || '';
       // FEATURE 7 & 9: load existing Live Date/Time; old mocks without these fields
       // safely fall back to empty values instead of crashing.
       elements.mockLiveDate.value = mock.liveDate || '';
@@ -1927,6 +1937,8 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       const negativeMarks = Number(elements.mockNegative.value);
       const passingPercentageRaw = elements.mockPassingPercentage.value.trim();
       const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
+      // Secure Question Paper PDF Download feature: optional pdfLink field.
+      const pdfLink = elements.mockPdfLink.value.trim();
       // FEATURE 1: read Live Date / Live Time from the form
       const liveDate = elements.mockLiveDate.value;
       const liveTime = elements.mockLiveTime.value;
@@ -1980,6 +1992,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         duration: duration || 0,
         negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
         passingPercentage,
+        pdfLink: pdfLink || null,
         liveDate,
         liveTime,
         liveDateTime,
