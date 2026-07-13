@@ -3,12 +3,16 @@ import { handleCreateOrder } from './handlers/createOrder.js';
 import { handleVerifyPayment } from './handlers/verifyPayment.js';
 import { handleWebhook } from './handlers/webhook.js';
 import { handlePurchaseStatus } from './handlers/purchaseStatus.js';
+import { handleDownloadQuestionPaper } from './handlers/downloadQuestionPaper.js';
 
 const routes = [
   { method: 'POST', path: '/api/create-order', handler: handleCreateOrder },
   { method: 'POST', path: '/api/verify-payment', handler: handleVerifyPayment },
   { method: 'GET', path: '/api/purchase-status', handler: handlePurchaseStatus },
-  { method: 'POST', path: '/api/webhook', handler: handleWebhook }
+  { method: 'POST', path: '/api/webhook', handler: handleWebhook },
+  // Secure Question Paper PDF download: reads the mock's pdfLink server-side
+  // only, watermarks it with the student's name/mobile, and streams it back.
+  { method: 'GET', path: '/api/download-question-paper', handler: handleDownloadQuestionPaper }
 ];
 
 export async function route(request, env, ctx) {
