@@ -221,10 +221,9 @@ display:none;
 }
 
 .offer-slide{
-min-width:100%;
-scroll-snap-align:center;
-flex-shrink:0;
-position:relative;
+    min-width:100%;
+    flex-shrink:0;
+    position:relative;
 }
 
 .offer-image{
