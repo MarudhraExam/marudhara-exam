@@ -387,22 +387,28 @@ style="background:red;color:white;margin-left:10px;">
 
 <h2>📢 Offer Banner Manager</h2>
 
-<label>Banner 1 Image URL</label>
-<input type="text" id="offer1Image">
+<h2>📢 Offer Banner Manager</h2>
 
-<label>Banner 1 Link</label>
-<input type="text" id="offer1Link">
+<label>Banner Image URL</label>
+<input type="text" id="offerImage">
 
-<label>Banner 2 Image URL</label>
-<input type="text" id="offer2Image">
+<label>Banner Link</label>
+<input type="text" id="offerLink">
 
-<label>Banner 2 Link</label>
-<input type="text" id="offer2Link">
+<label>Display Order</label>
+<input type="number" id="offerOrder" value="1">
 
-<button onclick="saveOffers()">
-💾 Save Offers
+<button onclick="saveOffer()">
+➕ Add Banner
 </button>
 
+<hr>
+
+<h3>Saved Banners</h3>
+
+<div id="offerList">
+Loading...
+</div>
 </div>
 <script type="module">
 
