@@ -1553,23 +1553,42 @@ alert("Error : " + error.message);
 
 };
 
-window.saveOffers = async function(){
+window.saveOffer = async function(){
 
 try{
 
-await setDoc(doc(db,"offerBanners","homeOffers"),{
+const image =
+document.getElementById("offerImage").value.trim();
 
-banner1Image:document.getElementById("offer1Image").value,
+const link =
+document.getElementById("offerLink").value.trim();
 
-banner1Link:document.getElementById("offer1Link").value,
+const order =
+Number(document.getElementById("offerOrder").value);
 
-banner2Image:document.getElementById("offer2Image").value,
+if(image===""){
+alert("Banner Image URL भरें");
+return;
+}
 
-banner2Link:document.getElementById("offer2Link").value
+await addDoc(
+collection(db,"offerBanners"),
+{
+image,
+link,
+order,
+active:true,
+createdAt:new Date().toISOString()
+}
+);
 
-});
+alert("Banner Added Successfully ✅");
 
-alert("Offer Banners Saved Successfully ✅");
+document.getElementById("offerImage").value="";
+document.getElementById("offerLink").value="";
+document.getElementById("offerOrder").value=order+1;
+
+loadOffers();
 
 }
 catch(error){
