@@ -30,6 +30,22 @@
 
 
 </header>
+
+<!-- ================================
+     Announcement Ticker System START
+     ================================ -->
+<div id="announcementTicker" class="ticker-wrapper">
+<div class="ticker-icon">📢</div>
+<div class="ticker-mask" id="tickerMask">
+<a href="#" id="tickerItem" class="ticker-item" target="_blank" rel="noopener">
+<span id="tickerText"></span>
+</a>
+</div>
+</div>
+<!-- ================================
+     Announcement Ticker System END
+     ================================ -->
+
 <section class="offer-section">
 
 <div id="offerContainer"></div>
@@ -198,7 +214,8 @@ doc,
 getDoc,
 setDoc,
 updateDoc,
-increment
+increment,
+onSnapshot
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -375,6 +392,181 @@ prevEl:".swiper-button-prev",
 });
 
 }
+
+// ================================
+// Announcement Ticker System START
+// ================================
+// One announcement is shown at a time. It scrolls fully across the
+// ticker, then after a short pause the next active announcement (sorted
+// by "order") plays. When the last one finishes, it loops back to the
+// first. Uses a single realtime Firestore listener (no polling, no
+// duplicate listeners) and a CSS keyframe animation driven by JS so
+// there is no overlap and no CSS "marquee" hacks.
+
+const tickerWrapper = document.getElementById("announcementTicker");
+const tickerMask = document.getElementById("tickerMask");
+const tickerItem = document.getElementById("tickerItem");
+const tickerText = document.getElementById("tickerText");
+
+let announcementsList = [];
+let tickerIndex = 0;
+let tickerTimer = null;
+let isTickerPlaying = false;
+let tickerListenerAttached = false;
+
+// Convert the "speed" field into a pixels-per-second rate so longer
+// messages automatically take proportionally longer to fully scroll.
+function announcementSpeedToPxPerSec(speed){
+
+if(speed === "slow") return 60;
+if(speed === "fast") return 160;
+return 100; // normal / default
+
+}
+
+function stopTickerAnimation(){
+
+tickerItem.style.animation = "none";
+tickerItem.removeEventListener("animationend", onTickerAnimationEnd);
+
+}
+
+function onTickerAnimationEnd(){
+
+tickerItem.removeEventListener("animationend", onTickerAnimationEnd);
+
+clearTimeout(tickerTimer);
+
+// Wait ~1 second after the current announcement fully exits before
+// starting the next one, so two announcements never overlap.
+tickerTimer = setTimeout(()=>{
+
+if(!announcementsList.length){
+isTickerPlaying = false;
+tickerWrapper.style.display = "none";
+return;
+}
+
+tickerIndex = (tickerIndex + 1) % announcementsList.length;
+
+playAnnouncement();
+
+}, 1000);
+
+}
+
+function playAnnouncement(){
+
+if(!announcementsList.length){
+
+isTickerPlaying = false;
+tickerWrapper.style.display = "none";
+return;
+
+}
+
+isTickerPlaying = true;
+tickerWrapper.style.display = "flex";
+
+if(tickerIndex >= announcementsList.length){
+tickerIndex = 0;
+}
+
+const item = announcementsList[tickerIndex];
+
+tickerText.textContent = item.message || "";
+tickerText.style.color = item.color || "#ffffff";
+
+if(item.link){
+tickerItem.setAttribute("href", item.link);
+tickerItem.style.pointerEvents = "auto";
+}else{
+tickerItem.removeAttribute("href");
+tickerItem.style.pointerEvents = "none";
+}
+
+// Reset any previous animation before measuring, so widths reflect
+// the new message text.
+stopTickerAnimation();
+
+// Force reflow so the browser registers the reset before re-applying
+// a fresh animation (prevents flicker/jumping).
+void tickerItem.offsetWidth;
+
+const maskWidth = tickerMask.offsetWidth;
+const textWidth = tickerItem.offsetWidth;
+
+const startX = maskWidth;
+const endX = -textWidth;
+const distance = maskWidth + textWidth;
+
+const pxPerSec = announcementSpeedToPxPerSec(item.speed);
+
+let duration = distance / pxPerSec;
+duration = Math.max(4, Math.min(duration, 30));
+
+tickerItem.style.setProperty("--ticker-start-x", startX + "px");
+tickerItem.style.setProperty("--ticker-end-x", endX + "px");
+tickerItem.style.animation = "tickerMove " + duration + "s linear forwards";
+
+tickerItem.addEventListener("animationend", onTickerAnimationEnd);
+
+}
+
+function attachAnnouncementListener(){
+
+if(tickerListenerAttached) return;
+tickerListenerAttached = true;
+
+// Single realtime listener - Firestore pushes updates automatically,
+// no page reload and no repeated getDocs() calls needed.
+onSnapshot(collection(db,"announcements"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.active){
+items.push(data);
+}
+
+});
+
+items.sort((a,b)=>(a.order||0)-(b.order||0));
+
+announcementsList = items;
+
+if(!announcementsList.length){
+
+clearTimeout(tickerTimer);
+stopTickerAnimation();
+isTickerPlaying = false;
+tickerWrapper.style.display = "none";
+return;
+
+}
+
+if(tickerIndex >= announcementsList.length){
+tickerIndex = 0;
+}
+
+// Only kick off the loop if it isn't already running - avoids
+// restarting/overlapping an announcement that's mid-scroll.
+if(!isTickerPlaying){
+playAnnouncement();
+}
+
+});
+
+}
+
+attachAnnouncementListener();
+
+// ================================
+// Announcement Ticker System END
+// ================================
 </script>
 </body>
 </html>
