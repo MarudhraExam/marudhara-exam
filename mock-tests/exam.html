@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -262,10 +262,26 @@
             line-height: 1.9;
             font-size: 1.05rem;
         }
+        /* Admin-only preview mode badge (only visible when ?preview=true) */
+        .admin-preview-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #dc2626;
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            z-index: 9999;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="page-shell">
+        <div id="adminPreviewBadge" class="admin-preview-badge hide">ADMIN PREVIEW</div>
         <div class="top-bar">
             <div>
                 <h1>Mock Exam</h1>
@@ -285,6 +301,9 @@
 
         <!-- Shown only when the mock's live time has not yet arrived -->
         <div id="lockContainer" class="lock-box hide"></div>
+
+        <!-- Shown only in Admin Preview mode after submitting, since preview results are not saved -->
+        <div id="previewResultBox" class="lock-box hide"></div>
 
         <div id="examContent">
         <section class="meta-list" id="mockMeta">
@@ -388,6 +407,8 @@
         const languageKey = "mockExamLanguage";
         const lockContainer = document.getElementById("lockContainer");
         const examContent = document.getElementById("examContent");
+        const adminPreviewBadge = document.getElementById("adminPreviewBadge");
+        const previewResultBox = document.getElementById("previewResultBox");
 
         let questions = [];
         let currentIndex = 0;
@@ -396,6 +417,7 @@
         let timerInterval = null;
         let endTime = null;
         let sessionData = null;
+        let previewMode = false;
         const answersKey = "mockExamAnswers";
         const sessionKey = "mockExamSession";
 
@@ -412,6 +434,14 @@
         function getMockId() {
             const params = new URLSearchParams(window.location.search);
             return params.get("mockId") || params.get("id");
+        }
+
+        // Admin Panel "Review" opens this same page with ?preview=true so admins
+        // can view/solve any mock without payment, live-date, or attempt checks,
+        // and without saving any attempt/result to Firebase.
+        function isPreviewMode() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get("preview") === "true";
         }
 
         // Resolves a mock's live date/time into a JS Date, or null if the mock
@@ -779,6 +809,20 @@ console.table(items.map(q => ({
                 createdAt: Timestamp.now()
             };
             try {
+                if (previewMode) {
+                    // Admin Preview Mode: result calculation still runs above, but we
+                    // must NOT save any attempt, create a result, update rankings, or
+                    // write anything to Firestore. Show the computed result inline instead.
+                    clearInterval(timerInterval);
+                    examContent.classList.add("hide");
+                    previewResultBox.innerHTML =
+                        `📊 Preview Result (not saved)<br>` +
+                        `Score: ${score} / ${Number(examMeta.totalMarks) || totalQuestions}<br>` +
+                        `Correct: ${correct} | Wrong: ${wrong} | Unattempted: ${unattempted}<br>` +
+                        `Percentage: ${percentage}%`;
+                    previewResultBox.classList.remove("hide");
+                    return;
+                }
                 const resultRef = await addDoc(collection(db, "mockResults"), resultPayload);
                 sessionStorage.setItem("mockResultId", resultRef.id);
                 redirectTo(`result.html?resultId=${encodeURIComponent(resultRef.id)}`);
@@ -796,7 +840,18 @@ console.table(items.map(q => ({
                     throw new Error("Mock ID is missing from URL.");
                 }
                 sessionData = getSessionData();
-                if (!sessionData || sessionData.mockId !== mockId) {
+                previewMode = isPreviewMode();
+                if (previewMode) {
+                    // Admin Preview Mode: skip payment verification, purchase validation
+                    // and attempt limit checks that normally happen via confirm.html.
+                    adminPreviewBadge.classList.remove("hide");
+                    sessionData = {
+                        studentName: "Admin Preview",
+                        studentMobile: "",
+                        mockId,
+                        startedAt: new Date().toISOString()
+                    };
+                } else if (!sessionData || sessionData.mockId !== mockId) {
                     redirectTo(`confirm.html?mockId=${encodeURIComponent(mockId)}`);
                     return;
                 }
@@ -804,12 +859,15 @@ console.table(items.map(q => ({
 
                 // --- FEATURE 1 & 2: Final live verification / security check ---
                 // Uses the mock data already fetched above (no duplicate Firestore read).
-                const liveDateTime = resolveLiveDateTime(examMeta);
-                if (liveDateTime && Date.now() < liveDateTime.getTime()) {
-                    // Current time is before the mock's live time: stop execution here.
-                    // Do not load questions, do not start the timer, do not init the exam.
-                    lockExamAccess(liveDateTime);
-                    return;
+                // Skipped entirely in Admin Preview Mode.
+                if (!previewMode) {
+                    const liveDateTime = resolveLiveDateTime(examMeta);
+                    if (liveDateTime && Date.now() < liveDateTime.getTime()) {
+                        // Current time is before the mock's live time: stop execution here.
+                        // Do not load questions, do not start the timer, do not init the exam.
+                        lockExamAccess(liveDateTime);
+                        return;
+                    }
                 }
 
                 mockTitle.textContent = examMeta.title || examMeta.name || "Untitled mock";
