@@ -137,8 +137,10 @@ font-size:32px;
 }
 
 .offer-card{
-    flex:1;
     position:relative;
+    width:100%;
+    max-width:1200px;
+    margin:auto;
 }
 
 .offer-card img{
