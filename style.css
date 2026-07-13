@@ -229,8 +229,7 @@ position:relative;
 
 .offer-image{
     width:100%;
-    aspect-ratio:16/5;
-    object-fit:cover;
+    height:auto;
     display:block;
     border-radius:12px;
     box-shadow:0 4px 15px rgba(0,0,0,.2);
