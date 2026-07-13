@@ -846,6 +846,11 @@ No Sub Categories
       subCategories: 'mockSubCategories'
     };
 
+    // Path to the existing student mock exam page, used by the "Review" button
+    // to open the SAME student interface in Preview Mode (?preview=true).
+    // Adjust this path if the student exam page lives in a different folder.
+    const STUDENT_EXAM_PATH = 'student/exam.html';
+
     const elements = {
       statusBar: document.getElementById('statusBar'),
       title: document.getElementById('categoryTitle'),
@@ -1390,6 +1395,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           <div class="mock-actions">
             <button type="button" class="button-secondary" data-mock-action="edit" data-id="${mock.id}">Edit</button>
             <button type="button" class="button-danger" data-mock-action="delete" data-id="${mock.id}">Delete</button>
+            <button type="button" class="button-secondary" data-mock-action="review" data-id="${mock.id}">👁 Review</button>
           </div>
         </article>`;
     }
@@ -2070,6 +2076,9 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           }
           if (action === 'delete') {
             await deleteMockTest(mockId);
+          }
+          if (action === 'review') {
+            window.open(`${STUDENT_EXAM_PATH}?mockId=${encodeURIComponent(mockId)}&preview=true`, '_blank');
           }
         });
       });
