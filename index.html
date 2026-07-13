@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>मरुधरा एग्जाम</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 </head>
 
 <body>
@@ -183,6 +184,7 @@ Today Visitors :
 </p>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script type="module">
 
 import { initializeApp }
@@ -282,6 +284,7 @@ document.getElementById(
 "todayVisitors"
 ).innerText =
 todayData.data()?.count || 0;
+
 // ===== Dynamic Offer Banners =====
 
 const offerContainer =
@@ -308,49 +311,70 @@ banners.sort((a,b)=>a.order-b.order);
 
 offerContainer.innerHTML="";
 
+function offerCardHTML(banner){
+
+return `
+<div class="offer-card">
+<div class="offer-tag">🔥 NEW OFFER</div>
+<a href="${banner.link}" target="_blank" rel="noopener">
+<img src="${banner.image}" alt="Offer Banner" loading="lazy">
+</a>
+</div>
+`;
+
+}
+
+if(banners.length === 1){
+
+// Only one banner - render it statically, no slider needed
+offerContainer.innerHTML = offerCardHTML(banners[0]);
+
+}else if(banners.length > 1){
+
+// Multiple banners - build Swiper slider
+let slidesHTML = "";
+
 banners.forEach((banner)=>{
 
-offerContainer.innerHTML += `
-
-<div class="offer-card">
-
-<div class="offer-tag">
-🔥 NEW OFFER
+slidesHTML += `
+<div class="swiper-slide">
+${offerCardHTML(banner)}
 </div>
-
-<a href="${banner.link}" target="_blank">
-
-<img src="${banner.image}" alt="Offer Banner">
-
-</a>
-
-</div>
-
 `;
 
 });
-let currentSlide = 0;
 
-setInterval(()=>{
+offerContainer.innerHTML = `
+<div class="swiper offerSwiper">
+<div class="swiper-wrapper">
+${slidesHTML}
+</div>
+<div class="swiper-pagination"></div>
+<div class="swiper-button-next"></div>
+<div class="swiper-button-prev"></div>
+</div>
+`;
 
-const slides =
-document.querySelectorAll(".offer-slide");
+new Swiper(".offerSwiper", {
 
-if(slides.length<=1) return;
+loop:true,
+grabCursor:true,
+autoplay:{
+delay:4000,
+disableOnInteraction:false,
+},
+pagination:{
+el:".swiper-pagination",
+clickable:true,
+},
+navigation:{
+nextEl:".swiper-button-next",
+prevEl:".swiper-button-prev",
+},
 
-currentSlide++;
-
-if(currentSlide>=slides.length){
-currentSlide=0;
-}
-
-document.getElementById("offerContainer")
-.scrollTo({
-left:slides[currentSlide].offsetLeft,
-behavior:"smooth"
 });
 
-},4000);
+}
 </script>
 </body>
 </html>
