@@ -150,8 +150,7 @@
     // FEATURE 7: live mocks first, then upcoming/locked mocks. Firestore query and
     // existing ordering within each group are untouched; this only re-groups the
     // already-fetched array using a stable sort.
-    function sortMocksByLiveStatus(tests) {
-      function sortMocksBySeries(tests) {
+   function sortMocksBySeries(tests) {
 
     return [...tests].sort((a, b) => {
 
@@ -164,13 +163,20 @@
     });
 
 }
-      return [...tests].sort((a, b) => {
-        const aLocked = getMockLiveState(a).locked ? 1 : 0;
-        const bLocked = getMockLiveState(b).locked ? 1 : 0;
-        return aLocked - bLocked;
-      });
-    }
 
+function sortMocksByLiveStatus(tests) {
+
+    return [...tests].sort((a, b) => {
+
+        const aLocked = getMockLiveState(a).locked ? 1 : 0;
+
+        const bLocked = getMockLiveState(b).locked ? 1 : 0;
+
+        return aLocked - bLocked;
+
+    });
+
+}
     // FEATURE 10: used by both the direct category flow and the sub category flow,
     // so lock/badge/sort behaviour is automatically identical for both.
     function renderMockTestCards(tests) {
