@@ -134,7 +134,25 @@ font-size:32px;
     margin:20px auto;
     padding:0 15px;
 }
+.offer-section{
+...
+}
 
+.offer-card{
+...
+}
+
+.offer-card img{
+...
+}
+
+.offer-card img:hover{
+...
+}
+
+.offer-tag{
+...
+}
 
 @keyframes newOffer{
 
