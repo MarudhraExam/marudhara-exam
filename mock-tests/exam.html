@@ -592,13 +592,58 @@
                 .replace(/\r\n/g, "\n");
         }
 
+        // Display-only enhancement: improves readability of the rendered question
+        // text by inserting a line break before numbered statements like (1) (2)
+        // (3) (4) (5) and before a few common heading phrases, but only when they
+        // appear mid-line (i.e. a break is actually needed). This never touches
+        // options, explanations, stored Firestore data, or existing line breaks
+        // beyond collapsing accidental duplicates that the insertion itself could
+        // create. It runs purely on the text used for rendering the question.
+        function enhanceQuestionDisplayFormatting(text) {
+            if (!text) return text;
+            let result = text;
+
+            // Statement markers such as (1), (2), (3), (4), (5) start a new line
+            // when they occur after other text on the same line.
+            result = result.replace(/([^\n])\s*(\([1-9]\))/g, (match, prevChar, marker) => {
+                return `${prevChar}\n${marker}`;
+            });
+
+            // Common headings/labels should start on their own line when they
+            // appear in the middle of the text (only when required).
+            const headingPhrases = [
+                "सही उत्तर है",
+                "निम्नलिखित",
+                "निम्न कथनों पर विचार कीजिए",
+                "Assertion",
+                "Reason",
+                "Column-I",
+                "Column-II",
+                "Match the following",
+                "सुमेलित कीजिए",
+                "Statement-I",
+                "Statement-II"
+            ];
+            headingPhrases.forEach((phrase) => {
+                const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const headingRegex = new RegExp(`([^\n])\\s*(${escapedPhrase})`, "g");
+                result = result.replace(headingRegex, (match, prevChar, headingMatch) => `${prevChar}\n${headingMatch}`);
+            });
+
+            // Never leave duplicate/blank lines behind from the insertions above.
+            result = result.replace(/\n{2,}/g, "\n");
+            result = result.replace(/^\n+/, "");
+
+            return result;
+        }
+
         function renderQuestion() {
             if (!questions.length || currentIndex < 0 || currentIndex >= questions.length) {
                 return;
             }
             const question = questions[currentIndex];
             questionCountElement.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-            const formattedQuestion = formatQuestionText(getLocalizedField(question, "question"));
+            const formattedQuestion = enhanceQuestionDisplayFormatting(formatQuestionText(getLocalizedField(question, "question")));
 
 questionTextElement.innerHTML =
     (formattedQuestion || "Untitled question.")
