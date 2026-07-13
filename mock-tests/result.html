@@ -1111,6 +1111,44 @@ ${pagesHtml}
 </html>`;
     }
 
+    // ===== Secure Question Paper PDF feature =====
+    // Same backend Worker used by the payment flow (see mock-tests/confirm.html
+    // and mock-tests/payment.html), which now also exposes
+    // GET /api/download-question-paper. That endpoint is the ONLY place that
+    // ever reads a mock's admin-configured `pdfLink` from Firestore; the
+    // browser never receives `pdfLink` itself, only this fixed API URL.
+    const QUESTION_PAPER_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
+
+    // Calls the secure backend endpoint, which fetches the original GitHub
+    // PDF server-side, stamps it with the student's name/mobile, and streams
+    // the watermarked PDF back. Returns true on success. Returns false if the
+    // mock has no pdfLink configured (or the request otherwise fails), so the
+    // caller can fall back to the existing print-based generator below —
+    // this keeps the button working exactly as before for every mock that
+    // was never given a PDF link.
+    async function downloadSecureQuestionPaperPdf(mockId, attemptId) {
+      try {
+        const res = await fetch(
+          `${QUESTION_PAPER_API_BASE}/api/download-question-paper?mockId=${encodeURIComponent(mockId)}&attemptId=${encodeURIComponent(attemptId)}`
+        );
+        if (!res.ok) return false;
+
+        const blob = await res.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = 'question-paper.pdf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+        return true;
+      } catch (error) {
+        console.error('Secure question paper download failed:', error);
+        return false;
+      }
+    }
+
     async function generateQuestionPaperPdf() {
       const button = document.getElementById('downloadQuestionPaperBtn');
       const result = pdfPaperState.result;
@@ -1192,7 +1230,23 @@ ${pagesHtml}
       const button = document.getElementById('downloadQuestionPaperBtn');
       if (!button || button.dataset.bound === '1') return;
       button.dataset.bound = '1';
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
+        // Secure Question Paper PDF feature: try the watermarked backend
+        // download first (only when we have both a mockId and the attempt's
+        // resultId). Any failure — including a mock with no pdfLink
+        // configured — falls back to the original print-based generator.
+        const mockId = pdfPaperState.result?.mockId;
+        const attemptId = getQueryParam('resultId');
+
+        if (mockId && attemptId) {
+          button.disabled = true;
+          button.textContent = 'Preparing…';
+          const success = await downloadSecureQuestionPaperPdf(mockId, attemptId);
+          button.disabled = false;
+          button.textContent = 'Download Question Paper';
+          if (success) return;
+        }
+
         generateQuestionPaperPdf();
       });
     }
