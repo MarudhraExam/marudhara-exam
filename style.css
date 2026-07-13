@@ -193,11 +193,11 @@ box-shadow:0 0 5px red;
 @media(max-width:768px){
 
 .offer-section{
-flex-direction:column;
+    padding:10px;
 }
 
-.offer-card img{
-height:auto;
+.offer-card{
+    width:100%;
 }
 
 }
