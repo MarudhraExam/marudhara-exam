@@ -331,6 +331,28 @@ class="offer-image">
 `;
 
 });
+let currentSlide = 0;
+
+setInterval(()=>{
+
+const slides =
+document.querySelectorAll(".offer-slide");
+
+if(slides.length<=1) return;
+
+currentSlide++;
+
+if(currentSlide>=slides.length){
+currentSlide=0;
+}
+
+document.getElementById("offerContainer")
+.scrollTo({
+left:slides[currentSlide].offsetLeft,
+behavior:"smooth"
+});
+
+},4000);
 </script>
 </body>
 </html>
