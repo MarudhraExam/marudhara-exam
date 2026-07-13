@@ -241,3 +241,92 @@ display:none;
 }
 
 }
+
+/* ================================
+   Announcement Ticker System START
+   ================================ */
+
+.ticker-wrapper{
+display:none;
+align-items:center;
+gap:12px;
+width:100%;
+background:#002B5B;
+padding:10px 8%;
+overflow:hidden;
+box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.ticker-icon{
+flex-shrink:0;
+font-size:18px;
+line-height:1;
+}
+
+.ticker-mask{
+position:relative;
+flex:1 1 auto;
+height:24px;
+overflow:hidden;
+}
+
+.ticker-item{
+position:absolute;
+top:0;
+left:0;
+display:inline-block;
+white-space:nowrap;
+text-decoration:none;
+font-weight:bold;
+font-size:16px;
+line-height:24px;
+will-change:transform;
+}
+
+.ticker-item span{
+color:inherit;
+}
+
+@keyframes tickerMove{
+
+from{
+transform:translateX(var(--ticker-start-x, 100%));
+}
+
+to{
+transform:translateX(var(--ticker-end-x, -100%));
+}
+
+}
+
+/* Pause on hover - desktop (mouse) only, never on touch devices */
+@media (hover:hover) and (pointer:fine){
+
+.ticker-wrapper:hover .ticker-item{
+animation-play-state:paused;
+}
+
+}
+
+@media(max-width:900px){
+
+.ticker-wrapper{
+padding:8px 5%;
+gap:8px;
+}
+
+.ticker-item{
+font-size:14px;
+line-height:22px;
+}
+
+.ticker-mask{
+height:22px;
+}
+
+}
+
+/* ================================
+   Announcement Ticker System END
+   ================================ */
+
