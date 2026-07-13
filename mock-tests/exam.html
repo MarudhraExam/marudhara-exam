@@ -599,43 +599,50 @@
         // options, explanations, stored Firestore data, or existing line breaks
         // beyond collapsing accidental duplicates that the insertion itself could
         // create. It runs purely on the text used for rendering the question.
-        function enhanceQuestionDisplayFormatting(text) {
-            if (!text) return text;
-            let result = text;
+       function enhanceQuestionDisplayFormatting(text) {
 
-            // Statement markers such as (1), (2), (3), (4), (5) start a new line
-            // when they occur after other text on the same line.
-            result = result.replace(/([^\n])\s*(\([1-9]\))/g, (match, prevChar, marker) => {
-                return `${prevChar}\n${marker}`;
-            });
+    if (!text) return "";
 
-            // Common headings/labels should start on their own line when they
-            // appear in the middle of the text (only when required).
-            const headingPhrases = [
-                "सही उत्तर है",
-                "निम्नलिखित",
-                "निम्न कथनों पर विचार कीजिए",
-                "Assertion",
-                "Reason",
-                "Column-I",
-                "Column-II",
-                "Match the following",
-                "सुमेलित कीजिए",
-                "Statement-I",
-                "Statement-II"
-            ];
-            headingPhrases.forEach((phrase) => {
-                const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                const headingRegex = new RegExp(`([^\n])\\s*(${escapedPhrase})`, "g");
-                result = result.replace(headingRegex, (match, prevChar, headingMatch) => `${prevChar}\n${headingMatch}`);
-            });
+    let result = String(text);
 
-            // Never leave duplicate/blank lines behind from the insertions above.
-            result = result.replace(/\n{2,}/g, "\n");
-            result = result.replace(/^\n+/, "");
+    result = result.replace(/\r\n/g, "\n");
+    result = result.replace(/\r/g, "\n");
 
-            return result;
-        }
+    result = result.replace(/अभिकथन\s*\(A\)\s*:?\s*/gi,"\n\nअभिकथन (A):\n");
+    result = result.replace(/कारण\s*\(R\)\s*:?\s*/gi,"\n\nकारण (R):\n");
+
+    result = result.replace(/Assertion\s*\(A\)\s*:?\s*/gi,"\n\nAssertion (A):\n");
+    result = result.replace(/Reason\s*\(R\)\s*:?\s*/gi,"\n\nReason (R):\n");
+
+    result = result.replace(/\s*(\([1-9][0-9]?\))/g,"\n$1");
+    result = result.replace(/\s*(\([A-E]\))/g,"\n$1");
+
+    result = result.replace(/Column-I/gi,"\n\nColumn-I\n");
+    result = result.replace(/Column-II/gi,"\nColumn-II\n");
+
+    result = result.replace(/Statement-I/gi,"\n\nStatement-I\n");
+    result = result.replace(/Statement-II/gi,"\nStatement-II\n");
+
+    result = result.replace(/कथन-I/g,"\n\nकथन-I\n");
+    result = result.replace(/कथन-II/g,"\nकथन-II\n");
+
+    result = result.replace(/Match the following/gi,"\n\nMatch the following\n");
+    result = result.replace(/सुमेलित कीजिए/g,"\n\nसुमेलित कीजिए\n");
+
+    result = result.replace(/निम्न कथनों पर विचार कीजिए[:：]?/g,
+        "निम्न कथनों पर विचार कीजिए :\n");
+
+    result = result.replace(/निम्नलिखित[:：]?/g,
+        "\nनिम्नलिखित\n");
+
+    result = result.replace(/सही उत्तर है[:：]?/g,
+        "\n\nसही उत्तर है :\n");
+
+    result = result.replace(/\n{3,}/g,"\n\n");
+
+    return result.trim();
+
+}
 
         function renderQuestion() {
             if (!questions.length || currentIndex < 0 || currentIndex >= questions.length) {
