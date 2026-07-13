@@ -129,7 +129,11 @@ font-size:32px;
 /* ===== Offer Banner Section ===== */
 
 .offer-section{
+    width:100%;
     max-width:1200px;
+    margin:20px auto;
+    padding:0 15px;
+}
     margin:25px auto;
     display:flex;
     gap:20px;
