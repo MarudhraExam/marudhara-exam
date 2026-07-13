@@ -135,19 +135,6 @@ font-size:32px;
     padding:0 15px;
 }
 
-.offer-tag{
-    position:absolute;
-    top:10px;
-    left:10px;
-    background:#ff0000;
-    color:#fff;
-    font-size:14px;
-    font-weight:bold;
-    padding:6px 15px;
-    border-radius:30px;
-    z-index:10;
-    animation:newOffer 1s infinite;
-}
 
 @keyframes newOffer{
 
