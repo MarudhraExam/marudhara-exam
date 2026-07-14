@@ -29,7 +29,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
 
 // Keep this list identical to the allow-list in firestore.rules / storage.rules.
 export const ADMIN_EMAILS = [
-  "admin@marudharaexam.in"
+  "jmdseller2025@gmail.com"
 ];
 
 function injectStyles() {

@@ -37,7 +37,7 @@ service cloud.firestore {
       return request.auth != null &&
         request.auth.token.email != null &&
         request.auth.token.email.lower() in [
-          'admin@marudharaexam.in'
+          'jmdseller2025@gmail.com'
         ];
     }
 
