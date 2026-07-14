@@ -2163,12 +2163,26 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.closeSubCategoryBtn.addEventListener('click', closeSubCategorySection);
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      attachListeners();
-      updateCategoryPriceFieldsVisibility();
-      await loadCategories();
-      await loadMockTests();
-    });
+   document.addEventListener('DOMContentLoaded', async () => {
+
+    console.log("STEP 1");
+
+    attachListeners();
+
+    console.log("STEP 2");
+
+    updateCategoryPriceFieldsVisibility();
+
+    console.log("STEP 3");
+
+    await loadCategories();
+
+    console.log("STEP 4");
+
+    await loadMockTests();
+
+    console.log("STEP 5");
+});
   </script>
 </body>
 </html>
