@@ -46,5 +46,39 @@ export async function handlePurchaseStatus(request, env) {
     paidByCategory[id] = !!(categories[id] && categories[id].paid === true);
   });
 
-  return json(env, { success: true, mobile, categories: paidByCategory });
+  // Payment History (used by the new My Account page only — nothing
+  // existing calls this endpoint without a categoryId today). Each paid
+  // category's last order is looked up for amount/currency; the category
+  // access boolean map above is completely unaffected either way.
+  const purchasedEntries = Object.entries(categories).filter(([, entry]) => entry && entry.paid === true);
+  let history = [];
+  try {
+    history = await Promise.all(purchasedEntries.map(async ([id, entry]) => {
+      let amount = null;
+      let currency = null;
+      if (entry.lastOrderId) {
+        try {
+          const order = await getDocument(env, 'paymentOrders', entry.lastOrderId);
+          if (order) {
+            amount = typeof order.amount === 'number' ? order.amount : null;
+            currency = order.currency || null;
+          }
+        } catch (err) {
+          console.error('purchase-status: order lookup failed for', entry.lastOrderId, err.message);
+        }
+      }
+      return {
+        categoryId: id,
+        paidAt: entry.paidAt || null,
+        amount,
+        currency,
+        lastOrderId: entry.lastOrderId || null,
+        lastPaymentId: entry.lastPaymentId || null
+      };
+    }));
+  } catch (err) {
+    console.error('purchase-status: history build failed:', err.message);
+  }
+
+  return json(env, { success: true, mobile, categories: paidByCategory, history });
 }
