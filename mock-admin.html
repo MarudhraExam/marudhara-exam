@@ -840,10 +840,31 @@ No Sub Categories
       getCountFromServer
     } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
-    // Blocks all page interaction until a signed-in, allow-listed admin
-    // account is present. Real enforcement happens in firestore.rules.
-    await guardAdmin(app);
+    console.log("A: all imports resolved, module body executing");
 
+    // ─────────────────────────────────────────────────────────────────
+    // ROOT CAUSE OF "STEP 1 never prints":
+    // This used to say `await guardAdmin(app);` right here, as a TOP-LEVEL
+    // await. A top-level await in a module PAUSES the entire module body at
+    // that exact line until the promise settles. Every line written after it
+    // — including the `document.addEventListener('DOMContentLoaded', ...)`
+    // call at the very bottom of this file — simply never runs until that
+    // await resolves. If guardAdmin(app) ever:
+    //   - throws / rejects (bad import path for ./admin-auth.js or
+    //     ./firebase.js, `app` being undefined, allow-list check failing), or
+    //   - never resolves (e.g. it's waiting on an onAuthStateChanged callback
+    //     that never fires because no one is signed in yet),
+    // then this module crashes/hangs right here, and NOTHING below it ever
+    // executes — the DOMContentLoaded listener is never even registered, so
+    // "STEP 1" can never print, no matter what the DOMContentLoaded code
+    // itself looks like.
+    //
+    // FIX: guardAdmin(app) is now called *inside* the DOMContentLoaded
+    // handler (see the bottom of this file), wrapped in try/catch, so:
+    //   1. The listener is ALWAYS registered (it's a synchronous call).
+    //   2. If guardAdmin(app) fails, we get a clear console.error instead of
+    //      silent, total script death.
+    // ─────────────────────────────────────────────────────────────────
 
     // INTEGRATION POINT (student-facing pages, not part of this file):
     // - mockCategories docs now expose `hasSubCategory` (boolean, default false).
@@ -2163,25 +2184,44 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.closeSubCategoryBtn.addEventListener('click', closeSubCategorySection);
     }
 
+   console.log("B: about to register DOMContentLoaded listener");
+
    document.addEventListener('DOMContentLoaded', async () => {
 
     console.log("STEP 1");
 
+    // Blocks all page interaction until a signed-in, allow-listed admin
+    // account is present. Real enforcement happens in firestore.rules.
+    // This now lives inside the listener (not as a top-level await) and is
+    // wrapped in try/catch so a failure here can't silently kill the whole
+    // module before the listener even gets attached.
+    try {
+      console.log("STEP 1a: calling guardAdmin(app)");
+      await guardAdmin(app);
+      console.log("STEP 1b: guardAdmin(app) resolved OK");
+    } catch (err) {
+      console.error("STEP 1 CRASH POINT: guardAdmin(app) threw/rejected:", err);
+      setStatus(`Admin check failed: ${err && err.message ? err.message : err}`, 'error');
+      return; // stop here — don't wire up the rest of the admin UI
+    }
+
+    console.log("STEP 2: attaching listeners");
+
     attachListeners();
 
-    console.log("STEP 2");
+    console.log("STEP 3: setting price field visibility");
 
     updateCategoryPriceFieldsVisibility();
 
-    console.log("STEP 3");
+    console.log("STEP 4: loading categories");
 
     await loadCategories();
 
-    console.log("STEP 4");
+    console.log("STEP 5: loading mock tests");
 
     await loadMockTests();
 
-    console.log("STEP 5");
+    console.log("STEP 6: init complete");
 });
   </script>
 </body>
