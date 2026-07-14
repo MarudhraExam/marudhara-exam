@@ -424,6 +424,50 @@
       margin-top: 8px;
     }
 
+    /* Mock Test List filter bar (Category / Sub Category) */
+    .mock-list-divider {
+      height: 1px;
+      border: 0;
+      margin: 28px 0 0;
+      background: linear-gradient(90deg, transparent, #d8e0ef 12%, #d8e0ef 88%, transparent);
+    }
+
+    .mock-filter-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 280px));
+      gap: 16px;
+      align-items: end;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f6f9ff;
+      border: 1px solid #e1e8f8;
+      border-radius: 20px;
+    }
+
+    .mock-filter-bar label {
+      margin: 0;
+      color: #23314f;
+    }
+
+    .mock-list-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .mock-list-count {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0b4ea2;
+      background: #eef4ff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
     @media (max-width: 1120px) {
       .layout {
         grid-template-columns: 1fr;
@@ -755,8 +799,31 @@ No Sub Categories
             <button type="button" class="button-secondary" id="cancelMockBtn" hidden>Cancel Edit</button>
           </div>
 
-          <div style="margin-top:32px;">
-            <h3 style="margin-bottom:14px;color:#3f4e72;">Mock Test List</h3>
+          <hr class="mock-list-divider" />
+
+          <!-- Mock Test List filters: narrow down 100+ mock tests by Category, then
+               Sub Category. Purely client-side filtering over already-loaded
+               mockTests — no new Firestore collections, no change to CRUD logic. -->
+          <div class="mock-filter-bar">
+            <label>
+              Category
+              <select id="mockFilterCategorySelect">
+                <option value="">Select Category</option>
+              </select>
+            </label>
+            <label id="mockFilterSubCategoryWrapper" style="display:none;">
+              Sub Category
+              <select id="mockFilterSubCategorySelect">
+                <option value="">All Sub Categories</option>
+              </select>
+            </label>
+          </div>
+
+          <div style="margin-top:24px;">
+            <div class="mock-list-heading-row">
+              <h3 style="margin-bottom:0;color:#3f4e72;">Mock Test List</h3>
+              <span class="mock-list-count" id="mockFilterCount">0 tests</span>
+            </div>
             <div id="mockTestList" class="placeholder-list">
               <div class="placeholder-item">Loading mock tests...</div>
             </div>
@@ -926,6 +993,12 @@ No Sub Categories
       mockTestList: document.getElementById('mockTestList'),
       mockSubCategoryWrapper: document.getElementById('mockSubCategoryWrapper'),
       mockSubCategorySelect: document.getElementById('mockSubCategorySelect'),
+      // Mock Test List filters (Category / Sub Category) — separate from the
+      // Publish form's own mockCategorySelect / mockSubCategorySelect above.
+      mockFilterCategorySelect: document.getElementById('mockFilterCategorySelect'),
+      mockFilterSubCategoryWrapper: document.getElementById('mockFilterSubCategoryWrapper'),
+      mockFilterSubCategorySelect: document.getElementById('mockFilterSubCategorySelect'),
+      mockFilterCount: document.getElementById('mockFilterCount'),
       // FEATURE 1: Live Date & Live Time form fields
       mockLiveDate: document.getElementById('mockLiveDate'),
       mockLiveTime: document.getElementById('mockLiveTime'),
@@ -950,6 +1023,9 @@ No Sub Categories
     let categories = [];
     let subCategories = [];
     let mockFormSubCategories = [];
+    // Sub categories currently loaded for the Mock Test List filter bar
+    // (separate from mockFormSubCategories used by the Publish form).
+    let mockFilterSubCategories = [];
 
     let editingCategoryId = null;
     let editingSubCategoryId = null;
@@ -1198,6 +1274,30 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       }
     }
 
+    // Populates the Mock Test List filter's Category dropdown. Kept separate
+    // from renderCategoryDropdown() (used by the Publish form) because the
+    // two dropdowns have different defaults ("Select Category" vs
+    // "Select category") and different selection state.
+    function renderMockFilterCategoryDropdown() {
+      if (!categories.length) {
+        elements.mockFilterCategorySelect.innerHTML = '<option value="">No categories available</option>';
+        return;
+      }
+
+      const previousValue = elements.mockFilterCategorySelect.value;
+      const options = ['<option value="">Select Category</option>'];
+      categories.forEach(category => {
+        options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`);
+      });
+      elements.mockFilterCategorySelect.innerHTML = options.join('');
+
+      // Preserve the admin's current filter selection across a data refresh
+      // (e.g. clicking "Refresh Data") instead of silently resetting it.
+      if (previousValue && categories.some(category => category.id === previousValue)) {
+        elements.mockFilterCategorySelect.value = previousValue;
+      }
+    }
+
     function renderMockUploadDropdown() {
       if (!mockTests.length) {
         elements.mockUploadSelect.innerHTML = '<option value="">No mock tests available</option>';
@@ -1434,13 +1534,87 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         </article>`;
     }
 
+    // Returns mockTests narrowed down by whatever is currently selected in the
+    // Mock Test List filter bar. Pure client-side filtering over the already
+    // loaded `mockTests` array — no extra Firestore reads, no change to the
+    // document structure. Rules (per requirements):
+    //   - No category selected            -> show everything
+    //   - Category selected only          -> show all mocks of that category
+    //   - Category + Sub Category selected -> show only that exact combination
+    function getFilteredMockTests() {
+      const categoryId = elements.mockFilterCategorySelect ? elements.mockFilterCategorySelect.value : '';
+      const subCategoryId = elements.mockFilterSubCategorySelect ? elements.mockFilterSubCategorySelect.value : '';
+
+      if (!categoryId) {
+        return mockTests;
+      }
+
+      let filtered = mockTests.filter(mock => mock.categoryId === categoryId);
+
+      if (subCategoryId) {
+        filtered = filtered.filter(mock => mock.subCategoryId === subCategoryId);
+      }
+
+      return filtered;
+    }
+
+    // Loads Sub Categories for the Category chosen in the Mock Test List
+    // filter bar, populates the Sub Category dropdown, and re-renders the
+    // list instantly — no page reload. Mirrors handleMockCategoryChange()
+    // (used by the Publish form) but keeps its own dropdown/state so the two
+    // features never interfere with each other.
+    async function handleMockFilterCategoryChange() {
+      const categoryId = elements.mockFilterCategorySelect.value;
+      mockFilterSubCategories = [];
+      elements.mockFilterSubCategorySelect.innerHTML = '<option value="">All Sub Categories</option>';
+
+      if (!categoryId) {
+        elements.mockFilterSubCategoryWrapper.style.display = 'none';
+        renderMockTests();
+        return;
+      }
+
+      const selectedCategory = categories.find(category => category.id === categoryId);
+
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        try {
+          mockFilterSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        } catch (error) {
+          console.error(error);
+          mockFilterSubCategories = [];
+        }
+
+        const options = ['<option value="">All Sub Categories</option>'];
+        mockFilterSubCategories.forEach(subCategory => {
+          options.push(`<option value="${escapeHtml(subCategory.id)}">${escapeHtml(subCategory.name)}</option>`);
+        });
+        elements.mockFilterSubCategorySelect.innerHTML = options.join('');
+        elements.mockFilterSubCategoryWrapper.style.display = '';
+      } else {
+        elements.mockFilterSubCategoryWrapper.style.display = 'none';
+      }
+
+      renderMockTests();
+    }
+
     function renderMockTests() {
+      const filtered = getFilteredMockTests();
+
+      if (elements.mockFilterCount) {
+        elements.mockFilterCount.textContent = `${filtered.length} test${filtered.length === 1 ? '' : 's'}`;
+      }
+
       if (!mockTests.length) {
         elements.mockTestList.innerHTML = '<div class="placeholder-item">No mock tests published yet.</div>';
         return;
       }
 
-      elements.mockTestList.innerHTML = mockTests.map(formatMockRow).join('');
+      if (!filtered.length) {
+        elements.mockTestList.innerHTML = '<div class="placeholder-item">No mock tests match the selected Category / Sub Category.</div>';
+        return;
+      }
+
+      elements.mockTestList.innerHTML = filtered.map(formatMockRow).join('');
       attachMockActions();
     }
 
@@ -1553,6 +1727,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         });
         renderCategories();
         renderCategoryDropdown();
+        renderMockFilterCategoryDropdown();
         updateStats();
         setStatus(`Loaded ${categories.length} categories.`, 'success');
       } catch (error) {
@@ -2178,6 +2353,14 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.cancelMockBtn.addEventListener('click', resetMockForm);
       elements.mockCategorySelect.addEventListener('change', () => {
         handleMockCategoryChange();
+      });
+      // Mock Test List filter bar: changing Category loads its Sub
+      // Categories and instantly re-renders the visible list (no reload).
+      elements.mockFilterCategorySelect.addEventListener('change', () => {
+        handleMockFilterCategoryChange();
+      });
+      elements.mockFilterSubCategorySelect.addEventListener('change', () => {
+        renderMockTests();
       });
       elements.saveSubCategoryBtn.addEventListener('click', saveSubCategory);
       elements.cancelSubCategoryBtn.addEventListener('click', resetSubCategoryForm);
