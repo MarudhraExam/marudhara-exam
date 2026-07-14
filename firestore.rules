@@ -173,6 +173,17 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Student accounts — Firebase Phone Authentication (OTP) login.
+    // A signed-in student may read/write ONLY their own profile document,
+    // keyed by their Firebase Auth uid (users/{uid}: uid, name, mobile,
+    // createdAt, lastLogin). No other student or anonymous visitor can
+    // read or modify another student's profile.
+    // ------------------------------------------------------------------
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ------------------------------------------------------------------
     // Everything else: denied by default (no more open test-mode rules).
     // ------------------------------------------------------------------
     match /{document=**} {
