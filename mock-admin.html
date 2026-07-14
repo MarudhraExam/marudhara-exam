@@ -1523,9 +1523,13 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     async function loadCategories() {
       try {
         setStatus('Loading categories...');
-        const q = query(collection(db, COLLECTIONS.categories), orderBy('order', orderAscending ? 'asc' : 'desc'));
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(collection(db, COLLECTIONS.categories));
         categories = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        categories.sort((a, b) => {
+          const orderA = Number.isFinite(a.order) ? a.order : 0;
+          const orderB = Number.isFinite(b.order) ? b.order : 0;
+          return orderAscending ? orderA - orderB : orderB - orderA;
+        });
         renderCategories();
         renderCategoryDropdown();
         updateStats();
@@ -1555,9 +1559,12 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
     async function loadMockTests() {
       try {
-        const q = query(collection(db, COLLECTIONS.tests), orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
+        const snapshot = await getDocs(collection(db, COLLECTIONS.tests));
         mockTests = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        mockTests.sort((a, b) => {
+          const toMillis = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : 0;
+          return toMillis(b.createdAt) - toMillis(a.createdAt);
+        });
         await loadMockAttemptCounts();
         renderMockTests();
         renderMockUploadDropdown();
