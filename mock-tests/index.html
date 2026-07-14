@@ -968,40 +968,7 @@
         // same liveDateTime rule as category.html — capped to a reasonable
         // number per section so the dashboard stays scannable; the full list
         // for any one category is always available via "View tests".
-        let liveRows = [];
-        let upcomingRows = [];
-        try {
-          const testsSnapshot = await getDocs(collection(db, 'mockTests'));
-          const allTests = testsSnapshot.docs
-            .map(d => ({ id: d.id, ...d.data() }))
-            .filter(t => categoriesById[t.categoryId]);
-
-          const upcoming = [];
-          const live = [];
-          allTests.forEach(test => {
-            const state = getMockLiveState(test);
-            if (state.locked) upcoming.push({ test, liveMoment: state.liveMoment });
-            else live.push(test);
-          });
-
-          upcoming.sort((a, b) => a.liveMoment - b.liveMoment);
-
-          liveRows = live.slice(0, 8).map(test => buildMockRow(
-            test,
-            categoriesById[test.categoryId] && categoriesById[test.categoryId].name,
-            '<span class="badge badge-live">Live</span>'
-          ));
-          upcomingRows = upcoming.slice(0, 8).map(({ test, liveMoment }) => buildMockRow(
-            test,
-            categoriesById[test.categoryId] && categoriesById[test.categoryId].name,
-            `<span class="badge badge-upcoming">Starts ${escapeHtml(formatLiveMoment(liveMoment))}</span>`
-          ));
-        } catch (mockError) {
-          console.error('Error loading mock tests for Live/Upcoming sections:', mockError);
-        }
-
-        liveList.innerHTML = liveRows.length ? liveRows.join('') : '<div class="dash-empty">No mock tests are live right now.</div>';
-        upcomingList.innerHTML = upcomingRows.length ? upcomingRows.join('') : '<div class="dash-empty">No upcoming mock tests scheduled.</div>';
+    
 
         dashboardSections.style.display = '';
         setStatus('Select a category or mock test to begin.');
