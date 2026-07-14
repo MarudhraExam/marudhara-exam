@@ -12,8 +12,11 @@
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const FIRESTORE_SCOPE = 'https://www.googleapis.com/auth/datastore';
+// Used only by the Forgot Password flow (worker/lib/firebaseAuthAdmin.js)
+// to call the Firebase Identity Toolkit Admin API server-side.
+export const IDENTITY_TOOLKIT_SCOPE = 'https://www.googleapis.com/auth/identitytoolkit';
 
-let cachedToken = null; // { accessToken, expiresAt }
+const cachedTokens = {}; // scope -> { accessToken, expiresAt }
 
 function base64UrlEncode(bytes) {
   let binary = '';
@@ -44,12 +47,12 @@ async function importPrivateKey(pem) {
   );
 }
 
-async function signJwt(env) {
+async function signJwt(env, scope) {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', typ: 'JWT' };
   const claimSet = {
     iss: env.FIREBASE_CLIENT_EMAIL,
-    scope: FIRESTORE_SCOPE,
+    scope,
     aud: TOKEN_URL,
     iat: now,
     exp: now + 3600
@@ -73,14 +76,20 @@ async function signJwt(env) {
   return `${unsignedToken}.${base64UrlEncode(signature)}`;
 }
 
-/** Returns a valid Google OAuth2 access token, refreshing/caching as needed. */
-export async function getGoogleAccessToken(env) {
+/**
+ * Returns a valid Google OAuth2 access token, refreshing/caching as
+ * needed. `scope` defaults to the Firestore scope every existing caller
+ * already relies on; pass IDENTITY_TOOLKIT_SCOPE for the Forgot Password
+ * Admin API calls instead. Each scope is cached independently.
+ */
+export async function getGoogleAccessToken(env, scope = FIRESTORE_SCOPE) {
   const nowMs = Date.now();
-  if (cachedToken && cachedToken.expiresAt - 60_000 > nowMs) {
-    return cachedToken.accessToken;
+  const cached = cachedTokens[scope];
+  if (cached && cached.expiresAt - 60_000 > nowMs) {
+    return cached.accessToken;
   }
 
-  const assertion = await signJwt(env);
+  const assertion = await signJwt(env, scope);
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -95,9 +104,9 @@ export async function getGoogleAccessToken(env) {
     throw new Error(`Google OAuth token exchange failed: ${data?.error_description || res.statusText}`);
   }
 
-  cachedToken = {
+  cachedTokens[scope] = {
     accessToken: data.access_token,
     expiresAt: nowMs + data.expires_in * 1000
   };
-  return cachedToken.accessToken;
+  return cachedTokens[scope].accessToken;
 }
