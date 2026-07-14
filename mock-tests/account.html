@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marudhara Exam | My Account</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+    body, button { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .page-shell { max-width: 1000px; margin: 0 auto; padding: 24px 20px 40px; }
+    header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand .logo { width: 52px; height: 52px; border-radius: 18px; display: grid; place-items: center; background: #0b4ea2; color: #fff; font-weight: 800; font-size: 1.1rem; }
+    .brand h1 { margin: 0; font-size: 1.8rem; line-height: 1.1; }
+    .top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .button-primary { border: 0; border-radius: 14px; padding: 12px 18px; background: #0b4ea2; color: #fff; cursor: pointer; }
+    .button-primary:hover { background: #0f3c7f; }
+    .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 14px; padding: 12px 18px; background: #fff; color: #0b4ea2; cursor: pointer; }
+    .button-secondary:hover { background: #eef4ff; }
+    .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
+    .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+
+    .profile-card {
+      display: flex; align-items: center; gap: 18px; background: #fff;
+      border: 1px solid rgba(35,49,79,.1); border-radius: 22px; padding: 22px; margin-bottom: 26px;
+    }
+    .profile-photo {
+      width: 72px; height: 72px; border-radius: 50%; background: #eef4ff; color: #0b4ea2;
+      display: grid; place-items: center; font-size: 1.8rem; font-weight: 800; flex-shrink: 0;
+    }
+    .profile-details h2 { margin: 0 0 4px; font-size: 1.3rem; color: #102a52; }
+    .profile-details p { margin: 0; color: #5f6f8f; }
+
+    .section { margin-bottom: 30px; }
+    .section h2 { font-size: 1.1rem; color: #102a52; margin: 0 0 14px; border-left: 4px solid #0b4ea2; padding-left: 10px; }
+    .table-wrap { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 18px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(35,49,79,.08); }
+    th { background: #f4f7fb; color: #33456b; font-weight: 700; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+    .badge.paid { background: #e6f7ea; color: #1e583a; }
+    .empty-state { padding: 24px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+    .view-link { color: #0b4ea2; font-weight: 700; }
+    @media (max-width: 640px) {
+      .profile-card { flex-direction: column; align-items: flex-start; text-align: left; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 560px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div><h1>My Account</h1></div>
+      </div>
+      <div class="top-actions">
+        <a class="button-secondary" href="index.html">Back to dashboard</a>
+        <button class="button-primary" id="logoutBtn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <div id="statusBar" class="status-bar">Loading your account…</div>
+
+    <div class="profile-card" id="profileCard" style="display:none;">
+      <div class="profile-photo" id="profileInitial">?</div>
+      <div class="profile-details">
+        <h2 id="profileName">—</h2>
+        <p id="profileMobile">—</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Purchased Categories</h2>
+      <div id="purchasedWrap"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Mock Attempt History &amp; Results</h2>
+      <div id="attemptsWrap"><div class="empty-state">Loading…</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Payment History</h2>
+      <div id="paymentsWrap"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from '../firebase.js';
+    import { collection, getDocs, query, where, orderBy, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+
+    const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
+
+    const statusBar = document.getElementById('statusBar');
+    const profileCard = document.getElementById('profileCard');
+    const profileInitial = document.getElementById('profileInitial');
+    const profileName = document.getElementById('profileName');
+    const profileMobile = document.getElementById('profileMobile');
+    const purchasedWrap = document.getElementById('purchasedWrap');
+    const attemptsWrap = document.getElementById('attemptsWrap');
+    const paymentsWrap = document.getElementById('paymentsWrap');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // Same mockExamSession shape used across confirm.html / payment.html /
+    // exam.html / mock-tests/index.html — reused here unchanged.
+    function getStoredStudent() {
+      try {
+        const raw = localStorage.getItem('mockExamSession') || sessionStorage.getItem('mockExamSession');
+        const session = raw ? JSON.parse(raw) : null;
+        return {
+          studentName: session && session.studentName ? String(session.studentName).trim() : '',
+          studentMobile: session && session.studentMobile ? String(session.studentMobile).trim() : ''
+        };
+      } catch {
+        return { studentName: '', studentMobile: '' };
+      }
+    }
+
+    function clearStoredStudent() {
+      try { sessionStorage.removeItem('mockExamSession'); } catch {}
+      try { localStorage.removeItem('mockExamSession'); } catch {}
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadProfile(user) {
+      let name = '';
+      let mobile = '';
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          name = snap.data().name || '';
+          mobile = snap.data().mobile || '';
+        }
+      } catch (err) {
+        console.error('Unable to load profile doc:', err);
+      }
+      if (!name || !mobile) {
+        const stored = getStoredStudent();
+        name = name || stored.studentName;
+        mobile = mobile || stored.studentMobile;
+      }
+      profileName.textContent = name || 'Student';
+      profileMobile.textContent = mobile ? `+91 ${mobile}` : '—';
+      profileInitial.textContent = (name || 'S').trim().charAt(0).toUpperCase();
+      profileCard.style.display = '';
+      return { name, mobile };
+    }
+
+    // TASK 3/4: purchased categories always come from the same
+    // /api/purchase-status endpoint (backed by userCategoryAccess, keyed by
+    // the verified mobile number) already used across the site — never
+    // from localStorage/device/browser state.
+    async function loadPurchasedCategories(mobile) {
+      if (!mobile) {
+        purchasedWrap.innerHTML = '<div class="empty-state">No mobile number on file.</div>';
+        return;
+      }
+      try {
+        const [categoriesSnap, statusRes] = await Promise.all([
+          getDocs(collection(db, 'mockCategories')),
+          fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}`).then(r => r.ok ? r.json() : null)
+        ]);
+        const categories = categoriesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const paidMap = (statusRes && statusRes.success && statusRes.categories) || {};
+        const purchased = categories.filter(c => c.isFree === false && paidMap[c.id] === true);
+
+        if (!purchased.length) {
+          purchasedWrap.innerHTML = '<div class="empty-state">No premium categories purchased yet.</div>';
+          return;
+        }
+
+        purchasedWrap.innerHTML = `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Category</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              ${purchased.map(c => `
+                <tr>
+                  <td>${escapeHtml(c.name || c.id)}</td>
+                  <td><span class="badge paid">Purchased</span></td>
+                  <td><a class="view-link" href="category.html?id=${encodeURIComponent(c.id)}">View tests</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+      } catch (err) {
+        console.error('Error loading purchased categories:', err);
+        purchasedWrap.innerHTML = '<div class="empty-state">Unable to load purchased categories right now.</div>';
+      }
+    }
+
+    async function loadAttemptHistory(mobile) {
+      if (!mobile) {
+        attemptsWrap.innerHTML = '<div class="empty-state">No mobile number on file.</div>';
+        return;
+      }
+      try {
+        const resultsQuery = query(collection(db, 'mockResults'), where('mobile', '==', mobile));
+        const snap = await getDocs(resultsQuery);
+        let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        results.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+        results = results.slice(0, 50);
+
+        if (!results.length) {
+          attemptsWrap.innerHTML = '<div class="empty-state">No mock tests attempted yet.</div>';
+          return;
+        }
+
+        attemptsWrap.innerHTML = `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Mock Test</th><th>Score</th><th>%</th><th>Submitted</th><th></th></tr></thead>
+            <tbody>
+              ${results.map(r => `
+                <tr>
+                  <td>${escapeHtml(r.mockTitle || r.mockId || 'Mock Test')}</td>
+                  <td>${escapeHtml(r.score ?? '—')}</td>
+                  <td>${escapeHtml(r.percentage ?? '—')}%</td>
+                  <td>${escapeHtml(formatDate(r.submittedAt))}</td>
+                  <td><a class="view-link" href="result.html?resultId=${encodeURIComponent(r.id)}">View result</a></td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+      } catch (err) {
+        console.error('Error loading attempt history:', err);
+        attemptsWrap.innerHTML = '<div class="empty-state">Unable to load attempt history right now.</div>';
+      }
+    }
+
+    // Payment History: userCategoryAccess/paymentOrders are locked to
+    // "deny all" for every browser client in firestore.rules (by design —
+    // only the Worker's service account may touch them), so this reads the
+    // additive `history` field returned by the existing, read-only
+    // GET /api/purchase-status endpoint instead of touching those
+    // collections directly.
+    async function loadPaymentHistory(mobile) {
+      if (!mobile) {
+        paymentsWrap.innerHTML = '<div class="empty-state">No mobile number on file.</div>';
+        return;
+      }
+      try {
+        const res = await fetch(`${PAYMENT_API_BASE}/api/purchase-status?mobile=${encodeURIComponent(mobile)}`);
+        const data = res.ok ? await res.json() : null;
+        const history = (data && data.success && Array.isArray(data.history)) ? data.history : [];
+
+        if (!history.length) {
+          paymentsWrap.innerHTML = '<div class="empty-state">No payments made yet.</div>';
+          return;
+        }
+
+        const categoriesSnap = await getDocs(collection(db, 'mockCategories'));
+        const categoryNames = Object.fromEntries(categoriesSnap.docs.map(d => [d.id, (d.data() || {}).name || d.id]));
+
+        history.sort((a, b) => new Date(b.paidAt || 0) - new Date(a.paidAt || 0));
+
+        paymentsWrap.innerHTML = `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Category</th><th>Amount</th><th>Date</th><th>Payment Ref</th></tr></thead>
+            <tbody>
+              ${history.map(h => `
+                <tr>
+                  <td>${escapeHtml(categoryNames[h.categoryId] || h.categoryId)}</td>
+                  <td>${h.amount ? '₹' + escapeHtml((h.amount / 100).toFixed(2)) : '—'}</td>
+                  <td>${escapeHtml(formatDate(h.paidAt))}</td>
+                  <td>${escapeHtml(h.lastPaymentId || '—')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>`;
+      } catch (err) {
+        console.error('Error loading payment history:', err);
+        paymentsWrap.innerHTML = '<div class="empty-state">Unable to load payment history right now.</div>';
+      }
+    }
+
+    logoutBtn.addEventListener('click', async () => {
+      try { await signOut(auth); } catch (err) { console.error('Sign out failed:', err); }
+      clearStoredStudent();
+      window.location.href = 'index.html';
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      // Same rule as mock-tests/index.html: only a Phone Auth (student) user
+      // counts as a logged-in student here, never an admin email session.
+      if (!user || !user.phoneNumber) {
+        setStatus('Please login to view your account.', 'error');
+        window.location.href = 'index.html';
+        return;
+      }
+      try {
+        setStatus('Loading your account…');
+        const { mobile } = await loadProfile(user);
+        await Promise.all([
+          loadPurchasedCategories(mobile),
+          loadAttemptHistory(mobile),
+          loadPaymentHistory(mobile)
+        ]);
+        setStatus('Account loaded.');
+      } catch (err) {
+        console.error('Error loading account:', err);
+        setStatus('Unable to load your account right now.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
