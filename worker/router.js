@@ -4,6 +4,7 @@ import { handleVerifyPayment } from './handlers/verifyPayment.js';
 import { handleWebhook } from './handlers/webhook.js';
 import { handlePurchaseStatus } from './handlers/purchaseStatus.js';
 import { handleDownloadQuestionPaper } from './handlers/downloadQuestionPaper.js';
+import { handleResetPassword } from './handlers/resetPassword.js';
 
 const routes = [
   { method: 'POST', path: '/api/create-order', handler: handleCreateOrder },
@@ -12,7 +13,11 @@ const routes = [
   { method: 'POST', path: '/api/webhook', handler: handleWebhook },
   // Secure Question Paper PDF download: reads the mock's pdfLink server-side
   // only, watermarks it with the student's name/mobile, and streams it back.
-  { method: 'GET', path: '/api/download-question-paper', handler: handleDownloadQuestionPaper }
+  { method: 'GET', path: '/api/download-question-paper', handler: handleDownloadQuestionPaper },
+  // Forgot Password (no SMS/email OTP): re-confirms Full Name + Mobile
+  // against the users collection, then admin-resets the Firebase Auth
+  // password directly.
+  { method: 'POST', path: '/api/reset-password', handler: handleResetPassword }
 ];
 
 export async function route(request, env, ctx) {
