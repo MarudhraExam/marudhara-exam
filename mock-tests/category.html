@@ -191,10 +191,15 @@ function sortMocksByLiveStatus(tests) {
         const liveState = getMockLiveState(test);
         const locked = liveState.locked;
 
-        // FEATURE 6: LIVE (green) vs Scheduled (orange) badge
+        // FEATURE 6: Scheduled (orange) badge only. The green "LIVE" badge
+        // has been removed from this per-card badge row — it was
+        // redundant with the dashboard's own dedicated "Live Mock Tests" /
+        // "Upcoming Mock Tests" sections. Locked/scheduling logic itself
+        // (liveState, lockNotice, button disabling/labeling below) is
+        // unchanged.
         const statusBadge = locked
           ? '<span class="badge badge-locked">Scheduled</span>'
-          : '<span class="badge badge-live">LIVE</span>';
+          : '';
 
         // FEATURE 3 & 8: locked notice with formatted live date/time
         let lockNotice = '';
