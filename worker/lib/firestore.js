@@ -229,3 +229,66 @@ export async function runDocumentTransaction(env, collection, docId, mutate) {
   await commitTransaction(env, transaction, [write]);
   return { committed: true, document: outcome.fields };
 }
+/**
+ * Query documents by a single field value.
+ * Returns plain JS objects with document id included as `id`.
+ */
+export async function queryDocumentsByField(env, collection, fieldName, value) {
+  const accessToken = await getGoogleAccessToken(env);
+
+  const url = `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`;
+
+  const firestoreValue =
+    typeof value === 'string'
+      ? { stringValue: value }
+      : typeof value === 'boolean'
+      ? { booleanValue: value }
+      : Number.isInteger(value)
+      ? { integerValue: String(value) }
+      : { doubleValue: value };
+
+  const body = {
+    structuredQuery: {
+      from: [
+        {
+          collectionId: collection
+        }
+      ],
+      where: {
+        fieldFilter: {
+          field: {
+            fieldPath: fieldName
+          },
+          op: 'EQUAL',
+          value: firestoreValue
+        }
+      }
+    }
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firestore query failed (${res.status}): ${err}`);
+  }
+
+  const rows = await res.json();
+
+  return rows
+    .filter(r => r.document)
+    .map(r => {
+      const doc = r.document;
+      return {
+        id: doc.name.split('/').pop(),
+        ...fromFirestoreFields(doc.fields || {})
+      };
+    });
+}
