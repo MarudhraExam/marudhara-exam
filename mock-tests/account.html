@@ -117,6 +117,15 @@
       return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
+    // Same synthetic student email domain used by mock-tests/index.html's
+    // Mobile Number + Password login, so this page can tell a student
+    // (password-auth) session apart from an admin (admin-auth.js) session
+    // that might be signed in on the same browser.
+    const STUDENT_EMAIL_DOMAIN = 'mockstudent.marudharaexam.in';
+    function isStudentUser(user) {
+      return !!(user && user.email && user.email.toLowerCase().endsWith(`@${STUDENT_EMAIL_DOMAIN}`));
+    }
+
     // Same mockExamSession shape used across confirm.html / payment.html /
     // exam.html / mock-tests/index.html — reused here unchanged.
     function getStoredStudent() {
@@ -298,9 +307,10 @@
     });
 
     onAuthStateChanged(auth, async (user) => {
-      // Same rule as mock-tests/index.html: only a Phone Auth (student) user
-      // counts as a logged-in student here, never an admin email session.
-      if (!user || !user.phoneNumber) {
+      // Same rule as mock-tests/index.html: only a password-auth student
+      // session (synthetic email) counts as logged in here, never an
+      // admin email session.
+      if (!user || !isStudentUser(user)) {
         setStatus('Please login to view your account.', 'error');
         window.location.href = 'index.html';
         return;
