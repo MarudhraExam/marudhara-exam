@@ -4,6 +4,10 @@ import {
 getFirestore
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+import {
+getAuth
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 const firebaseConfig = {
 apiKey: "AIzaSyDHe87UG-QGy2Kxh7RI8t51qOGgppVd_YA",
 authDomain: "marudhara-exam.firebaseapp.com",
@@ -18,3 +22,4 @@ const app = initializeApp(firebaseConfig);
 
 export { app };
 export const db = getFirestore(app);
+export const auth = getAuth(app);
