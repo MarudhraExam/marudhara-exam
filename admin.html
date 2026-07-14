@@ -71,19 +71,6 @@ button:hover{
 
 <body>
 
-<script>
-
-const password = prompt("Admin Password Enter करें");
-
-if(password !== "Marudhara@2026"){
-
-alert("Wrong Password");
-window.location.href = "index.html";
-
-}
-
-</script>
-
 <div class="container">
 
 <h1>⚙️ मरुधरा एग्जाम Admin Panel</h1>
@@ -228,6 +215,8 @@ doc,
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+import { guardAdmin } from "./admin-auth.js";
+
 const firebaseConfig = {
 
 apiKey:
@@ -255,6 +244,11 @@ initializeApp(firebaseConfig);
 
 const db =
 getFirestore(app);
+
+// Blocks all page interaction until a signed-in, allow-listed admin
+// account is present. Real enforcement happens in firestore.rules.
+await guardAdmin(app);
+
 async function loadExams(){
 
 const examList =

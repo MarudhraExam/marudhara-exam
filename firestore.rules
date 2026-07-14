@@ -1,0 +1,182 @@
+rules_version = '2';
+
+// ---------------------------------------------------------------------------
+// Marudhara Exam — Production Firestore Security Rules
+// ---------------------------------------------------------------------------
+// Deploy with:  firebase deploy --only firestore:rules
+// (or paste this file's contents into Firebase Console -> Firestore ->
+// Rules -> Publish).
+//
+// This replaces the default "allow read, write: if true" test-mode rules
+// (the cause of the Firestore Console security warning) with a real,
+// least-privilege policy:
+//
+//   - Site content (exams, vacancies, notes, mock tests, results, etc.)
+//     is publicly READABLE, exactly like today, so the public website
+//     keeps working with zero UI changes.
+//   - Only a signed-in admin account (see ADMIN_EMAILS below) may create,
+//     update, or delete that content.
+//   - Students may CREATE their own mock-test attempt records (no auth
+//     required, matching the current no-login exam flow) but can never
+//     modify or delete an attempt once submitted.
+//   - Payment/purchase data (paymentOrders, userCategoryAccess) is
+//     managed exclusively by the Cloudflare Worker using a service
+//     account, which authenticates via Google OAuth2 and therefore
+//     bypasses these rules entirely — so it is deliberately locked to
+//     "deny all" here for every normal client, preventing anyone from
+//     reading or forging purchase/payment records from the browser.
+//   - Everything not explicitly listed below is denied by default.
+//
+// IMPORTANT: keep ADMIN_EMAILS below in sync with admin-auth.js.
+// ---------------------------------------------------------------------------
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() in [
+          'admin@marudharaexam.in'
+        ];
+    }
+
+    // ------------------------------------------------------------------
+    // Public site content — public read, admin-only write.
+    // ------------------------------------------------------------------
+    match /exams/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /vacancies/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /downloads/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notesCategories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notesSubjects/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notesTopics/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notesPdfs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /offerBanners/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /quizzes/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /dailySujas/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Government exam result PDFs/metadata (result-admin.html).
+    match /results/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Result search system (result-system/).
+    match /resultExams/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /resultStudents/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------
+    // Mock test system — public read, admin-only write.
+    // ------------------------------------------------------------------
+    match /mockCategories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /mockSubCategories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /mockTests/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /mockQuestions/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------
+    // Student-submitted exam attempts — anyone may create their own
+    // attempt (site has no login for students), nobody may edit/delete
+    // one after submission. Read stays public because result.html uses
+    // a live collection query to compute each student's overall rank.
+    // ------------------------------------------------------------------
+    match /mockResults/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.mockId is string
+        && request.resource.data.score is number;
+      allow update, delete: if isAdmin();
+    }
+
+    match /examAttempts/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.mockId is string;
+      allow update, delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------
+    // Payment data — the Cloudflare payments Worker writes/reads this
+    // exclusively via a service account (Google OAuth2), which is NOT
+    // subject to these rules. No browser client should ever touch these
+    // collections directly, so they are fully locked down here.
+    // ------------------------------------------------------------------
+    match /paymentOrders/{docId} {
+      allow read, write: if false;
+    }
+
+    match /userCategoryAccess/{docId} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Everything else: denied by default (no more open test-mode rules).
+    // ------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

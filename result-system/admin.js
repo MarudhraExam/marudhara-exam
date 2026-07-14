@@ -3,6 +3,7 @@
 
 import {
   db,
+  app,
   collection,
   getDocs,
   getDoc,
@@ -19,7 +20,14 @@ import {
   addDoc
 } from "./firebase.js";
 
+import { guardAdmin } from "../admin-auth.js";
+
 import { generateStaticDatabase } from "./generator.js";
+
+// Blocks all page interaction until a signed-in, allow-listed admin
+// account is present. Real enforcement happens in firestore.rules.
+await guardAdmin(app);
+
 
 // ── Constants ────────────────────────────────────────────────
 const RESULTS_COL = 'resultExams';

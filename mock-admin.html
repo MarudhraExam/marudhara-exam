@@ -821,7 +821,8 @@ No Sub Categories
   </div>
 
   <script type="module">
-    import { db } from './firebase.js';
+    import { db, app } from './firebase.js';
+    import { guardAdmin } from './admin-auth.js';
     import * as XLSX from 'https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs';
     import {
       collection,
@@ -838,6 +839,11 @@ No Sub Categories
       writeBatch,
       getCountFromServer
     } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+
+    // Blocks all page interaction until a signed-in, allow-listed admin
+    // account is present. Real enforcement happens in firestore.rules.
+    await guardAdmin(app);
+
 
     // INTEGRATION POINT (student-facing pages, not part of this file):
     // - mockCategories docs now expose `hasSubCategory` (boolean, default false).

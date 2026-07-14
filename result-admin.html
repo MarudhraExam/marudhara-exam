@@ -35,6 +35,7 @@ th{background:#002B5B;color:#fff}
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {getFirestore,collection,addDoc,getDocs,deleteDoc,doc} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { guardAdmin } from "./admin-auth.js";
 
 
 const firebaseConfig={
@@ -48,6 +49,11 @@ appId:"1:680152404373:web:23515d1d06c44dbd33669c"
 
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
+
+// Blocks all page interaction until a signed-in, allow-listed admin
+// account is present. Real enforcement happens in firestore.rules.
+await guardAdmin(app);
+
 
 async function readPdf(file){
  const ab=await file.arrayBuffer();

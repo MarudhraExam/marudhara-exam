@@ -1,6 +1,7 @@
 console.log("IMPORT JS LOADED");
 import {
     db,
+    app,
     collection,
     addDoc,
     getDocs,
@@ -15,6 +16,12 @@ import {
     limit,
     getDoc
 } from './firebase.js';
+import { guardAdmin } from '../admin-auth.js';
+
+// Blocks all page interaction until a signed-in, allow-listed admin
+// account is present. Real enforcement happens in firestore.rules.
+await guardAdmin(app);
+
 const examForm = document.getElementById('exam-form');
 const examIdInput = document.getElementById('exam-id');
 const examNameInput = document.getElementById('exam-name');
