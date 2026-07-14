@@ -303,7 +303,7 @@
 }
 
     /* ---------------------------------------------------------------
-       TASK 1/2/6: OTP Login modal, dashboard sections, account nav.
+       Login modal, dashboard sections, account nav.
        Appended styles only — nothing above this point was changed.
        --------------------------------------------------------------- */
     .top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -433,7 +433,7 @@
     <div id="statusBar" class="status-bar">Loading…</div>
 
     <!-- TASK 2/7: Mock Dashboard — grouped sections instead of one long list.
-         Hidden until the student is logged in (OTP verified). -->
+         Hidden until the student is logged in. -->
     <section id="dashboardSections" style="display:none;">
       <div class="dash-section">
         <h2>Free Mock Tests</h2>
@@ -458,42 +458,69 @@
     </section>
   </div>
 
-  <!-- TASK 1: OTP Login modal. Shown whenever there is no verified Firebase
-       Phone Auth session; the Mock Dashboard above stays hidden until then. -->
+  <!-- Mobile Number + Password login modal. Shown whenever there is no
+       signed-in student session; the Mock Dashboard above stays hidden
+       until then. Three steps: Login (default), Create Account, and
+       Forgot Password. -->
   <div id="loginOverlay" class="modal-overlay hidden">
     <div class="modal-box">
-      <div id="loginStepDetails" class="modal-step active">
+      <div id="loginStepLogin" class="modal-step active">
         <h2>Login to continue</h2>
-        <p class="modal-sub">Enter your details to receive an OTP on your mobile number.</p>
-        <label for="loginName">Full Name</label>
-        <input id="loginName" type="text" placeholder="Your full name" autocomplete="name" />
+        <p class="modal-sub">Enter your mobile number and password to continue.</p>
         <label for="loginMobile">Mobile Number</label>
         <input id="loginMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" />
-        <p class="field-hint">We'll send a one-time OTP via SMS to verify this number.</p>
-        <div class="modal-error" id="loginDetailsError"></div>
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" />
+        <div class="modal-error" id="loginError"></div>
         <div class="modal-actions">
-          <button class="button-primary" id="sendOtpBtn" type="button">Send OTP</button>
+          <button class="button-primary" id="loginBtn" type="button">Login</button>
         </div>
+        <button class="modal-link-btn" id="showSignupBtn" type="button">Create Account</button>
+        <button class="modal-link-btn" id="showForgotBtn" type="button">Forgot Password?</button>
       </div>
-      <div id="loginStepOtp" class="modal-step">
-        <h2>Verify OTP</h2>
-        <p class="modal-sub" id="otpSentTo">Enter the 6-digit code sent to your mobile number.</p>
-        <label for="loginOtp">OTP</label>
-        <input id="loginOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" />
-        <div class="modal-error" id="loginOtpError"></div>
+
+      <div id="loginStepSignup" class="modal-step">
+        <h2>Create Account</h2>
+        <p class="modal-sub">Register with your mobile number to access mock tests.</p>
+        <label for="signupName">Full Name</label>
+        <input id="signupName" type="text" placeholder="Your full name" autocomplete="name" />
+        <label for="signupMobile">Mobile Number</label>
+        <input id="signupMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" />
+        <label for="signupPassword">Password</label>
+        <input id="signupPassword" type="password" placeholder="Create a password (min 6 characters)" autocomplete="new-password" />
+        <label for="signupConfirmPassword">Confirm Password</label>
+        <input id="signupConfirmPassword" type="password" placeholder="Re-enter password" autocomplete="new-password" />
+        <div class="modal-error" id="signupError"></div>
         <div class="modal-actions">
-          <button class="button-primary" id="verifyOtpBtn" type="button">Verify &amp; Continue</button>
+          <button class="button-primary" id="signupBtn" type="button">Create Account</button>
         </div>
-        <button class="modal-link-btn" id="changeNumberBtn" type="button">Change mobile number</button>
+        <button class="modal-link-btn" id="backToLoginFromSignupBtn" type="button">Back to Login</button>
+      </div>
+
+      <div id="loginStepForgot" class="modal-step">
+        <h2>Reset Password</h2>
+        <p class="modal-sub">Confirm your registered name and mobile number to set a new password.</p>
+        <label for="forgotName">Full Name</label>
+        <input id="forgotName" type="text" placeholder="Your registered full name" autocomplete="name" />
+        <label for="forgotMobile">Mobile Number</label>
+        <input id="forgotMobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" />
+        <label for="forgotPassword">New Password</label>
+        <input id="forgotPassword" type="password" placeholder="New password (min 6 characters)" autocomplete="new-password" />
+        <label for="forgotConfirmPassword">Confirm New Password</label>
+        <input id="forgotConfirmPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" />
+        <div class="modal-error" id="forgotError"></div>
+        <div class="modal-actions">
+          <button class="button-primary" id="forgotBtn" type="button">Reset Password</button>
+        </div>
+        <button class="modal-link-btn" id="backToLoginFromForgotBtn" type="button">Back to Login</button>
       </div>
     </div>
   </div>
-  <div id="recaptcha-container"></div>
 
   <script type="module">
     import { db, auth } from '../firebase.js';
     import { collection, getDocs, query, where, orderBy, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
-    import { RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
 
     const statusBar = document.getElementById('statusBar');
     const dashboardSections = document.getElementById('dashboardSections');
@@ -505,19 +532,31 @@
     const myAccountLink = document.getElementById('myAccountLink');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // TASK 1: OTP Login modal elements.
+    // Login / Create Account / Forgot Password modal elements.
     const loginOverlay = document.getElementById('loginOverlay');
-    const loginStepDetails = document.getElementById('loginStepDetails');
-    const loginStepOtp = document.getElementById('loginStepOtp');
-    const loginName = document.getElementById('loginName');
+    const loginStepLogin = document.getElementById('loginStepLogin');
+    const loginStepSignup = document.getElementById('loginStepSignup');
+    const loginStepForgot = document.getElementById('loginStepForgot');
     const loginMobile = document.getElementById('loginMobile');
-    const loginOtp = document.getElementById('loginOtp');
-    const otpSentTo = document.getElementById('otpSentTo');
-    const loginDetailsError = document.getElementById('loginDetailsError');
-    const loginOtpError = document.getElementById('loginOtpError');
-    const sendOtpBtn = document.getElementById('sendOtpBtn');
-    const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-    const changeNumberBtn = document.getElementById('changeNumberBtn');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginError = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+    const showSignupBtn = document.getElementById('showSignupBtn');
+    const showForgotBtn = document.getElementById('showForgotBtn');
+    const signupName = document.getElementById('signupName');
+    const signupMobile = document.getElementById('signupMobile');
+    const signupPassword = document.getElementById('signupPassword');
+    const signupConfirmPassword = document.getElementById('signupConfirmPassword');
+    const signupError = document.getElementById('signupError');
+    const signupBtn = document.getElementById('signupBtn');
+    const backToLoginFromSignupBtn = document.getElementById('backToLoginFromSignupBtn');
+    const forgotName = document.getElementById('forgotName');
+    const forgotMobile = document.getElementById('forgotMobile');
+    const forgotPassword = document.getElementById('forgotPassword');
+    const forgotConfirmPassword = document.getElementById('forgotConfirmPassword');
+    const forgotError = document.getElementById('forgotError');
+    const forgotBtn = document.getElementById('forgotBtn');
+    const backToLoginFromForgotBtn = document.getElementById('backToLoginFromForgotBtn');
 
     if (!db) {
       console.error('Firebase db is not initialized. Verify the import path to ../firebase.js and ensure firebase.js exports db correctly.');
@@ -540,12 +579,12 @@
     // to a category instead of a specific mock.
     const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
 
-    // Student details (name/mobile). Previously populated via window.prompt();
-    // TASK 1 now populates this exclusively from a Firebase Phone Auth
-    // OTP-verified login (see completeLogin below), but the storage key and
-    // shape are UNCHANGED so confirm.html / payment.html / exam.html / this
-    // page's own purchase flow keep working exactly as before with zero
-    // changes required on their end.
+    // Student details (name/mobile). Previously populated via window.prompt(),
+    // now populated exclusively from Mobile Number + Password login/signup
+    // (see completeLogin below), but the storage key and shape are UNCHANGED
+    // so confirm.html / payment.html / exam.html / this page's own purchase
+    // flow keep working exactly as before with zero changes required on
+    // their end.
     function getStoredStudent() {
       try {
         const raw = localStorage.getItem('mockExamSession') || sessionStorage.getItem('mockExamSession');
@@ -715,8 +754,8 @@
       });
     }
 
-    // TASK 1: the student is only ever allowed onto this page after OTP
-    // login, so name/mobile are always already known by the time a
+    // The student is only ever allowed onto this page after logging in,
+    // so name/mobile are always already known by the time a
     // purchase starts. No more window.prompt() fallback — if either is
     // somehow missing (should not happen), the purchase is refused and the
     // login modal is shown again rather than guessing/asking ad hoc.
@@ -983,20 +1022,36 @@
     }
 
     // -----------------------------------------------------------------
-    // TASK 1: OTP Login (Firebase Phone Authentication).
+    // Login system: Mobile Number + Password.
+    //
+    // Firebase Authentication requires an email identifier, so a stable,
+    // synthetic email is derived from the mobile number
+    // (`<mobile>@STUDENT_EMAIL_DOMAIN`) purely as an internal account key
+    // — students only ever see/enter their mobile number, never this
+    // email. This also gives free mobile-number-uniqueness enforcement:
+    // Firebase Auth itself rejects a second signup with the same derived
+    // email ("auth/email-already-in-use"), so no separate uniqueness
+    // check is needed. Passwords are always stored by Firebase
+    // Authentication itself — never in plain text in Firestore or
+    // anywhere else in this project.
     // -----------------------------------------------------------------
-    let confirmationResult = null;
-    let pendingName = '';
-    let pendingMobile = '';
-    let recaptchaVerifier = null;
+    const STUDENT_EMAIL_DOMAIN = 'mockstudent.marudharaexam.in';
+    function mobileToStudentEmail(mobile) {
+      return `${mobile}@${STUDENT_EMAIL_DOMAIN}`;
+    }
+    // Distinguishes a student (password-auth, synthetic email) session
+    // from an admin (admin-auth.js, real email in ADMIN_EMAILS) session
+    // that might be signed in on the same browser/tab.
+    function isStudentUser(user) {
+      return !!(user && user.email && user.email.toLowerCase().endsWith(`@${STUDENT_EMAIL_DOMAIN}`));
+    }
 
     function showLoginModal() {
       dashboardSections.style.display = 'none';
       myAccountLink.style.display = 'none';
       logoutBtn.style.display = 'none';
       loginOverlay.classList.remove('hidden');
-      loginStepDetails.classList.add('active');
-      loginStepOtp.classList.remove('active');
+      showLoginStep('loginStepLogin');
       setStatus('Please login to view mock tests.');
     }
 
@@ -1006,14 +1061,21 @@
       logoutBtn.style.display = '';
     }
 
+    function showLoginStep(stepId) {
+      [loginStepLogin, loginStepSignup, loginStepForgot].forEach(step => step.classList.remove('active'));
+      document.getElementById(stepId).classList.add('active');
+      clearModalErrors();
+    }
+
     function showModalError(el, message) {
       el.textContent = message;
       el.classList.add('visible');
     }
 
     function clearModalErrors() {
-      loginDetailsError.classList.remove('visible');
-      loginOtpError.classList.remove('visible');
+      loginError.classList.remove('visible');
+      signupError.classList.remove('visible');
+      forgotError.classList.remove('visible');
     }
 
     // Normalizes to a plain 10-digit Indian mobile number, mirroring the
@@ -1025,57 +1087,20 @@
       return /^[6-9]\d{9}$/.test(mobile) ? mobile : null;
     }
 
-    function getRecaptchaVerifier() {
-      if (!recaptchaVerifier) {
-        recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
-      }
-      return recaptchaVerifier;
+    function friendlyAuthError(error) {
+      const code = error && error.code;
+      if (code === 'auth/email-already-in-use') return 'This mobile number is already registered. Please login instead.';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') return 'Incorrect mobile number or password.';
+      if (code === 'auth/weak-password') return 'Password must be at least 6 characters.';
+      if (code === 'auth/too-many-requests') return 'Too many attempts. Please try again later.';
+      return (error && error.message) || 'Something went wrong. Please try again.';
     }
 
-    async function sendOtp() {
-      clearModalErrors();
-      const name = loginName.value.trim();
-      const mobile = normalizeMobileInput(loginMobile.value);
-
-      if (!name) {
-        showModalError(loginDetailsError, 'Please enter your full name.');
-        return;
-      }
-      if (!mobile) {
-        showModalError(loginDetailsError, 'Please enter a valid 10-digit mobile number.');
-        return;
-      }
-
-      sendOtpBtn.disabled = true;
-      sendOtpBtn.textContent = 'Sending OTP…';
-      try {
-        const verifier = getRecaptchaVerifier();
-        confirmationResult = await signInWithPhoneNumber(auth, `+91${mobile}`, verifier);
-        pendingName = name;
-        pendingMobile = mobile;
-        otpSentTo.textContent = `Enter the 6-digit code sent to +91${mobile}.`;
-        loginStepDetails.classList.remove('active');
-        loginStepOtp.classList.add('active');
-        loginOtp.value = '';
-      } catch (error) {
-        console.error('OTP send error:', error);
-        showModalError(loginDetailsError, error && error.message ? error.message : 'Unable to send OTP. Please try again.');
-        // A failed attempt can leave the invisible reCAPTCHA in a used
-        // state; reset it so the next attempt gets a fresh challenge.
-        try {
-          if (recaptchaVerifier) { recaptchaVerifier.clear(); recaptchaVerifier = null; }
-        } catch {}
-      } finally {
-        sendOtpBtn.disabled = false;
-        sendOtpBtn.textContent = 'Send OTP';
-      }
-    }
-
-    // TASK 1: after OTP verification, create/update users/{uid} with uid,
-    // name, mobile, createdAt, lastLogin — then reuse the existing
-    // mockExamSession session (unchanged shape) so every other page on the
-    // site keeps working without modification.
-    async function completeLogin(user) {
+    // Creates/updates users/{uid} with uid, name, mobile, createdAt,
+    // lastLogin — then reuses the existing mockExamSession session
+    // (unchanged shape) so every other page on the site keeps working
+    // without any changes.
+    async function completeLogin(user, name, mobile) {
       const userRef = doc(db, 'users', user.uid);
       let existing = null;
       try {
@@ -1085,11 +1110,14 @@
         console.error('Unable to read existing user profile:', err);
       }
 
+      const resolvedName = name || (existing && existing.name) || '';
+      const resolvedMobile = mobile || (existing && existing.mobile) || '';
+
       try {
         await setDoc(userRef, {
           uid: user.uid,
-          name: pendingName,
-          mobile: pendingMobile,
+          name: resolvedName,
+          mobile: resolvedMobile,
           createdAt: existing && existing.createdAt ? existing.createdAt : serverTimestamp(),
           lastLogin: serverTimestamp()
         }, { merge: true });
@@ -1097,44 +1125,143 @@
         console.error('Unable to save user profile:', err);
       }
 
-      saveStoredStudent({ studentName: pendingName, studentMobile: pendingMobile });
+      saveStoredStudent({ studentName: resolvedName, studentMobile: resolvedMobile });
       hideLoginModal();
       await loadDashboard();
     }
 
-    async function verifyOtp() {
+    async function doLogin() {
       clearModalErrors();
-      const code = loginOtp.value.trim();
-      if (!code || code.length < 6) {
-        showModalError(loginOtpError, 'Please enter the 6-digit OTP.');
+      const mobile = normalizeMobileInput(loginMobile.value);
+      const password = loginPassword.value;
+
+      if (!mobile) {
+        showModalError(loginError, 'Please enter a valid 10-digit mobile number.');
         return;
       }
-      if (!confirmationResult) {
-        showModalError(loginOtpError, 'OTP session expired. Please request a new OTP.');
+      if (!password) {
+        showModalError(loginError, 'Please enter your password.');
         return;
       }
 
-      verifyOtpBtn.disabled = true;
-      verifyOtpBtn.textContent = 'Verifying…';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in…';
       try {
-        const result = await confirmationResult.confirm(code);
-        await completeLogin(result.user);
+        await setPersistence(auth, browserLocalPersistence);
+        const cred = await signInWithEmailAndPassword(auth, mobileToStudentEmail(mobile), password);
+        await completeLogin(cred.user, null, mobile);
       } catch (error) {
-        console.error('OTP verify error:', error);
-        showModalError(loginOtpError, error && error.message ? error.message : 'Incorrect OTP. Please try again.');
+        console.error('Login error:', error);
+        showModalError(loginError, friendlyAuthError(error));
       } finally {
-        verifyOtpBtn.disabled = false;
-        verifyOtpBtn.textContent = 'Verify & Continue';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
       }
     }
 
-    sendOtpBtn.addEventListener('click', sendOtp);
-    verifyOtpBtn.addEventListener('click', verifyOtp);
-    changeNumberBtn.addEventListener('click', () => {
+    async function doSignup() {
       clearModalErrors();
-      loginStepOtp.classList.remove('active');
-      loginStepDetails.classList.add('active');
-    });
+      const name = signupName.value.trim();
+      const mobile = normalizeMobileInput(signupMobile.value);
+      const password = signupPassword.value;
+      const confirmPassword = signupConfirmPassword.value;
+
+      if (!name) {
+        showModalError(signupError, 'Please enter your full name.');
+        return;
+      }
+      if (!mobile) {
+        showModalError(signupError, 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showModalError(signupError, 'Password must be at least 6 characters.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        showModalError(signupError, 'Passwords do not match.');
+        return;
+      }
+
+      signupBtn.disabled = true;
+      signupBtn.textContent = 'Creating account…';
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const cred = await createUserWithEmailAndPassword(auth, mobileToStudentEmail(mobile), password);
+        await completeLogin(cred.user, name, mobile);
+      } catch (error) {
+        console.error('Signup error:', error);
+        showModalError(signupError, friendlyAuthError(error));
+      } finally {
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Create Account';
+      }
+    }
+
+    // Forgot Password: this site has no SMS/email delivery channel (OTP
+    // has been removed entirely), so resetting a password can't rely on
+    // a mailed/texted link or code. Instead the student re-confirms their
+    // registered Full Name + Mobile Number, and the existing Cloudflare
+    // Worker (which already holds Firebase service-account credentials
+    // for payments) verifies that combination against the `users`
+    // collection and, only on a match, sets the new password directly on
+    // the existing Firebase Auth account via the Identity Toolkit Admin
+    // API. The password is still always stored by Firebase Authentication
+    // itself, never as plain text.
+    async function doForgotPassword() {
+      clearModalErrors();
+      const name = forgotName.value.trim();
+      const mobile = normalizeMobileInput(forgotMobile.value);
+      const password = forgotPassword.value;
+      const confirmPassword = forgotConfirmPassword.value;
+
+      if (!name) {
+        showModalError(forgotError, 'Please enter your registered full name.');
+        return;
+      }
+      if (!mobile) {
+        showModalError(forgotError, 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+      if (!password || password.length < 6) {
+        showModalError(forgotError, 'Password must be at least 6 characters.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        showModalError(forgotError, 'Passwords do not match.');
+        return;
+      }
+
+      forgotBtn.disabled = true;
+      forgotBtn.textContent = 'Resetting…';
+      try {
+        const res = await fetch(`${PAYMENT_API_BASE}/api/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, mobile, newPassword: password })
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || data.success !== true) {
+          throw new Error((data && data.error && data.error.message) || 'Unable to reset password. Please check your name and mobile number.');
+        }
+        showLoginStep('loginStepLogin');
+        setStatus('Password reset successfully. Please login with your new password.');
+      } catch (error) {
+        console.error('Forgot password error:', error);
+        showModalError(forgotError, error && error.message ? error.message : 'Unable to reset password. Please try again.');
+      } finally {
+        forgotBtn.disabled = false;
+        forgotBtn.textContent = 'Reset Password';
+      }
+    }
+
+    loginBtn.addEventListener('click', doLogin);
+    signupBtn.addEventListener('click', doSignup);
+    forgotBtn.addEventListener('click', doForgotPassword);
+    showSignupBtn.addEventListener('click', () => showLoginStep('loginStepSignup'));
+    showForgotBtn.addEventListener('click', () => showLoginStep('loginStepForgot'));
+    backToLoginFromSignupBtn.addEventListener('click', () => showLoginStep('loginStepLogin'));
+    backToLoginFromForgotBtn.addEventListener('click', () => showLoginStep('loginStepLogin'));
     logoutBtn.addEventListener('click', async () => {
       try { await signOut(auth); } catch (err) { console.error('Sign out failed:', err); }
       clearStoredStudent();
@@ -1142,16 +1269,17 @@
     });
 
     // Keeps the student logged in until Logout: Firebase Auth's own
-    // persisted session (localStorage, default) restores `user` on every
-    // visit. If the mockExamSession cache was cleared but the Firebase
-    // session is still valid, the student's profile is re-read from
-    // users/{uid} rather than asking them to verify OTP again.
+    // persisted session (browserLocalPersistence, set in doLogin/doSignup
+    // above) restores `user` on every visit. If the mockExamSession cache
+    // was cleared but the Firebase session is still valid, the student's
+    // profile is re-read from users/{uid} rather than asking them to log
+    // in again.
     onAuthStateChanged(auth, async (user) => {
-      // Only treat this as a student session if it's a Phone Auth user —
-      // an admin signed in via email/password (admin-auth.js) on the same
-      // browser must still see the OTP login here, never be treated as a
-      // logged-in student.
-      if (user && user.phoneNumber) {
+      // Only treat this as a student session if it's a password-auth user
+      // with our synthetic student email domain — an admin signed in via
+      // email/password (admin-auth.js) on the same browser must still see
+      // the login dialog here, never be treated as a logged-in student.
+      if (user && isStudentUser(user)) {
         const stored = getStoredStudent();
         if (!stored.studentMobile) {
           try {
