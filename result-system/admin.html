@@ -1,627 +1,272 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Admin Panel - मरुधरा एग्जाम</title>
-
-    
-<style>
-
-    
-body{
-    font-family:Arial,sans-serif;
-    background:#f5f6fa;
-    padding:30px;
-}
-
-
-.container{
-    max-width:900px;
-    margin:auto;
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    box-shadow:0 5px 15px rgba(0,0,0,.1);
-}
-
-h1{
-    text-align:center;
-    color:#002B5B;
-    margin-bottom:25px;
-}
-
-input,
-textarea{
-    width:100%;
-    padding:12px;
-    margin-top:8px;
-    margin-bottom:20px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    box-sizing:border-box;
-}
-
-button{
-    width:100%;
-    padding:15px;
-    background:#FF8C00;
-    color:white;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    font-size:18px;
-}
-
-button:hover{
-    opacity:.9;
-}
-
-.info{
-    background:#eef4ff;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
-
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Marudhara Exam</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-
 <body>
 
-<div class="container">
+<div class="admin-layout">
 
-<h1>⚙️ मरुधरा एग्जाम Admin Panel</h1>
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-name">Marudhara Exam</span>
+      <span class="brand-sub">Result System</span>
+    </div>
 
-<div class="info">
+    <div class="sidebar-section-label">Menu</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="admin.html" class="active">
+          <span class="nav-dot"></span>
+          Dashboard
+        </a>
+      </li>
+      <li>
+     <a href="index.html">
+          <span class="nav-dot"></span>
+          Student Search
+        </a>
+      </li>
+    </ul>
 
-<b>Format Example</b>
+    <div class="sidebar-section-label">Manage</div>
+    <ul class="sidebar-nav">
+      <li>
+        <a href="admin.html" class="active">
+          <span class="nav-dot"></span>
+          Import Results
+        </a>
+      </li>
+      <li>
+        <a href="admin.html">
+          <span class="nav-dot"></span>
+          Manage Exams
+        </a>
+      </li>
+    </ul>
+  </aside>
 
-<br><br>
+  <!-- ── Main Area ────────────────────────────────────────── -->
+  <div class="main-area">
 
-Exam Name :
-RSSB 3rd Grade
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span>Home</span>
+        <span class="sep">/</span>
+        <span class="page-crumb">Admin Panel</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-site-link">www.marudharaexam.in</span>
+      </div>
+    </div>
 
-<br>
+    <!-- Content -->
+    <div class="content-area">
 
-Paper Code :
-A
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <div class="page-title">Admin Panel</div>
+          <div class="page-subtitle">Import exam results from Excel and manage uploaded exams.</div>
+        </div>
+      </div>
 
-<br>
+      <!-- Global Alert -->
+      <div id="global-alert" class="alert hidden" role="alert">
+        <span id="global-alert-text"></span>
+      </div>
 
-Deleted Questions :
-5,12,27
+      <!-- Upload Summary -->
+      <div id="upload-summary" class="upload-summary">
+        <h3>Import Successful</h3>
+        <div class="upload-summary-grid">
+          <div class="summary-item">
+            <div class="s-label">Exam Name</div>
+            <div class="s-value" id="sum-exam-name">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">File Name</div>
+            <div class="s-value" id="sum-file-name">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">Total Students</div>
+            <div class="s-value" id="sum-count">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="s-label">Upload Date</div>
+            <div class="s-value" id="sum-date">—</div>
+          </div>
+        </div>
+      </div>
 
-<br>
+      <!-- Import Card -->
+      <div class="card">
+        <div class="card-title">Import New Exam Results</div>
 
-Answer Key :
+        <div class="form-row">
+          <div class="form-group">
+            <label for="exam-name-input">Exam Name</label>
+            <input
+              type="text"
+              id="exam-name-input"
+              class="form-control"
+              placeholder="e.g. Rajasthan Police Constable 2024"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label>Excel File (.xlsx / .xls)</label>
+            <div class="file-input-wrapper">
+              <input type="file" id="excel-file-input" accept=".xlsx,.xls" />
+              <div class="file-input-display" id="file-display">
+                <span id="file-display-text">Click to choose Excel file</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-<br>
+        <div id="import-progress-wrap" class="hidden">
+          <div class="progress-wrap">
+            <div class="progress-bar" id="import-progress-bar"></div>
+          </div>
+          <div class="progress-label" id="import-progress-label">Preparing…</div>
+        </div>
 
-A,B,C,D,E,A,B,C,D,E
+        <div class="mt-4">
+          <button class="btn btn-primary" id="import-btn">Import Results</button>
+        </div>
+      </div>
 
+      <!-- Exams Table Card -->
+      <div class="card mt-6">
+        <div class="card-title">Uploaded Exams</div>
+
+        <div id="exams-loading" class="loading-overlay">
+          <div class="spinner spinner-dark"></div>
+          Loading exams…
+        </div>
+
+        <div id="exams-table-wrap" class="table-wrapper hidden">
+          <table id="exams-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Exam Name</th>
+                <th>Students</th>
+                <th>Upload Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="exams-tbody">
+              <tr class="empty-row"><td colspan="5">No exams uploaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-area -->
+</div><!-- /admin-layout -->
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- MODAL: Delete -->
+<div class="modal-backdrop" id="delete-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h2>Delete Exam</h2>
+      <button class="modal-close" data-close="delete-modal">&times;</button>
+    </div>
+    <div class="modal-body confirm-modal-body">
+      <div class="confirm-icon">&#x26A0;</div>
+      <h3>Are you sure?</h3>
+      <p id="delete-confirm-text">
+        This will permanently delete the exam and all associated student records.
+        This action cannot be undone.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="delete-modal">Cancel</button>
+      <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+    </div>
+  </div>
 </div>
 
-<label>Exam Name</label>
-<input type="text" id="examName">
-
-<label>Paper Code</label>
-<input type="text" id="paperCode">
-
-<label>Exam Date</label>
-<input type="date" id="examDate">
-
-<label>Total Questions</label>
-<input type="number" id="totalQuestions">
-
-<label>Correct Marks</label>
-<input type="number"
-id="correctMarks"
-value="2">
-
-<label>Negative Marks</label>
-<input type="number"
-id="negativeMarks"
-value="0.33"
-step="0.01">
-
-<label>Pass Percentage</label>
-<input type="number"
-id="passPercentage"
-value="40">
-
-<label>Deleted Questions</label>
-
-<input
-type="text"
-id="deletedQuestions"
-placeholder="5,12,27">
-
-<label>Answer Key</label>
-
-<textarea
-id="answerKey"
-rows="8"
-placeholder="A,B,C,D,E,A,B,C,D,E">
-</textarea>
-
-<button onclick="saveExam()">
-
-Save Exam
-
-</button>
-<hr>
-
-<h2>📢 Vacancy Management</h2>
-
-<label>Vacancy Name</label>
-<input type="text" id="vacancyName">
-
-<label>Vacancy Date</label>
-<input type="date" id="vacancyDate">
-
-<label>Vacancy Details</label>
-<textarea id="vacancyDetails" rows="8"></textarea>
-
-<label>PDF Link</label>
-<input type="text" id="pdfLink">
-
-<label>Apply Link</label>
-<input type="text" id="applyLink">
-
-<label>Official Website</label>
-<input type="text" id="officialLink">
-
-<button onclick="saveVacancy()">
-Publish Vacancy
-</button>
-
-<hr>
-
-<h2>📋 Vacancy List</h2>
-
-<div id="vacancyListAdmin">
-Loading...
+<!-- MODAL: Rename -->
+<div class="modal-backdrop" id="rename-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2>Rename Exam</h2>
+      <button class="modal-close" data-close="rename-modal">&times;</button>
+    </div>
+    <div class="modal-body rename-modal-body">
+      <div class="form-group">
+        <label for="rename-input">New Exam Name</label>
+        <input
+          type="text"
+          id="rename-input"
+          class="form-control"
+          placeholder="Enter new exam name"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="rename-modal">Cancel</button>
+      <button class="btn btn-primary" id="rename-confirm-btn">Rename</button>
+    </div>
+  </div>
 </div>
 
-<hr>
-
-<h2>📚 Saved Exams</h2>
-
-<div id="examList">
-Loading Exams...
+<!-- MODAL: Replace Excel -->
+<div class="modal-backdrop" id="replace-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h2>Replace Excel</h2>
+      <button class="modal-close" data-close="replace-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning">
+        All previous student records for this exam will be deleted and replaced.
+      </div>
+      <div class="form-group">
+        <label>Replacing results for</label>
+        <div
+          class="form-control"
+          id="replace-exam-name-display"
+          style="background:var(--bg);cursor:default;font-weight:600"
+        ></div>
+      </div>
+      <div class="form-group">
+        <label>New Excel File (.xlsx / .xls)</label>
+        <div class="file-input-wrapper">
+          <input type="file" id="replace-file-input" accept=".xlsx,.xls" />
+          <div class="file-input-display" id="replace-file-display">
+            <span id="replace-file-display-text">Click to choose Excel file</span>
+          </div>
+        </div>
+      </div>
+      <div id="replace-progress-wrap" class="hidden">
+        <div class="progress-wrap">
+          <div class="progress-bar" id="replace-progress-bar"></div>
+        </div>
+        <div class="progress-label" id="replace-progress-label">Preparing…</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-close="replace-modal">Cancel</button>
+      <button class="btn btn-accent" id="replace-confirm-btn">Replace</button>
+    </div>
+  </div>
 </div>
 
-</div>
-
-<script type="module">
-
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getFirestore,
-collection,
-addDoc,
-getDocs,
-deleteDoc,
-doc,
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-import { guardAdmin } from "./admin-auth.js";
-
-const firebaseConfig = {
-
-apiKey:
-"AIzaSyDHe87UG-QGy2Kxh7RI8t51qOGgppVd_YA",
-
-authDomain:
-"marudhara-exam.firebaseapp.com",
-
-projectId:
-"marudhara-exam",
-
-storageBucket:
-"marudhara-exam.firebasestorage.app",
-
-messagingSenderId:
-"680152404373",
-
-appId:
-"1:680152404373:web:32f4dcb9e16c525d33669c",
-measurementId: "G-8PVKGVQ74F"
-
-};
-
-const app =
-initializeApp(firebaseConfig);
-
-const db =
-getFirestore(app);
-
-// Blocks all page interaction until a signed-in, allow-listed admin
-// account is present. Real enforcement happens in firestore.rules.
-await guardAdmin(app);
-
-async function loadExams(){
-
-const examList =
-document.getElementById("examList");
-
-if(!examList) return;
-
-examList.innerHTML = "";
-
-const snapshot =
-await getDocs(collection(db,"exams"));
-
-snapshot.forEach((exam)=>{
-
-const data = exam.data();
-
-examList.innerHTML += `
-
-<div style="
-border:1px solid #ddd;
-padding:12px;
-margin-bottom:10px;
-border-radius:8px;
-">
-
-<b>${data.examName}</b>
-(${data.paperCode})
-
-<br><br>
-
-<button
-onclick="deleteExam('${exam.id}')"
-style="
-background:red;
-width:auto;
-padding:10px 15px;
-">
-🗑 Delete
-</button>
-
-</div>
-
-`;
-
-});
-
-}
-
-window.deleteExam = async function(id){
-
-const confirmDelete =
-confirm("क्या आप यह Exam Delete करना चाहते हैं?");
-
-if(!confirmDelete) return;
-
-await deleteDoc(
-doc(db,"exams",id)
-);
-
-alert("Exam Deleted ✅");
-loadExams();
-
-};
-async function loadVacanciesAdmin(){
-const list =
-document.getElementById("vacancyListAdmin");
-
-if(!list) return;
-
-list.innerHTML = "";
-
-const snapshot =
-await getDocs(collection(db,"vacancies"));
-
-const vacancies = [];
-
-snapshot.forEach((v)=>{
-
-vacancies.push({
-id:v.id,
-...v.data()
-});
-
-});
-
-vacancies.sort((a,b)=>
-new Date(b.createdAt) -
-new Date(a.createdAt)
-);
-
-vacancies.forEach((v)=>{
-
-list.innerHTML += `
-
-<div style="
-border:1px solid #ddd;
-padding:12px;
-margin-bottom:10px;
-border-radius:8px;
-">
-
-<b>${v.vacancyName}</b>
-
-<br>
-
-📅 ${v.vacancyDate || "-"}
-
-<br><br>
-
-<button
-onclick="deleteVacancy('${v.id}')"
-style="
-background:red;
-width:auto;
-padding:10px 15px;
-">
-🗑 Delete
-</button>
-
-</div>
-
-`;
-
-});
-
-}
-
-window.deleteVacancy =
-async function(id){
-
-if(!confirm(
-"क्या Vacancy Delete करनी है?"
-))
-return;
-
-await deleteDoc(
-doc(db,"vacancies",id)
-);
-
-alert("Vacancy Deleted ✅");
-console.log("Before Vacancy Load");
-loadVacanciesAdmin();
-
-};
-
-window.saveVacancy =
-async function(){
-
-try{
-
-const vacancyName =
-document.getElementById("vacancyName").value;
-
-const vacancyDate =
-document.getElementById("vacancyDate").value;
-
-const vacancyDetails =
-document.getElementById("vacancyDetails").value;
-
-const pdfLink =
-document.getElementById("pdfLink").value;
-
-const applyLink =
-document.getElementById("applyLink").value;
-
-const officialLink =
-document.getElementById("officialLink").value;
-
-if(
-vacancyName === "" ||
-vacancyDetails === ""
-){
-
-alert(
-"Vacancy Name और Details भरें"
-);
-
-return;
-
-}
-
-await addDoc(
-collection(db,"vacancies"),
-{
-vacancyName,
-vacancyDate,
-vacancyDetails,
-pdfLink,
-applyLink,
-officialLink,
-createdAt:
-new Date().toISOString()
-}
-);
-
-alert("Vacancy Published ✅");
-
-loadVacanciesAdmin();
-
-document.getElementById(
-"vacancyName"
-).value = "";
-
-document.getElementById(
-"vacancyDate"
-).value = "";
-
-document.getElementById(
-"vacancyDetails"
-).value = "";
-
-document.getElementById(
-"pdfLink"
-).value = "";
-
-document.getElementById(
-"applyLink"
-).value = "";
-
-document.getElementById(
-"officialLink"
-).value = "";
-
-}
-catch(error){
-
-alert(
-"Error : " + error.message
-);
-
-}
-
-};
-console.log("Before Vacancy Load");
-loadVacanciesAdmin();
-
-window.saveExam = async function(){
-loadVacanciesAdmin();
-
-
-window.saveExam = async function(){
-
-
-
-try{
-
-const examName =
-document.getElementById("examName").value;
-
-const paperCode =
-document.getElementById("paperCode").value;
-
-const examDate =
-document.getElementById("examDate").value;
-
-const totalQuestions =
-Number(
-document.getElementById("totalQuestions").value
-);
-
-const correctMarks =
-Number(
-document.getElementById("correctMarks").value
-);
-
-const negativeMarks =
-Number(
-document.getElementById("negativeMarks").value
-);
-
-const passPercentage =
-Number(
-document.getElementById("passPercentage").value
-);
-
-const deletedQuestions =
-document.getElementById("deletedQuestions").value;
-
-const answerKey =
-document.getElementById("answerKey").value;
-
-if(
-examName === "" ||
-paperCode === "" ||
-totalQuestions <= 0 ||
-answerKey === ""
-){
-
-alert(
-"सभी आवश्यक जानकारी भरें"
-);
-
-return;
-
-}
-
-const examData = {
-
-examName,
-paperCode,
-examDate,
-
-totalQuestions,
-
-correctMarks,
-
-negativeMarks,
-
-passPercentage,
-
-deletedQuestions,
-
-answerKey,
-
-createdAt:
-new Date().toISOString()
-
-};
-
-await addDoc(
-collection(db,"exams"),
-examData
-);
-
-alert(
-"Exam Saved To Firebase ✅"
-);
-loadExams();
-document.getElementById(
-"examName"
-).value = "";
-
-document.getElementById(
-"paperCode"
-).value = "";
-
-document.getElementById(
-"examDate"
-).value = "";
-
-document.getElementById(
-"totalQuestions"
-).value = "";
-
-document.getElementById(
-"deletedQuestions"
-).value = "";
-
-document.getElementById(
-"answerKey"
-).value = "";
-
-}
-catch(error){
-
-alert(
-"Error : " + error.message
-);
-
-}
-
-};
-
-};
-
-console.log("Before Exam Load");
-loadExams();
-</script>
-
+<script type="module" src="admin.js"></script>
 </body>
-
 </html>
-
-
-
