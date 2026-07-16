@@ -910,7 +910,8 @@
     // only pass an id through the HTML attribute) can look up the full
     // category object needed to create an order.
     let categoriesById = {};
-
+// Categories that currently have at least one enabled coupon.
+const categoriesWithCoupons = new Set();
     // Applied coupon state per category — keyed by categoryId.
     // Populated by window.applyCouponForCategory, read by startCategoryPurchase.
     const categoryAppliedCoupons = {};
