@@ -418,6 +418,68 @@
     @media (max-width: 768px) {
       .mock-row { flex-direction: column; align-items: stretch; }
     }
+
+    /* ---- Coupon UI additions (premium category cards only) ---- */
+    .coupon-section { padding: 0 22px 14px; }
+    .coupon-section label.coupon-label { display: block; font-size: 0.85rem; font-weight: 700; color: #33456b; margin-bottom: 6px; }
+    .coupon-input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(35, 49, 79, 0.18);
+      font: inherit;
+      font-size: 0.96rem;
+      color: #1f324f;
+      background: #f8fbff;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .coupon-input:focus { border-color: #0b4ea2; background: #fff; }
+    .coupon-input:disabled { opacity: 0.6; cursor: not-allowed; }
+    .button-coupon-apply {
+      width: 100%;
+      margin-top: 8px;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 18px;
+      background: #eef4ff;
+      color: #0b4ea2;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .button-coupon-apply:hover:not(:disabled) { background: #d8e9ff; }
+    .button-coupon-apply:disabled { opacity: 0.6; cursor: not-allowed; }
+    .coupon-msg { margin-top: 8px; font-size: 0.87rem; font-weight: 600; min-height: 18px; }
+    .coupon-msg.success { color: #1e583a; }
+    .coupon-msg.error   { color: #8a1f19; }
+    .button-coupon-remove {
+      width: 100%;
+      margin-top: 6px;
+      border: 0;
+      border-radius: 12px;
+      padding: 9px 14px;
+      background: #ffe7e6;
+      color: #8a1f19;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .button-coupon-remove:hover { background: #ffd0ce; }
+    .coupon-breakdown { margin-top: 10px; background: #f4f7fb; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .coupon-breakdown-row { display: flex; justify-content: space-between; font-size: 0.88rem; color: #556180; }
+    .coupon-breakdown-row.discount { color: #1e583a; font-weight: 700; }
+    .coupon-breakdown-row.final    { color: #0b4ea2; font-weight: 800; font-size: 0.94rem; border-top: 1px solid rgba(35,49,79,.1); padding-top: 6px; margin-top: 2px; }
+    @media (max-width: 768px) {
+      .coupon-section { padding: 0 10px 10px; }
+    }
   </style>
 </head>
 <body>
@@ -815,7 +877,8 @@
         const orderRes = await createOrder({
           categoryId: category.id,
           mobile: studentMobile,
-          studentName: studentName
+          studentName: studentName,
+          ...(categoryAppliedCoupons[category.id] ? { couponCode: categoryAppliedCoupons[category.id].code } : {})
         });
         if (!orderRes || orderRes.success !== true || !orderRes.orderId) {
           throw new Error('Unable to create payment order. Please try again.');
@@ -848,6 +911,90 @@
     // category object needed to create an order.
     let categoriesById = {};
 
+    // Applied coupon state per category — keyed by categoryId.
+    // Populated by window.applyCouponForCategory, read by startCategoryPurchase.
+    const categoryAppliedCoupons = {};
+
+    // ---- Coupon helpers (called via onclick attributes on card HTML) ----
+
+    window.applyCouponForCategory = async function (categoryId, applyBtnEl) {
+      if (applyBtnEl && applyBtnEl.dataset.applying === 'true') return;
+      const mobile = getStoredMobile();
+      if (!mobile) {
+        const msgEl = document.getElementById('couponMsg_' + categoryId);
+        if (msgEl) { msgEl.textContent = 'Please login first.'; msgEl.className = 'coupon-msg error'; }
+        return;
+      }
+      const inputEl  = document.getElementById('couponInput_' + categoryId);
+      const msgEl    = document.getElementById('couponMsg_' + categoryId);
+      const removeEl = document.getElementById('removeBtn_' + categoryId);
+      const discRow  = document.getElementById('discRow_' + categoryId);
+      const finalRow = document.getElementById('finalRow_' + categoryId);
+      const discAmt  = document.getElementById('discAmt_' + categoryId);
+      const finalAmt = document.getElementById('finalAmt_' + categoryId);
+      const purchBtn = document.getElementById('purchaseBtn_' + categoryId);
+      const category = categoriesById[categoryId];
+
+      if (!inputEl || !msgEl || !category) return;
+
+      const code = inputEl.value.trim().toUpperCase();
+      if (!code) { msgEl.textContent = 'Please enter a coupon code.'; msgEl.className = 'coupon-msg error'; return; }
+
+      if (applyBtnEl) { applyBtnEl.dataset.applying = 'true'; applyBtnEl.disabled = true; }
+      inputEl.disabled = true;
+      msgEl.textContent = 'Validating…'; msgEl.className = 'coupon-msg';
+
+      try {
+        const res = await createOrder({ mobile, categoryId, couponCode: code, preview: true });
+        if (!res || res.success !== true) {
+          throw new Error((res && res.message) || 'Invalid coupon. Please try again.');
+        }
+        // Store verified coupon for this category.
+        categoryAppliedCoupons[categoryId] = { code, originalAmount: res.originalAmount, discountAmount: res.discountAmount, paidAmount: res.paidAmount };
+
+        // Show breakdown.
+        const fmt = p => '₹' + (p / 100).toLocaleString('en-IN');
+        if (discAmt)  discAmt.textContent  = '−' + fmt(res.discountAmount);
+        if (finalAmt) finalAmt.textContent = fmt(res.paidAmount);
+        if (discRow)  discRow.style.display  = '';
+        if (finalRow) finalRow.style.display = '';
+
+        msgEl.textContent = '✅ Coupon Applied Successfully'; msgEl.className = 'coupon-msg success';
+        if (removeEl) removeEl.style.display = '';
+        if (applyBtnEl) applyBtnEl.style.display = 'none';
+        if (purchBtn)   purchBtn.textContent = 'Purchase ' + fmt(res.paidAmount);
+      } catch (err) {
+        delete categoryAppliedCoupons[categoryId];
+        msgEl.textContent = (err && err.message) || 'Invalid coupon. Please try again.';
+        msgEl.className = 'coupon-msg error';
+        inputEl.disabled = false;
+      } finally {
+        if (applyBtnEl) { applyBtnEl.dataset.applying = 'false'; applyBtnEl.disabled = false; }
+      }
+    };
+
+    window.removeCouponForCategory = function (categoryId, origPriceLabel) {
+      delete categoryAppliedCoupons[categoryId];
+      const inputEl  = document.getElementById('couponInput_' + categoryId);
+      const msgEl    = document.getElementById('couponMsg_' + categoryId);
+      const removeEl = document.getElementById('removeBtn_' + categoryId);
+      const applyEl  = document.getElementById('applyBtn_' + categoryId);
+      const discRow  = document.getElementById('discRow_' + categoryId);
+      const finalRow = document.getElementById('finalRow_' + categoryId);
+      const purchBtn = document.getElementById('purchaseBtn_' + categoryId);
+      const category = categoriesById[categoryId];
+
+      if (inputEl)  { inputEl.value = ''; inputEl.disabled = false; }
+      if (msgEl)    { msgEl.textContent = ''; msgEl.className = 'coupon-msg'; }
+      if (removeEl) removeEl.style.display = 'none';
+      if (applyEl)  { applyEl.style.display = ''; applyEl.disabled = false; }
+      if (discRow)  discRow.style.display  = 'none';
+      if (finalRow) finalRow.style.display = 'none';
+      if (purchBtn && category) purchBtn.textContent = 'Purchase ₹' + escapeHtml(String(category.offerPrice ?? origPriceLabel));
+    };
+
+    // ---- End coupon helpers ----
+
     window.handleCategoryButtonClick = function (categoryId, buttonEl) {
       const category = categoriesById[categoryId];
       if (!category) return;
@@ -862,19 +1009,30 @@
     function buildCard(category, paid) {
       const icon = (category.image || category.icon) ? `<img src="${escapeHtml(category.image || category.icon)}" alt="${escapeHtml(category.name)} icon" />` : '<div class="fallback-icon">📚</div>';
       const description = escapeHtml(category.description || 'Browse mock tests in this category.');
-      // Category-level Premium system: access/price is a property of the
-      // category, not of any individual mock inside it.
       const isFree = category.isFree !== false;
       const accessBadge = isFree
         ? '<span class="badge">Free</span>'
         : `<span class="badge">Premium ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
-      // Free categories, and premium categories this student has already
-      // purchased, open straight to the tests. A premium category the
-      // student hasn't purchased shows a Purchase button that starts the
-      // payment flow immediately — it never navigates to category.html
-      // first, so premium mocks can never be reached without paying.
       const unlocked = isFree || paid === true;
       const ctaLabel = unlocked ? 'View tests' : `Purchase ₹${escapeHtml(category.offerPrice ?? '—')}`;
+      const catId = escapeHtml(category.id);
+      const origPriceLabel = escapeHtml(String(category.offerPrice ?? '—'));
+
+      // Coupon section — injected only for premium, unpurchased categories.
+      const couponHtml = (!isFree && !unlocked) ? `
+        <div class="coupon-section" id="couponSection_${catId}">
+          <label class="coupon-label" for="couponInput_${catId}">Coupon Code</label>
+          <input id="couponInput_${catId}" class="coupon-input" type="text" placeholder="ENTER COUPON CODE" maxlength="50" autocomplete="off" spellcheck="false" />
+          <button type="button" class="button-coupon-apply" id="applyBtn_${catId}" onclick="window.applyCouponForCategory('${catId}', this)">Apply Coupon</button>
+          <div id="couponMsg_${catId}" class="coupon-msg"></div>
+          <button type="button" class="button-coupon-remove" id="removeBtn_${catId}" style="display:none;" onclick="window.removeCouponForCategory('${catId}', '${origPriceLabel}')">✕ Remove Coupon</button>
+          <div class="coupon-breakdown">
+            <div class="coupon-breakdown-row" id="origRow_${catId}"><span>Original Price</span><span>₹${origPriceLabel}</span></div>
+            <div class="coupon-breakdown-row discount" id="discRow_${catId}" style="display:none;"><span>Discount</span><span id="discAmt_${catId}"></span></div>
+            <div class="coupon-breakdown-row final" id="finalRow_${catId}" style="display:none;"><span>Final Price</span><span id="finalAmt_${catId}"></span></div>
+          </div>
+        </div>` : '';
+
       return `
         <article class="card">
           <div class="hero">${icon}</div>
@@ -886,8 +1044,9 @@
               ${accessBadge}
             </div>
           </div>
+          ${couponHtml}
           <div class="card-footer">
-            <button class="button-primary" type="button" onclick="window.handleCategoryButtonClick('${category.id}', this)">${ctaLabel}</button>
+            <button class="button-primary" id="purchaseBtn_${catId}" type="button" onclick="window.handleCategoryButtonClick('${category.id}', this)">${ctaLabel}</button>
           </div>
         </article>`;
     }
