@@ -910,8 +910,7 @@
     // only pass an id through the HTML attribute) can look up the full
     // category object needed to create an order.
     let categoriesById = {};
-// Categories that currently have at least one enabled coupon.
-const categoriesWithCoupons = new Set();
+
     // Applied coupon state per category — keyed by categoryId.
     // Populated by window.applyCouponForCategory, read by startCategoryPurchase.
     const categoryAppliedCoupons = {};
@@ -1020,13 +1019,8 @@ const categoriesWithCoupons = new Set();
       const origPriceLabel = escapeHtml(String(category.offerPrice ?? '—'));
 
       // Coupon section — injected only for premium, unpurchased categories.
-const showCoupon =
-    !isFree &&
-    !unlocked &&
-    categoriesWithCoupons.has(category.id);
-
-const couponHtml = showCoupon ? `
-<div class="coupon-section" id="couponSection_${catId}">
+      const couponHtml = (!isFree && !unlocked) ? `
+        <div class="coupon-section" id="couponSection_${catId}">
           <label class="coupon-label" for="couponInput_${catId}">Coupon Code</label>
           <input id="couponInput_${catId}" class="coupon-input" type="text" placeholder="ENTER COUPON CODE" maxlength="50" autocomplete="off" spellcheck="false" />
           <button type="button" class="button-coupon-apply" id="applyBtn_${catId}" onclick="window.applyCouponForCategory('${catId}', this)">Apply Coupon</button>
@@ -1106,44 +1100,7 @@ const couponHtml = showCoupon ? `
         const snapshot = await getDocs(categoriesQuery);
         const categories = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         categoriesById = Object.fromEntries(categories.map(category => [category.id, category]));
-// Load enabled coupons and remember which categories have coupons.
-categoriesWithCoupons.clear();
 
-try {
-    const couponSnapshot = await getDocs(
-        query(
-            collection(db, "couponCodes"),
-            where("status", "==", "enabled")
-        )
-    );
-
-    const now = new Date();
-
-    couponSnapshot.forEach(doc => {
-        const coupon = doc.data();
-
-        // Date validation
-        if (coupon.validFrom) {
-            const from = coupon.validFrom.toDate ? coupon.validFrom.toDate() : new Date(coupon.validFrom);
-            if (from > now) return;
-        }
-
-        if (coupon.validUntil) {
-            const until = coupon.validUntil.toDate ? coupon.validUntil.toDate() : new Date(coupon.validUntil);
-            if (until < now) return;
-        }
-
-        const cats =
-            coupon.categories ||
-            coupon.categoryIds ||
-            [];
-
-        cats.forEach(id => categoriesWithCoupons.add(id));
-    });
-
-} catch (err) {
-    console.error("Unable to load coupon list", err);
-}
         const mobile = getStoredMobile();
         const paidFlags = await Promise.all(categories.map(category => {
           const isFree = category.isFree !== false;
