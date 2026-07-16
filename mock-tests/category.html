@@ -42,32 +42,6 @@
     .button-primary:hover { background: #0f3c7f; }
     .empty-state { padding: 32px 24px; border-radius: 24px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
     @media (max-width: 720px) { .category-summary { flex-direction: column; align-items: stretch; } }
-
-    /* ---- Coupon UI additions ---- */
-    .coupon-section { margin-top: 14px; width: 100%; }
-    .coupon-row { display: flex; gap: 8px; align-items: stretch; }
-    .coupon-input { flex: 1; border: 1px solid rgba(35,49,79,.18); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 1rem; color: #1f324f; background: #f8fbff; letter-spacing: .05em; text-transform: uppercase; outline: none; transition: border-color .2s; }
-    .coupon-input:focus { border-color: #0b4ea2; background: #fff; }
-    .coupon-input:disabled { opacity: .6; cursor: not-allowed; }
-    .button-coupon-apply { border: 0; border-radius: 12px; padding: 12px 18px; cursor: pointer; font: inherit; font-weight: 700; font-size: .95rem; background: #0b4ea2; color: #fff; white-space: nowrap; transition: background .2s; }
-    .button-coupon-apply:hover:not(:disabled) { background: #0f3c7f; }
-    .button-coupon-apply:disabled { opacity: .6; cursor: not-allowed; }
-    .coupon-msg { margin-top: 8px; font-size: .9rem; font-weight: 600; min-height: 20px; }
-    .coupon-msg.success { color: #1e583a; }
-    .coupon-msg.error { color: #8a1f19; }
-    .button-coupon-remove { border: 0; border-radius: 12px; padding: 10px 16px; cursor: pointer; font: inherit; font-weight: 700; font-size: .88rem; background: #ffe7e6; color: #8a1f19; margin-top: 6px; transition: background .2s; }
-    .button-coupon-remove:hover { background: #ffd0ce; }
-    .coupon-breakdown { background: #f4f7fb; border-radius: 14px; padding: 14px 16px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-    .coupon-breakdown-row { display: flex; justify-content: space-between; font-size: .95rem; color: #556180; }
-    .coupon-breakdown-row.discount { color: #1e583a; font-weight: 700; }
-    .coupon-breakdown-row.final { color: #0b4ea2; font-weight: 800; font-size: 1.02rem; border-top: 1px solid rgba(35,49,79,.1); padding-top: 8px; margin-top: 2px; }
-    .button-purchase { border: 0; border-radius: 14px; padding: 13px 22px; background: #0b4ea2; color: #fff; cursor: pointer; font: inherit; font-weight: 700; font-size: 1rem; margin-top: 14px; transition: background .2s ease, transform .2s ease; }
-    .button-purchase:hover:not(:disabled) { background: #0f3c7f; transform: translateY(-1px); }
-    .button-purchase:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-    .mobile-input-row { margin-bottom: 10px; }
-    .mobile-input-row input { width: 100%; border: 1px solid rgba(35,49,79,.18); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 1rem; color: #1f324f; background: #f8fbff; outline: none; transition: border-color .2s; }
-    .mobile-input-row input:focus { border-color: #0b4ea2; background: #fff; }
-    .mobile-input-row label { display: block; font-size: .88rem; font-weight: 700; color: #4d5f7d; margin-bottom: 6px; }
   </style>
 </head>
 <body>
@@ -107,12 +81,6 @@
     let currentSubCategories = [];
     let currentSubCategoryCounts = [];
 
-    // Cloudflare Worker payment backend base URL.
-    const PAYMENT_API_BASE = 'https://marudhara-payment-api.jmdseller2025.workers.dev';
-
-    // Coupon state — module-level so Purchase handler always sees latest applied coupon.
-    let activeCoupon = null; // { code, originalAmount, discountAmount, paidAmount } (paise)
-
     function setStatus(message, type = 'info') {
       statusBar.textContent = message;
       statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
@@ -136,29 +104,9 @@
 
     function renderCategoryHeader(category) {
       const isFree = category.isFree !== false;
-      const offerPrice = category.offerPrice ?? '';
-      const originalPrice = category.originalPrice ?? '';
       const accessBadge = isFree
         ? '<span class="badge badge-live">Free</span>'
-        : `<span class="badge">Premium — <s>₹${escapeHtml(String(originalPrice))}</s> ₹${escapeHtml(String(offerPrice))}</span>`;
-
-      const couponAndPurchaseHtml = isFree ? '' : `
-        <div class="coupon-section" id="couponSection">
-          <div class="mobile-input-row">
-            <label for="catMobileInput">Mobile Number</label>
-            <input id="catMobileInput" type="tel" placeholder="Enter your mobile number" autocomplete="tel" maxlength="15" />
-          </div>
-          <label style="display:block;font-size:.88rem;font-weight:700;color:#4d5f7d;margin-bottom:6px;">Coupon Code</label>
-          <div class="coupon-row">
-            <input id="catCouponInput" class="coupon-input" type="text" placeholder="ENTER COUPON CODE" maxlength="50" autocomplete="off" spellcheck="false" />
-            <button type="button" id="catApplyCouponBtn" class="button-coupon-apply">Apply</button>
-          </div>
-          <div id="catCouponMsg" class="coupon-msg"></div>
-          <button type="button" id="catRemoveCouponBtn" class="button-coupon-remove" style="display:none;">✕ Remove Coupon</button>
-          <div id="catCouponBreakdown" class="coupon-breakdown" style="display:none;"></div>
-        </div>
-        <button type="button" id="catPurchaseBtn" class="button-purchase">Purchase ₹${escapeHtml(String(offerPrice))}</button>`;
-
+        : `<span class="badge">Premium — <s>₹${escapeHtml(category.originalPrice ?? '')}</s> ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
       categoryHeader.innerHTML = `
         <div class="category-summary">
           <div class="icon">${(category.image || category.icon) ? `<img src="${escapeHtml(category.image || category.icon)}" alt="${escapeHtml(category.name)} icon">` : '<div class="fallback-icon">📚</div>'}</div>
@@ -166,242 +114,9 @@
             <h2>${escapeHtml(category.name)}</h2>
             <p>${escapeHtml(category.description || 'Browse available mock tests for this category and begin your practice session.')}</p>
             <div class="badge-row">${accessBadge}</div>
-            ${couponAndPurchaseHtml}
           </div>
         </div>`;
     }
-
-    // ---- Payment backend helpers ----
-    async function createOrder(payload) {
-      const res = await fetch(`${PAYMENT_API_BASE}/api/create-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Unable to create payment order. Please try again.');
-      return res.json();
-    }
-
-    async function verifyPayment(payload) {
-      const res = await fetch(`${PAYMENT_API_BASE}/api/verify-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error('Payment verification failed. Please try again.');
-      return res.json();
-    }
-
-    function loadRazorpayScript() {
-      return new Promise((resolve, reject) => {
-        if (window.Razorpay) { resolve(); return; }
-        const existing = document.querySelector('script[data-rzp-cat]');
-        if (existing) {
-          existing.addEventListener('load', () => resolve());
-          existing.addEventListener('error', () => reject(new Error('Unable to load payment gateway.')));
-          return;
-        }
-        const s = document.createElement('script');
-        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        s.dataset.rzpCat = 'true';
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error('Unable to load payment gateway.'));
-        document.body.appendChild(s);
-      });
-    }
-
-    function openRazorpayCheckout(orderRes, categoryId, mobile) {
-      return new Promise((resolve, reject) => {
-        const razorpayKey = orderRes.keyId;
-        const orderId     = orderRes.orderId;
-        const amount      = orderRes.amount;
-        const currency    = orderRes.currency || 'INR';
-        if (!razorpayKey || !orderId || !amount) {
-          reject(new Error('Payment order details are incomplete. Please try again.'));
-          return;
-        }
-        const rzp = new window.Razorpay({
-          key: razorpayKey,
-          amount,
-          currency,
-          name: 'Marudhara Exam',
-          description: 'Category Access',
-          order_id: orderId,
-          prefill: { contact: mobile },
-          theme: { color: '#0b4ea2' },
-          modal: { ondismiss: () => reject(new Error('Payment was cancelled.')) },
-          handler: async function (response) {
-            try {
-              setStatus('Verifying payment…');
-              const verifyRes = await verifyPayment({
-                categoryId,
-                mobile,
-                razorpay_order_id:   response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature:  response.razorpay_signature
-              });
-              if (verifyRes && verifyRes.success) {
-                resolve(verifyRes);
-              } else {
-                reject(new Error('Payment verification failed.'));
-              }
-            } catch (err) {
-              reject(err);
-            }
-          }
-        });
-        rzp.on('payment.failed', () => reject(new Error('Payment failed. Please try again.')));
-        rzp.open();
-      });
-    }
-
-    // ---- Coupon + Purchase handlers for category header ----
-    function attachCategoryPurchaseHandlers(category) {
-      const isFree = category.isFree !== false;
-      if (isFree) return; // no payment UI for free categories
-
-      const mobileInput      = document.getElementById('catMobileInput');
-      const couponInput      = document.getElementById('catCouponInput');
-      const applyBtn         = document.getElementById('catApplyCouponBtn');
-      const removeBtn        = document.getElementById('catRemoveCouponBtn');
-      const couponMsgEl      = document.getElementById('catCouponMsg');
-      const couponBreakdown  = document.getElementById('catCouponBreakdown');
-      const purchaseBtn      = document.getElementById('catPurchaseBtn');
-      const offerPrice       = category.offerPrice ?? '';
-
-      if (!applyBtn || !purchaseBtn) return; // guard if DOM not rendered
-
-      function setCouponMsg(text, type) {
-        couponMsgEl.textContent = text;
-        couponMsgEl.className = 'coupon-msg' + (type ? ' ' + type : '');
-      }
-
-      function showBreakdown(code, orig, disc, paid) {
-        const fmt = p => '₹' + (p / 100).toLocaleString('en-IN');
-        couponBreakdown.style.display = '';
-        couponBreakdown.innerHTML =
-          '<div class="coupon-breakdown-row"><span>Original Price</span><span>' + fmt(orig) + '</span></div>' +
-          '<div class="coupon-breakdown-row discount"><span>Discount (' + escapeHtml(code) + ')</span><span>−' + fmt(disc) + '</span></div>' +
-          '<div class="coupon-breakdown-row final"><span>Final Price</span><span>' + fmt(paid) + '</span></div>';
-      }
-
-      function hideBreakdown() {
-        couponBreakdown.style.display = 'none';
-        couponBreakdown.innerHTML = '';
-      }
-
-      // Auto-uppercase
-      couponInput.addEventListener('input', () => {
-        const pos = couponInput.selectionStart;
-        couponInput.value = couponInput.value.toUpperCase();
-        couponInput.setSelectionRange(pos, pos);
-      });
-
-      // Apply coupon
-      let isApplying = false;
-      applyBtn.addEventListener('click', async () => {
-        if (isApplying) return;
-        const code   = couponInput.value.trim().toUpperCase();
-        const mobile = mobileInput.value.trim();
-        if (!code)   { setCouponMsg('Please enter a coupon code.', 'error'); return; }
-        if (!mobile) { setCouponMsg('Enter your mobile number first.', 'error'); return; }
-
-        isApplying = true;
-        applyBtn.disabled = true;
-        couponInput.disabled = true;
-        setCouponMsg('Validating…');
-
-        try {
-          const res = await createOrder({
-            mobile,
-            categoryId: category.id,
-            couponCode: code,
-            preview: true
-          });
-          if (!res || res.success !== true) {
-            throw new Error((res && res.message) || 'Invalid coupon. Please try again.');
-          }
-          activeCoupon = { code, originalAmount: res.originalAmount, discountAmount: res.discountAmount, paidAmount: res.paidAmount };
-          showBreakdown(code, res.originalAmount, res.discountAmount, res.paidAmount);
-          setCouponMsg('✅ Coupon "' + code + '" applied!', 'success');
-          removeBtn.style.display = '';
-          applyBtn.style.display = 'none';
-          couponInput.disabled = true;
-          const finalRupees = (res.paidAmount / 100).toLocaleString('en-IN');
-          purchaseBtn.textContent = 'Purchase ₹' + finalRupees;
-        } catch (err) {
-          activeCoupon = null;
-          setCouponMsg((err && err.message) || 'Invalid coupon. Please try again.', 'error');
-          couponInput.disabled = false;
-        } finally {
-          isApplying = false;
-          applyBtn.disabled = false;
-        }
-      });
-
-      // Remove coupon
-      removeBtn.addEventListener('click', () => {
-        activeCoupon = null;
-        couponInput.value = '';
-        couponInput.disabled = false;
-        applyBtn.style.display = '';
-        applyBtn.disabled = false;
-        removeBtn.style.display = 'none';
-        hideBreakdown();
-        setCouponMsg('');
-        purchaseBtn.textContent = 'Purchase ₹' + escapeHtml(String(offerPrice));
-      });
-
-      // Purchase
-      purchaseBtn.addEventListener('click', async () => {
-        if (purchaseBtn.dataset.processing === 'true') return;
-        const mobile = mobileInput.value.trim();
-        if (!mobile) {
-          setStatus('Mobile number is required to purchase.', 'error');
-          mobileInput.focus();
-          return;
-        }
-
-        purchaseBtn.dataset.processing = 'true';
-        purchaseBtn.disabled = true;
-        const prevLabel = purchaseBtn.textContent;
-        purchaseBtn.textContent = 'Please wait…';
-
-        try {
-          setStatus('Preparing payment…');
-          await loadRazorpayScript();
-
-          const orderPayload = activeCoupon
-            ? { mobile, categoryId: category.id, couponCode: activeCoupon.code }
-            : { mobile, categoryId: category.id };
-
-          const orderRes = await createOrder(orderPayload);
-          if (!orderRes || orderRes.success !== true || !orderRes.orderId) {
-            throw new Error((orderRes && orderRes.message) || 'Unable to create payment order. Please try again.');
-          }
-
-          setStatus('Opening payment window…');
-          const verifyRes = await openRazorpayCheckout(orderRes, category.id, mobile);
-          if (!verifyRes || verifyRes.success !== true) {
-            throw new Error('Payment verification failed. Please try again.');
-          }
-
-          setStatus('✅ Payment successful! You can now start any exam in this category.');
-          purchaseBtn.style.display = 'none';
-          document.getElementById('couponSection') && (document.getElementById('couponSection').style.display = 'none');
-        } catch (err) {
-          console.error('Purchase error:', err);
-          setStatus(err && err.message ? err.message : 'Unable to complete purchase. Please try again.', 'error');
-        } finally {
-          purchaseBtn.dataset.processing = 'false';
-          purchaseBtn.disabled = false;
-          if (purchaseBtn.style.display !== 'none') {
-            purchaseBtn.textContent = prevLabel;
-          }
-        }
-      });
-    }
-    // ---- End coupon + purchase handlers ----
 
     // FEATURE 1 & 9: safely read liveDateTime; missing/invalid values mean the mock
     // is treated as always LIVE, so old mock documents keep working unchanged.
@@ -670,7 +385,6 @@ testsGrid.innerHTML =
         const category = { id: categoryDoc.id, ...categoryDoc.data() };
         currentCategoryId = category.id;
         renderCategoryHeader(category);
-        attachCategoryPurchaseHandlers(category);
 
         if (category.hasSubCategory) {
           await loadSubCategoryList(category.id);
