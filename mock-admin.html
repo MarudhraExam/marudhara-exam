@@ -495,6 +495,79 @@
         position: static;
       }
     }
+
+    /* ---- Coupon Manager additions ---- */
+    .coupon-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
+
+    .coupon-table th,
+    .coupon-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #edf1f7;
+      font-size: 0.93rem;
+    }
+
+    .coupon-table th {
+      text-align: left;
+      color: #5b6887;
+      font-weight: 700;
+    }
+
+    .coupon-table tr:hover {
+      background: #f7f9ff;
+    }
+
+    .coupon-code-badge {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: #eef4ff;
+      color: #0b4ea2;
+      padding: 4px 10px;
+      border-radius: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .coupon-status-badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .coupon-status-badge.enabled {
+      background: #e6f7ea;
+      color: #1e583a;
+    }
+
+    .coupon-status-badge.disabled {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .coupon-category-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .coupon-category-tag {
+      background: #f1f5ff;
+      color: #263857;
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    #couponCategorySelect {
+      min-height: 120px;
+    }
   </style>
 </head>
 <body>
@@ -520,6 +593,7 @@
           <a href="#mock-tests"><span>🧪</span> Mock Tests</a>
           <a href="#excel-upload"><span>📄</span> Excel Upload</a>
           <a href="#payment"><span>💳</span> Payment Setup</a>
+          <a href="#coupons"><span>🎟️</span> Coupons</a>
         </nav>
       </aside>
 
@@ -883,6 +957,80 @@ No Sub Categories
             <button type="button" class="button-primary" id="setupPaymentBtn">Prepare Payment</button>
           </div>
         </section>
+
+        <!-- ======================================================
+             COUPON MANAGER — added section, no existing code changed
+             ====================================================== -->
+        <section id="coupons" class="section-card">
+          <h2>Coupon Manager</h2>
+          <p>Create and manage discount coupons for premium category unlocks.</p>
+
+          <div class="status-bar" id="couponStatusBar">Ready to manage coupons.</div>
+
+          <div class="form-grid">
+            <label>
+              Coupon Code
+              <input type="text" id="couponCode" placeholder="e.g. SAVE50" autocomplete="off" maxlength="50" style="text-transform:uppercase;" />
+            </label>
+            <label>
+              Discount Type
+              <select id="couponDiscountType">
+                <option value="fixed">Fixed Amount (₹)</option>
+                <option value="percentage">Percentage (%)</option>
+              </select>
+            </label>
+            <label>
+              Discount Value
+              <input type="number" id="couponDiscountValue" min="0" step="0.01" placeholder="e.g. 50" />
+            </label>
+            <label>
+              Valid From
+              <input type="date" id="couponStartDate" />
+            </label>
+            <label>
+              Valid Until
+              <input type="date" id="couponEndDate" />
+            </label>
+            <label>
+              Status
+              <select id="couponStatus">
+                <option value="enabled">Enabled</option>
+                <option value="disabled">Disabled</option>
+              </select>
+            </label>
+            <label>
+              Applicable Categories
+              <small style="color:#5f6f8f;font-weight:400;font-size:0.85rem;">(Hold Ctrl / Cmd to select multiple. Leave all unselected to apply to every category.)</small>
+              <select id="couponCategorySelect" multiple></select>
+            </label>
+          </div>
+
+          <div class="action-group">
+            <button type="button" class="button-primary" id="saveCouponBtn">Add Coupon</button>
+            <button type="button" class="button-secondary" id="cancelCouponBtn" hidden>Cancel Edit</button>
+            <button type="button" class="button-link" id="clearCouponBtn">Clear Fields</button>
+          </div>
+
+          <div id="couponTableWrapper" style="overflow-x:auto;margin-top:24px;">
+            <table class="coupon-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Discount</th>
+                  <th>Valid From</th>
+                  <th>Valid Until</th>
+                  <th>Status</th>
+                  <th>Categories</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="couponRows">
+                <tr><td colspan="7" class="empty-state">Loading coupons…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -944,7 +1092,8 @@ No Sub Categories
       tests: 'mockTests',
       questions: 'mockQuestions',
       results: 'mockResults',
-      subCategories: 'mockSubCategories'
+      subCategories: 'mockSubCategories',
+      coupons: 'couponCodes'
     };
 
     // Path to the existing student mock exam page, used by the "Review" button
@@ -1020,6 +1169,22 @@ No Sub Categories
       subCategoryRows: document.getElementById('subCategoryRows')
     };
 
+    // ---- Coupon Manager element refs (added, not modifying elements above) ----
+    const couponEls = {
+      statusBar:        document.getElementById('couponStatusBar'),
+      code:             document.getElementById('couponCode'),
+      discountType:     document.getElementById('couponDiscountType'),
+      discountValue:    document.getElementById('couponDiscountValue'),
+      startDate:        document.getElementById('couponStartDate'),
+      endDate:          document.getElementById('couponEndDate'),
+      status:           document.getElementById('couponStatus'),
+      categorySelect:   document.getElementById('couponCategorySelect'),
+      saveBtn:          document.getElementById('saveCouponBtn'),
+      cancelBtn:        document.getElementById('cancelCouponBtn'),
+      clearBtn:         document.getElementById('clearCouponBtn'),
+      couponRows:       document.getElementById('couponRows')
+    };
+
     let categories = [];
     let subCategories = [];
     let mockFormSubCategories = [];
@@ -1040,6 +1205,10 @@ No Sub Categories
 
     // FEATURE 5: cache of { mockId: attemptCount } read from the results collection
     let mockAttemptCounts = {};
+
+    // ---- Coupon Manager state ----
+    let coupons = [];
+    let editingCouponId = null;
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
       elements.statusBar.className = `status-bar ${type}`.trim();
@@ -2305,6 +2474,212 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       });
     }
 
+    // =========================================================
+    // COUPON MANAGER — new functions only, nothing existing changed
+    // =========================================================
+
+    function setCouponStatus(message, type = 'info') {
+      couponEls.statusBar.textContent = message;
+      couponEls.statusBar.className = `status-bar ${type}`.trim();
+    }
+
+    function resetCouponForm() {
+      editingCouponId = null;
+      couponEls.code.value = '';
+      couponEls.discountType.value = 'fixed';
+      couponEls.discountValue.value = '';
+      couponEls.startDate.value = '';
+      couponEls.endDate.value = '';
+      couponEls.status.value = 'enabled';
+      Array.from(couponEls.categorySelect.options).forEach(o => { o.selected = false; });
+      couponEls.saveBtn.textContent = 'Add Coupon';
+      couponEls.cancelBtn.hidden = true;
+    }
+
+    function populateCouponCategorySelect() {
+      const prev = Array.from(couponEls.categorySelect.selectedOptions).map(o => o.value);
+      couponEls.categorySelect.innerHTML = '';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name || cat.id;
+        opt.selected = prev.includes(cat.id);
+        couponEls.categorySelect.appendChild(opt);
+      });
+    }
+
+    function populateCouponForm(coupon) {
+      editingCouponId = coupon.id;
+      couponEls.code.value = coupon.code || '';
+      couponEls.discountType.value = coupon.discountType || 'fixed';
+      couponEls.discountValue.value = coupon.discountValue != null ? coupon.discountValue : '';
+      couponEls.startDate.value = coupon.startDate
+        ? new Date(coupon.startDate).toISOString().slice(0, 10) : '';
+      couponEls.endDate.value = coupon.endDate
+        ? new Date(coupon.endDate).toISOString().slice(0, 10) : '';
+      couponEls.status.value = coupon.status || 'enabled';
+      Array.from(couponEls.categorySelect.options).forEach(o => {
+        o.selected = !coupon.categories || coupon.categories.length === 0
+          ? false
+          : coupon.categories.includes(o.value);
+      });
+      couponEls.saveBtn.textContent = 'Update Coupon';
+      couponEls.cancelBtn.hidden = false;
+      couponEls.code.focus();
+    }
+
+    function renderCoupons() {
+      if (!coupons.length) {
+        couponEls.couponRows.innerHTML = '<tr><td colspan="7" class="empty-state">No coupons yet. Add one above.</td></tr>';
+        return;
+      }
+      couponEls.couponRows.innerHTML = coupons.map(c => {
+        const discountLabel = c.discountType === 'percentage'
+          ? `${c.discountValue}%`
+          : `₹${c.discountValue}`;
+        const startLabel = c.startDate ? new Date(c.startDate).toLocaleDateString('en-IN') : '—';
+        const endLabel   = c.endDate   ? new Date(c.endDate).toLocaleDateString('en-IN')   : '—';
+        const statusBadge = `<span class="coupon-status-badge ${c.status === 'enabled' ? 'enabled' : 'disabled'}">${c.status === 'enabled' ? 'Enabled' : 'Disabled'}</span>`;
+        const catNames = (!c.categories || c.categories.length === 0)
+          ? '<span class="coupon-category-tag">All categories</span>'
+          : c.categories.map(cid => {
+              const cat = categories.find(x => x.id === cid);
+              return `<span class="coupon-category-tag">${escapeHtml(cat ? cat.name || cid : cid)}</span>`;
+            }).join('');
+        const toggleLabel = c.status === 'enabled' ? 'Disable' : 'Enable';
+        return `<tr>
+          <td><span class="coupon-code-badge">${escapeHtml(c.code)}</span></td>
+          <td>${escapeHtml(discountLabel)}</td>
+          <td>${escapeHtml(startLabel)}</td>
+          <td>${escapeHtml(endLabel)}</td>
+          <td>${statusBadge}</td>
+          <td><div class="coupon-category-tags">${catNames}</div></td>
+          <td>
+            <div class="category-actions">
+              <button class="button-secondary" style="padding:8px 12px;font-size:0.85rem;" data-coupon-id="${escapeHtml(c.id)}" data-action="edit">Edit</button>
+              <button class="button-secondary" style="padding:8px 12px;font-size:0.85rem;" data-coupon-id="${escapeHtml(c.id)}" data-action="toggle">${escapeHtml(toggleLabel)}</button>
+              <button class="button-danger" style="padding:8px 12px;font-size:0.85rem;" data-coupon-id="${escapeHtml(c.id)}" data-action="delete">Delete</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadCoupons() {
+      try {
+        const snap = await getDocs(query(collection(db, COLLECTIONS.coupons), orderBy('code')));
+        coupons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderCoupons();
+      } catch (err) {
+        console.error('loadCoupons failed:', err);
+        setCouponStatus(`Failed to load coupons: ${err.message}`, 'error');
+      }
+    }
+
+    function validateCouponForm() {
+      const code = couponEls.code.value.trim().toUpperCase();
+      if (!code) { setCouponStatus('Coupon code is required.', 'error'); return null; }
+      if (!/^[A-Z0-9_-]{1,50}$/.test(code)) {
+        setCouponStatus('Coupon code may only contain letters, numbers, hyphens and underscores.', 'error');
+        return null;
+      }
+      const discountValue = parseFloat(couponEls.discountValue.value);
+      if (isNaN(discountValue) || discountValue <= 0) {
+        setCouponStatus('Discount value must be a positive number.', 'error'); return null;
+      }
+      const discountType = couponEls.discountType.value;
+      if (discountType === 'percentage' && discountValue > 100) {
+        setCouponStatus('Percentage discount cannot exceed 100.', 'error'); return null;
+      }
+      const startDate = couponEls.startDate.value ? new Date(couponEls.startDate.value).getTime() : null;
+      const endDate   = couponEls.endDate.value   ? new Date(couponEls.endDate.value).getTime()   : null;
+      if (startDate && endDate && endDate < startDate) {
+        setCouponStatus('Valid Until date must be on or after Valid From date.', 'error'); return null;
+      }
+      const selectedCategories = Array.from(couponEls.categorySelect.selectedOptions).map(o => o.value);
+      return { code, discountType, discountValue, startDate, endDate, status: couponEls.status.value, categories: selectedCategories };
+    }
+
+    async function saveCoupon() {
+      const data = validateCouponForm();
+      if (!data) return;
+      couponEls.saveBtn.disabled = true;
+      try {
+        if (editingCouponId) {
+          await updateDoc(doc(db, COLLECTIONS.coupons, editingCouponId), data);
+          setCouponStatus(`Coupon "${data.code}" updated.`, 'success');
+        } else {
+          await addDoc(collection(db, COLLECTIONS.coupons), { ...data, createdAt: serverTimestamp() });
+          setCouponStatus(`Coupon "${data.code}" added.`, 'success');
+        }
+        resetCouponForm();
+        await loadCoupons();
+      } catch (err) {
+        console.error('saveCoupon failed:', err);
+        setCouponStatus(`Save failed: ${err.message}`, 'error');
+      } finally {
+        couponEls.saveBtn.disabled = false;
+      }
+    }
+
+    async function deleteCoupon(id) {
+      const coupon = coupons.find(c => c.id === id);
+      if (!coupon) return;
+      if (!confirm(`Delete coupon "${coupon.code}"? This cannot be undone.`)) return;
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.coupons, id));
+        setCouponStatus(`Coupon "${coupon.code}" deleted.`, 'success');
+        if (editingCouponId === id) resetCouponForm();
+        await loadCoupons();
+      } catch (err) {
+        console.error('deleteCoupon failed:', err);
+        setCouponStatus(`Delete failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function toggleCouponStatus(id) {
+      const coupon = coupons.find(c => c.id === id);
+      if (!coupon) return;
+      const newStatus = coupon.status === 'enabled' ? 'disabled' : 'enabled';
+      try {
+        await updateDoc(doc(db, COLLECTIONS.coupons, id), { status: newStatus });
+        setCouponStatus(`Coupon "${coupon.code}" ${newStatus}.`, 'success');
+        await loadCoupons();
+      } catch (err) {
+        console.error('toggleCouponStatus failed:', err);
+        setCouponStatus(`Update failed: ${err.message}`, 'error');
+      }
+    }
+
+    function attachCouponListeners() {
+      couponEls.code.addEventListener('input', () => {
+        const pos = couponEls.code.selectionStart;
+        couponEls.code.value = couponEls.code.value.toUpperCase();
+        couponEls.code.setSelectionRange(pos, pos);
+      });
+      couponEls.saveBtn.addEventListener('click', saveCoupon);
+      couponEls.cancelBtn.addEventListener('click', resetCouponForm);
+      couponEls.clearBtn.addEventListener('click', resetCouponForm);
+      couponEls.couponRows.addEventListener('click', async e => {
+        const btn = e.target.closest('[data-coupon-id]');
+        if (!btn) return;
+        const id     = btn.dataset.couponId;
+        const action = btn.dataset.action;
+        if (action === 'edit') {
+          const coupon = coupons.find(c => c.id === id);
+          if (coupon) { populateCouponForm(coupon); document.getElementById('coupons').scrollIntoView({ behavior: 'smooth' }); }
+        } else if (action === 'delete') {
+          await deleteCoupon(id);
+        } else if (action === 'toggle') {
+          await toggleCouponStatus(id);
+        }
+      });
+    }
+
+    // =========================================================
+    // END COUPON MANAGER
+    // =========================================================
+
     function attachListeners() {
       elements.saveBtn.addEventListener('click', saveCategory);
       elements.cancelBtn.addEventListener('click', resetCategoryForm);
@@ -2391,6 +2766,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     console.log("STEP 2: attaching listeners");
 
     attachListeners();
+    attachCouponListeners();
 
     console.log("STEP 3: setting price field visibility");
 
@@ -2399,10 +2775,12 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     console.log("STEP 4: loading categories");
 
     await loadCategories();
+    populateCouponCategorySelect();
 
     console.log("STEP 5: loading mock tests");
 
     await loadMockTests();
+    await loadCoupons();
 
     console.log("STEP 6: init complete");
 });
