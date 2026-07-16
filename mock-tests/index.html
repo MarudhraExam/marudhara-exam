@@ -1020,8 +1020,13 @@ const categoriesWithCoupons = new Set();
       const origPriceLabel = escapeHtml(String(category.offerPrice ?? '—'));
 
       // Coupon section — injected only for premium, unpurchased categories.
-      const couponHtml = (!isFree && !unlocked) ? `
-        <div class="coupon-section" id="couponSection_${catId}">
+const showCoupon =
+    !isFree &&
+    !unlocked &&
+    categoriesWithCoupons.has(category.id);
+
+const couponHtml = showCoupon ? `
+<div class="coupon-section" id="couponSection_${catId}">
           <label class="coupon-label" for="couponInput_${catId}">Coupon Code</label>
           <input id="couponInput_${catId}" class="coupon-input" type="text" placeholder="ENTER COUPON CODE" maxlength="50" autocomplete="off" spellcheck="false" />
           <button type="button" class="button-coupon-apply" id="applyBtn_${catId}" onclick="window.applyCouponForCategory('${catId}', this)">Apply Coupon</button>
