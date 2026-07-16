@@ -1,1217 +1,2411 @@
-html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Emergent</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mock Admin | Marudhara Exam</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      color: #23314f;
+      background: #f4f7fb;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f7;
-            color: #333;
-        }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf2f8 100%);
+    }
 
-        .admin-container {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+    #mockAdminRoot {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
 
-        .sidebar {
-            width: 260px;
-            background: #1a1a1a;
-            color: #fff;
-            padding: 24px 16px;
-            overflow-y: auto;
-            border-right: 1px solid #333;
-        }
+    #mockAdminRoot header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 0 16px;
+    }
 
-        .sidebar-title {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #888;
-            margin-top: 24px;
-            margin-bottom: 12px;
-            padding: 0 8px;
-        }
+    #mockAdminRoot .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
 
-        .sidebar-item {
-            padding: 12px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 14px;
-        }
+    #mockAdminRoot .brand h1 {
+      font-size: 1.9rem;
+      letter-spacing: -0.04em;
+      margin: 0;
+      color: #102a52;
+    }
 
-        .sidebar-item:hover {
-            background: #333;
-        }
+    #mockAdminRoot .brand small {
+      color: #62738b;
+      font-size: 0.96rem;
+    }
 
-        .sidebar-item.active {
-            background: #0066ff;
-            font-weight: 600;
-        }
+    #mockAdminRoot .top-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 32px;
-            background: #f5f5f7;
-        }
+    #mockAdminRoot .top-actions a,
+    #mockAdminRoot .top-actions button {
+      background: #002b5b;
+      color: #fff;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
 
-        .page-header {
-            margin-bottom: 32px;
-        }
+    #mockAdminRoot .top-actions a:hover,
+    #mockAdminRoot .top-actions button:hover {
+      background: #0f3c7f;
+    }
 
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 320px) 1fr;
+      gap: 24px;
+      align-items: start;
+    }
 
-        .page-subtitle {
-            font-size: 14px;
-            color: #666;
-        }
+    .panel,
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(35, 49, 79, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(23, 42, 77, 0.06);
+      overflow: hidden;
+    }
 
-        .section-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e5e5e7;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
+    .panel {
+      position: sticky;
+      top: 18px;
+      height: fit-content;
+    }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+    .panel nav {
+      display: grid;
+      gap: 8px;
+      padding: 20px;
+    }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+    .panel nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      color: #263857;
+      font-weight: 600;
+      text-decoration: none;
+      background: #f6f8fc;
+      transition: background 0.2s ease;
+    }
 
-        .form-grid.full {
-            grid-template-columns: 1fr;
-        }
+    .panel nav a.active,
+    .panel nav a:hover {
+      background: #e8effd;
+    }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
+    .panel nav a span {
+      font-size: 1.1rem;
+    }
 
-        .form-group label {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #333;
-        }
+    .content {
+      display: grid;
+      gap: 24px;
+    }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            padding: 10px 12px;
-            border: 1px solid #d5d5d7;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border 0.2s;
-        }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+    }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #0066ff;
-            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
-        }
+    .stat-card {
+      padding: 24px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+      border: 1px solid rgba(102, 132, 217, 0.12);
+    }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
+    .stat-card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #556180;
+      margin-bottom: 10px;
+    }
 
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+    .stat-card p {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+      color: #102a52;
+    }
 
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-        }
+    .section-card {
+      padding: 28px;
+    }
 
-        .checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            cursor: pointer;
-        }
+    .section-card h2,
+    .section-card h3 {
+      margin-top: 0;
+      color: #102a52;
+    }
 
-        .checkbox-item label {
-            margin: 0;
-            font-weight: 400;
-            cursor: pointer;
-            font-size: 14px;
-        }
+    .section-card h2 {
+      font-size: 1.55rem;
+      margin-bottom: 12px;
+    }
 
-        .action-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
+    .section-card p {
+      margin: 0 0 20px;
+      color: #54637d;
+      line-height: 1.8;
+    }
 
-        .button-primary,
-        .button-secondary,
-        .button-danger,
-        .button-link {
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    .form-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr;
+    }
 
-        .button-primary {
-            background: #0066ff;
-            color: #fff;
-        }
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.95rem;
+      color: #4d5f7d;
+      font-weight: 600;
+    }
 
-        .button-primary:hover {
-            background: #0052cc;
-            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
-        }
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid #d8e0ef;
+      background: #fbfdff;
+      padding: 14px 16px;
+      color: #23314f;
+      font: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
 
-        .button-secondary {
-            background: #f5f5f7;
-            color: #333;
-            border: 1px solid #d5d5d7;
-        }
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #7a96f5;
+      box-shadow: 0 0 0 4px rgba(122, 150, 245, 0.12);
+    }
 
-        .button-secondary:hover {
-            background: #ebebf0;
-        }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
 
-        .button-danger {
-            background: #ff3b30;
-            color: #fff;
-        }
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 6px;
+    }
 
-        .button-danger:hover {
-            background: #cc2f26;
-        }
+    .button-primary,
+    .button-secondary,
+    .button-link {
+      border: 0;
+      font: inherit;
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
 
-        .button-link {
-            background: none;
-            padding: 8px 4px;
-            color: #0066ff;
-            text-decoration: none;
-        }
+    .button-primary {
+      background: #0b4ea2;
+      color: #fff;
+    }
 
-        .button-link:hover {
-            color: #0052cc;
-            text-decoration: underline;
-        }
+    .button-secondary {
+      background: #eef2ff;
+      color: #1f3f7c;
+    }
 
-        .status-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: #f5f5f7;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
+    .button-danger {
+      background: #e1534b;
+      color: #fff;
+    }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
+    .button-link {
+      background: transparent;
+      color: #0b4ea2;
+    }
 
-        .status-indicator.active {
-            background: #34c759;
-        }
+    .button-primary:hover,
+    .button-danger:hover,
+    .button-secondary:hover,
+    .button-link:hover {
+      transform: translateY(-1px);
+    }
 
-        .status-indicator.inactive {
-            background: #ff3b30;
-        }
+    .category-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+    }
 
-        .category-table,
-        .test-table,
-        .coupon-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
+    .category-table th,
+    .category-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #edf1f7;
+    }
 
-        .category-table thead,
-        .test-table thead,
-        .coupon-table thead {
-            background: #f5f5f7;
-        }
+    .category-table th {
+      text-align: left;
+      color: #5b6887;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
 
-        .category-table th,
-        .test-table th,
-        .coupon-table th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            color: #666;
-            border-bottom: 1px solid #e5e5e7;
-        }
+    .category-row {
+      transition: background 0.2s ease;
+    }
 
-        .category-table td,
-        .test-table td,
-        .coupon-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e5e7;
-            font-size: 14px;
-        }
+    .category-row:hover {
+      background: #f7f9ff;
+    }
 
-        .category-table tr:hover,
-        .test-table tr:hover,
-        .coupon-table tr:hover {
-            background: #f9f9f9;
-        }
+    .category-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
+    .status-bar {
+      min-height: 36px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      color: #405675;
+      background: #f1f5ff;
+      margin-bottom: 18px;
+    }
 
-        .action-buttons .button-link {
-            padding: 6px 8px;
-            font-size: 13px;
-        }
+    .status-bar.success {
+      background: #e6f7ea;
+      color: #1e583a;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
+    .status-bar.error {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
 
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
+    .empty-state {
+      padding: 26px;
+      border-radius: 18px;
+      background: #f7f9ff;
+      color: #556180;
+      text-align: center;
+      margin-top: 14px;
+    }
 
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+    .placeholder-list {
+      display: grid;
+      gap: 18px;
+      margin-top: 16px;
+    }
 
-        .badge-success {
-            background: #d1f4e0;
-            color: #1b5e20;
-        }
+    .placeholder-item {
+      padding: 18px;
+      border-radius: 18px;
+      background: #f6f8ff;
+      border: 1px dashed #dbe2f6;
+    }
 
-        .badge-danger {
-            background: #ffdddd;
-            color: #c41c3b;
-        }
+    .placeholder-item h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
 
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
+    .placeholder-item p {
+      margin: 0;
+      color: #5f6f8f;
+      line-height: 1.7;
+    }
 
-        .alert-success {
-            background: #d1f4e0;
-            color: #1b5e20;
-            border: 1px solid #a5d6a7;
-        }
+    .mock-card {
+      padding: 22px;
+      border-radius: 20px;
+      background: #f8fbff;
+      border: 1px solid #dbe2f6;
+      display: grid;
+      gap: 12px;
+    }
 
-        .alert-error {
-            background: #ffdddd;
-            color: #c41c3b;
-            border: 1px solid #ef9a9a;
-        }
+    .mock-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-        .alert-info {
-            background: #e3f2fd;
-            color: #01579b;
-            border: 1px solid #90caf9;
-        }
+    .mock-card-title {
+      font-size: 1rem;
+      margin: 0;
+      color: #102a52;
+      font-weight: 700;
+    }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
+    .mock-card-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      color: #4d5f7d;
+      font-size: 0.95rem;
+    }
 
-        .modal.show {
-            display: flex;
-        }
+    .mock-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: #eef4ff;
+      color: #0b4ea2;
+    }
 
-        .modal-content {
-            background: #fff;
-            border-radius: 12px;
-            padding: 32px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
+    .mock-badge.premium {
+      background: #fff0f0;
+      color: #b12b29;
+    }
 
-        .modal-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
+    /* FEATURE 4: status badge colors - Scheduled (orange), Live (green), Expired (red) */
+    .mock-badge.status-scheduled {
+      background: #fff4e5;
+      color: #a15c00;
+    }
 
-        .modal-body {
-            margin-bottom: 24px;
-            color: #666;
-            font-size: 14px;
-        }
+    .mock-badge.status-live {
+      background: #e6f7ea;
+      color: #1e583a;
+    }
 
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
+    .mock-badge.status-expired {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
 
-        .hidden {
-            display: none;
-        }
-    </style>
+    .mock-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    /* Mock Test List filter bar (Category / Sub Category) */
+    .mock-list-divider {
+      height: 1px;
+      border: 0;
+      margin: 28px 0 0;
+      background: linear-gradient(90deg, transparent, #d8e0ef 12%, #d8e0ef 88%, transparent);
+    }
+
+    .mock-filter-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 280px));
+      gap: 16px;
+      align-items: end;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f6f9ff;
+      border: 1px solid #e1e8f8;
+      border-radius: 20px;
+    }
+
+    .mock-filter-bar label {
+      margin: 0;
+      color: #23314f;
+    }
+
+    .mock-list-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .mock-list-count {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0b4ea2;
+      background: #eef4ff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      #mockAdminRoot {
+        padding: 18px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        justify-content: stretch;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="sidebar">
-            <div style="padding: 0 8px; margin-bottom: 24px;">
-                <h1 style="font-size: 20px; font-weight: 700;">Admin</h1>
-            </div>
-            
-            <div class="sidebar-title">MANAGEMENT</div>
-            <div class="sidebar-item active" onclick="switchSection('categories')">Category Manager</div>
-            <div class="sidebar-item" onclick="switchSection('tests')">Mock Test Manager</div>
-            <div class="sidebar-item" onclick="switchSection('excel')">Excel Upload</div>
-            <div class="sidebar-item" onclick="switchSection('payment')">Payment Setup</div>
-            <div class="sidebar-item" onclick="switchSection('coupons')">Coupon Manager</div>
-            
-            <div class="sidebar-title" style="margin-top: 32px;">SETTINGS</div>
-            <div class="sidebar-item">System Settings</div>
-            <div class="sidebar-item">User Logs</div>
+  <div id="mockAdminRoot">
+    <header>
+      <div class="brand">
+        <div aria-hidden="true" style="width:46px;height:46px;border-radius:14px;background:#0b4ea2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:0 12px 26px rgba(11,78,162,.18);">M</div>
+        <div>
+          <h1>Mock Admin</h1>
+          <small>Category manager, test structure and integration hub</small>
         </div>
+      </div>
+      <div class="top-actions">
+        <a href="index.html">Live Site</a>
+        <button type="button" id="refreshButton">Refresh Data</button>
+      </div>
+    </header>
 
-        <div class="main-content">
-            <!-- Categories Section -->
-            <div id="section-categories" class="section-content">
-                <div class="page-header">
-                    <h1 class="page-title">Category Manager</h1>
-                    <p class="page-subtitle">Manage all exam categories</p>
-                </div>
+    <div class="layout">
+      <aside class="panel">
+        <nav>
+          <a href="#categories" class="active"><span>📂</span> Categories</a>
+          <a href="#mock-tests"><span>🧪</span> Mock Tests</a>
+          <a href="#excel-upload"><span>📄</span> Excel Upload</a>
+          <a href="#payment"><span>💳</span> Payment Setup</a>
+        </nav>
+      </aside>
 
-                <div class="section-card">
-                    <div class="section-title">Add New Category</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Category Name</label>
-                            <input type="text" id="categoryName" placeholder="e.g., JEE Main">
-                        </div>
-                        <div class="form-group">
-                            <label>Category Code</label>
-                            <input type="text" id="categoryCode" placeholder="e.g., JEE_MAIN">
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="categoryDesc" placeholder="Category description"></textarea>
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" onclick="addCategory()">Add Category</button>
-                        <button class="button-secondary" onclick="clearCategoryForm()">Clear Form</button>
-                    </div>
-                </div>
+      <main class="content">
+        <section class="stats-grid">
+          <article class="stat-card">
+            <h3>Total Categories</h3>
+            <p id="totalCategories">0</p>
+          </article>
+          <article class="stat-card">
+            <h3>Active Categories</h3>
+            <p id="activeCategories">0</p>
+          </article>
+          <article class="stat-card">
+            <h3>Mock Tests Ready</h3>
+            <p id="mockTestsCount">0</p>
+          </article>
+          <article class="stat-card">
+            <h3>Integration Status</h3>
+            <p>Prepared</p>
+          </article>
+        </section>
 
-                <div class="section-card">
-                    <div class="section-title">All Categories</div>
-                    <div id="categoriesList"></div>
-                </div>
+        <section id="categories" class="section-card">
+          <h2>Category Manager</h2>
+          <p>Maintain mock test categories with live Firestore syncing, search and inline editing support.</p>
+
+          <div class="status-bar" id="statusBar">Ready to manage categories.</div>
+
+          <div class="form-grid">
+            <label>
+              Category title
+              <input type="text" id="categoryTitle" placeholder="Enter category name" autocomplete="off" />
+            </label>
+            <label>
+              Icon URL
+              <input type="url" id="categoryIcon" placeholder="https://..." />
+            </label>
+            <label>
+              Display order
+              <input type="number" id="categoryOrder" min="0" placeholder="0" />
+            </label>
+            <label>
+              Description
+              <textarea id="categoryDescription" placeholder="Optional category description"></textarea>
+            </label>
+            <label>
+              Status
+              <select id="categoryActive">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </label>
+            <label>
+  Use Sub Category
+  <select id="categoryHasSubCategory">
+    <option value="false">No</option>
+    <option value="true">Yes</option>
+  </select>
+</label>
+            <label>
+              Access
+              <select id="categoryIsFree">
+                <option value="true">Free</option>
+                <option value="false">Premium</option>
+              </select>
+            </label>
+            <label id="categoryOriginalPriceWrapper" style="display:none;">
+              Original Price (₹)
+              <input type="number" id="categoryOriginalPrice" min="0" step="0.01" placeholder="e.g. 199" />
+            </label>
+            <label id="categoryOfferPriceWrapper" style="display:none;">
+              Offer Price (₹)
+              <input type="number" id="categoryOfferPrice" min="0" step="0.01" placeholder="e.g. 99" />
+            </label>
+          </div>
+
+          <div class="action-group">
+            <button type="button" class="button-primary" id="saveCategoryBtn">Add Category</button>
+            <button type="button" class="button-secondary" id="cancelEditBtn" hidden>Cancel</button>
+            <button type="button" class="button-link" id="clearFieldsBtn">Clear Fields</button>
+          </div>
+
+          <div style="margin-top:28px; display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+            <div style="flex:1; min-width:220px;">
+              <label style="display:block; font-size:0.92rem; color:#5f6f8f; margin-bottom:8px; font-weight:600;">Search categories</label>
+              <input type="search" id="searchInput" placeholder="Search by name, description or icon" />
             </div>
-
-            <!-- Mock Tests Section -->
-            <div id="section-tests" class="section-content hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Mock Test Manager</h1>
-                    <p class="page-subtitle">Create and manage mock tests</p>
-                </div>
-
-                <div class="section-card">
-                    <div class="section-title">Create Mock Test</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Test Name</label>
-                            <input type="text" id="testName" placeholder="e.g., JEE Main 2024 - Full Length">
-                        </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select id="testCategory"></select>
-                        </div>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Total Questions</label>
-                            <input type="number" id="testQuestions" placeholder="90">
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (Minutes)</label>
-                            <input type="number" id="testDuration" placeholder="180">
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="testDesc" placeholder="Test description"></textarea>
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" onclick="addTest()">Create Test</button>
-                        <button class="button-secondary" onclick="clearTestForm()">Clear Form</button>
-                    </div>
-                </div>
-
-                <div class="section-card">
-                    <div class="section-title">All Tests</div>
-                    <div id="testsList"></div>
-                </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="button-secondary" id="sortByOrderBtn">Sort by Order</button>
             </div>
+          </div>
 
-            <!-- Excel Upload Section -->
-            <div id="section-excel" class="section-content hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Excel Upload</h1>
-                    <p class="page-subtitle">Bulk import questions from Excel</p>
-                </div>
+          <div id="categoryTableWrapper">
+            <table class="category-table" id="categoryTable">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Order</th>
+                  <th>Status</th>
+                  <th>Access</th>
+                  <th>Icon</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categoryRows">
+                <tr><td colspan="6" class="empty-state">Loading categories…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+    <section id="subCategorySection" class="section-card" style="display:none;">
 
-                <div class="section-card">
-                    <div class="section-title">Upload Questions</div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Select Test</label>
-                            <select id="excelTestSelect"></select>
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Excel File</label>
-                            <input type="file" id="excelFile" accept=".xlsx,.xls">
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" onclick="uploadExcel()">Upload Questions</button>
-                    </div>
-                </div>
+<h2>Sub Category Manager</h2>
 
-                <div class="section-card">
-                    <div class="section-title">Upload Status</div>
-                    <div class="status-bar">
-                        <div class="status-indicator inactive"></div>
-                        <span>No uploads yet</span>
-                    </div>
-                </div>
+<p id="selectedCategoryName"></p>
+
+<div class="status-bar" id="subCategoryStatusBar">Ready to manage sub categories.</div>
+
+<div class="form-grid">
+
+<label>
+Sub Category Name
+<input type="text" id="subCategoryName">
+</label>
+
+<label>
+Display Order
+<input type="number" id="subCategoryOrder" value="0">
+</label>
+
+<label>
+Status
+<select id="subCategoryActive">
+  <option value="true">Active</option>
+  <option value="false">Inactive</option>
+</select>
+</label>
+
+</div>
+
+<div class="action-group">
+
+<button
+class="button-primary"
+id="saveSubCategoryBtn">
+
+Save Sub Category
+
+</button>
+
+<button type="button" class="button-secondary" id="cancelSubCategoryBtn" hidden>Cancel</button>
+
+<button type="button" class="button-link" id="closeSubCategoryBtn">Close</button>
+
+</div>
+
+<table class="category-table">
+
+<thead>
+
+<tr>
+
+<th>Name</th>
+
+<th>Order</th>
+
+<th>Status</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="subCategoryRows">
+
+<tr>
+
+<td colspan="4">
+
+No Sub Categories
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</section>
+        <section id="mock-test-manager" class="section-card">
+          <h2>Mock Test Manager</h2>
+          <p>Publish mock tests with category binding, scoring, duration, and Excel metadata.</p>
+
+          <!-- FEATURE 6: Mock dashboard stats row (reuses existing .stats-grid / .stat-card styles) -->
+          <section class="stats-grid" style="margin-bottom:24px;">
+            <article class="stat-card">
+              <h3>Total Mock Tests</h3>
+              <p id="mockStatTotal">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Live Mock Tests</h3>
+              <p id="mockStatLive">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Scheduled Mock Tests</h3>
+              <p id="mockStatScheduled">0</p>
+            </article>
+            <article class="stat-card">
+              <h3>Total Attempts</h3>
+              <p id="mockStatAttempts">0</p>
+            </article>
+          </section>
+
+          <div class="status-bar" id="mockStatusBar">Ready to publish mock tests.</div>
+          <p style="margin:-10px 0 18px;color:#5f6f8f;font-size:0.92rem;">Free/Premium access and pricing are controlled entirely by the mock's <strong>Category</strong> (see Category Manager above). There is no per-mock pricing anymore.</p>
+
+          <div class="form-grid">
+            <label>
+              Category
+              <select id="mockCategorySelect">
+                <option value="">Loading categories ...</option>
+              </select>
+            </label>
+            <label id="mockSubCategoryWrapper" style="display:none;">
+              Sub Category
+              <select id="mockSubCategorySelect">
+                <option value="">Select sub category</option>
+              </select>
+            </label>
+            <label>
+              Mock Test Name
+              <input type="text" id="mockName" placeholder="Enter mock test name" />
+            </label>
+            <label>
+              Total Questions
+              <input type="number" id="mockQuestions" min="0" placeholder="Total number of questions" />
+            </label>
+            <label>
+              Total Marks
+              <input type="number" id="mockMarks" min="0" placeholder="Total marks available" />
+            </label>
+            <label>
+              Duration (Minutes)
+              <input type="number" id="mockDuration" min="0" placeholder="Duration in minutes" />
+            </label>
+            <label>
+              Negative Marks
+              <input type="number" id="mockNegative" min="0" step="0.25" placeholder="Negative marks per wrong answer" />
+            </label>
+            <label>
+              Passing Percentage
+              <input type="number" id="mockPassingPercentage" min="0" max="100" step="0.1" placeholder="Passing percentage" />
+            </label>
+            <!-- Secure Question Paper PDF Download feature: optional GitHub PDF link.
+                 Saved as `pdfLink` on the mock document. Never read by the frontend —
+                 only the backend Worker (/api/download-question-paper) reads it. -->
+            <label>
+              Question Paper PDF Link
+              <input type="url" id="mockPdfLink" placeholder="https://raw.githubusercontent.com/... (optional)" />
+            </label>
+            <!-- FEATURE 1: Live Date & Live Time fields (required) -->
+            <label>
+              Live Date
+              <input type="date" id="mockLiveDate" required />
+            </label>
+            <label>
+              Live Time
+              <input type="time" id="mockLiveTime" required />
+            </label>
+          </div>
+
+          <div class="action-group">
+            <button type="button" class="button-primary" id="publishMockBtn">Publish Mock Test</button>
+            <button type="button" class="button-secondary" id="cancelMockBtn" hidden>Cancel Edit</button>
+          </div>
+
+          <hr class="mock-list-divider" />
+
+          <!-- Mock Test List filters: narrow down 100+ mock tests by Category, then
+               Sub Category. Purely client-side filtering over already-loaded
+               mockTests — no new Firestore collections, no change to CRUD logic. -->
+          <div class="mock-filter-bar">
+            <label>
+              Category
+              <select id="mockFilterCategorySelect">
+                <option value="">Select Category</option>
+              </select>
+            </label>
+            <label id="mockFilterSubCategoryWrapper" style="display:none;">
+              Sub Category
+              <select id="mockFilterSubCategorySelect">
+                <option value="">All Sub Categories</option>
+              </select>
+            </label>
+          </div>
+
+          <div style="margin-top:24px;">
+            <div class="mock-list-heading-row">
+              <h3 style="margin-bottom:0;color:#3f4e72;">Mock Test List</h3>
+              <span class="mock-list-count" id="mockFilterCount">0 tests</span>
             </div>
-
-            <!-- Payment Setup Section -->
-            <div id="section-payment" class="section-content hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Payment Setup</h1>
-                    <p class="page-subtitle">Configure payment gateway and plans</p>
-                </div>
-
-                <div class="section-card">
-                    <div class="section-title">Stripe Configuration</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Publishable Key</label>
-                            <input type="password" id="stripePublic" placeholder="pk_live_...">
-                        </div>
-                        <div class="form-group">
-                            <label>Secret Key</label>
-                            <input type="password" id="stripeSecret" placeholder="sk_live_...">
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" onclick="savePaymentConfig()">Save Configuration</button>
-                    </div>
-                </div>
-
-                <div class="section-card">
-                    <div class="section-title">Subscription Plans</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Plan Name</label>
-                            <input type="text" id="planName" placeholder="e.g., Pro Plan">
-                        </div>
-                        <div class="form-group">
-                            <label>Price (₹)</label>
-                            <input type="number" id="planPrice" placeholder="999">
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Features</label>
-                            <textarea id="planFeatures" placeholder="Unlimited tests&#10;Study materials&#10;Performance tracking"></textarea>
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" onclick="addPlan()">Add Plan</button>
-                    </div>
-                </div>
+            <div id="mockTestList" class="placeholder-list">
+              <div class="placeholder-item">Loading mock tests...</div>
             </div>
+          </div>
+        </section>
 
-            <!-- Coupon Manager Section -->
-            <div id="section-coupons" class="section-content hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Coupon Manager</h1>
-                    <p class="page-subtitle">Create and manage discount coupons</p>
-                </div>
+        <section id="mock-tests" class="section-card">
+          <h2>Mock Tests Structure</h2>
+          <p>Designed for future mock test builder and question bank workflows. This workspace is ready for category-linked exam creation and scoring.</p>
+          <div class="placeholder-list">
+            <article class="placeholder-item">
+              <h3>Test builder</h3>
+              <p>Define mock tests, set duration, select category and assign question pools.</p>
+            </article>
+            <article class="placeholder-item">
+              <h3>Question library</h3>
+              <p>Prepare structured question banks for future upload and live exam delivery.</p>
+            </article>
+          </div>
+        </section>
 
-                <div id="couponMessage"></div>
+        <section id="excel-upload" class="section-card">
+          <h2>Excel Upload</h2>
+          <p>Import questions for an existing mock test. The file should include columns: Question, OptionA, OptionB, OptionC, OptionD, CorrectAnswer, Explanation.</p>
+          <div class="status-bar" id="excelUploadStatusBar">Select a mock test, choose a worksheet, and upload your question bank.</div>
+          <div class="form-grid">
+            <label>
+              Select mock test
+              <select id="mockUploadSelect">
+                <option value="">Loading mock tests...</option>
+              </select>
+            </label>
+            <label>
+              Choose file
+              <input type="file" id="excelUploadInput" accept=".xlsx" />
+            </label>
+          </div>
+          <div class="action-group">
+            <button type="button" class="button-primary" id="uploadExcelBtn">Upload Excel</button>
+          </div>
+        </section>
 
-                <div class="section-card">
-                    <div class="section-title">Create New Coupon</div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Coupon Code</label>
-                            <input type="text" id="couponCode" placeholder="e.g., SAVE20" maxlength="20">
-                        </div>
-                        <div class="form-group">
-                            <label>Coupon Name</label>
-                            <input type="text" id="couponName" placeholder="e.g., Summer Discount">
-                        </div>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Discount Type</label>
-                            <select id="discountType" onchange="updateDiscountLabel()">
-                                <option value="fixed">Fixed (₹)</option>
-                                <option value="percentage">Percentage (%)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label id="discountValueLabel">Discount Value (₹)</label>
-                            <input type="number" id="discountValue" placeholder="Enter amount" min="0">
-                        </div>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="date" id="startDate">
-                        </div>
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="date" id="endDate">
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Categories (Multi-Select)</label>
-                            <div class="checkbox-group" id="categoriesCheckboxList"></div>
-                        </div>
-                    </div>
-                    <div class="form-grid full">
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea id="couponDescription" placeholder="Coupon details and terms"></textarea>
-                        </div>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="couponStatus">
-                                <option value="enabled">Enabled</option>
-                                <option value="disabled">Disabled</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="action-group">
-                        <button class="button-primary" id="addCouponBtn" onclick="addCoupon()">Add Coupon</button>
-                        <button class="button-secondary" id="updateCouponBtn" onclick="updateCoupon()" style="display: none;">Update Coupon</button>
-                        <button class="button-secondary" id="cancelEditBtn" onclick="cancelCouponEdit()" style="display: none;">Cancel Edit</button>
-                        <button class="button-secondary" onclick="clearCouponForm()">Clear Form</button>
-                    </div>
-                </div>
-
-                <div class="section-card">
-                    <div class="section-title">All Coupons</div>
-                    <div id="couponsList"></div>
-                </div>
-            </div>
-        </div>
+        <section id="payment" class="section-card">
+          <h2>Payment Integration</h2>
+          <p>Prepare payment gateway configuration and enrollment management. This panel is designed to host gateway settings and payment triggers.</p>
+          <div class="placeholder-list">
+            <article class="placeholder-item">
+              <h3>Gateway setup</h3>
+              <p>Connect a payment provider and enable transaction tracking for premium test access.</p>
+            </article>
+            <article class="placeholder-item">
+              <h3>Purchase flow</h3>
+              <p>Future integration will support payment links, order creation and verification.</p>
+            </article>
+          </div>
+          <div class="action-group" style="margin-top:18px;">
+            <button type="button" class="button-primary" id="setupPaymentBtn">Prepare Payment</button>
+          </div>
+        </section>
+      </main>
     </div>
+  </div>
 
-    <div id="confirmModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">Confirm Delete</div>
-            <div class="modal-body">Are you sure you want to delete this coupon? This action cannot be undone.</div>
-            <div class="modal-actions">
-                <button class="button-secondary" onclick="closeModal()">Cancel</button>
-                <button class="button-danger" onclick="confirmDelete()">Delete</button>
-            </div>
-        </div>
-    </div>
+  <script type="module">
+    import { db, app } from './firebase.js';
+    import { guardAdmin } from './admin-auth.js';
+    import * as XLSX from 'https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs';
+    import {
+      collection,
+      addDoc,
+      getDocs,
+      deleteDoc,
+      doc,
+      orderBy,
+      query,
+      updateDoc,
+      serverTimestamp,
+      deleteField,
+      where,
+      writeBatch,
+      getCountFromServer
+    } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+    console.log("A: all imports resolved, module body executing");
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDemoKey",
-            authDomain: "emergent-demo.firebaseapp.com",
-            projectId: "emergent-demo",
-            storageBucket: "emergent-demo.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456"
+    // ─────────────────────────────────────────────────────────────────
+    // ROOT CAUSE OF "STEP 1 never prints":
+    // This used to say `await guardAdmin(app);` right here, as a TOP-LEVEL
+    // await. A top-level await in a module PAUSES the entire module body at
+    // that exact line until the promise settles. Every line written after it
+    // — including the `document.addEventListener('DOMContentLoaded', ...)`
+    // call at the very bottom of this file — simply never runs until that
+    // await resolves. If guardAdmin(app) ever:
+    //   - throws / rejects (bad import path for ./admin-auth.js or
+    //     ./firebase.js, `app` being undefined, allow-list check failing), or
+    //   - never resolves (e.g. it's waiting on an onAuthStateChanged callback
+    //     that never fires because no one is signed in yet),
+    // then this module crashes/hangs right here, and NOTHING below it ever
+    // executes — the DOMContentLoaded listener is never even registered, so
+    // "STEP 1" can never print, no matter what the DOMContentLoaded code
+    // itself looks like.
+    //
+    // FIX: guardAdmin(app) is now called *inside* the DOMContentLoaded
+    // handler (see the bottom of this file), wrapped in try/catch, so:
+    //   1. The listener is ALWAYS registered (it's a synchronous call).
+    //   2. If guardAdmin(app) fails, we get a clear console.error instead of
+    //      silent, total script death.
+    // ─────────────────────────────────────────────────────────────────
+
+    // INTEGRATION POINT (student-facing pages, not part of this file):
+    // - mockCategories docs now expose `hasSubCategory` (boolean, default false).
+    // - When hasSubCategory === true, browse via mockSubCategories (field categoryId)
+    //   before listing mockTests; otherwise keep the existing category -> mock flow.
+    // - mockTests docs now expose `subCategoryId` (string doc id, or null when the
+    //   category has no subcategories). Filter mock lists by subCategoryId when present.
+    const COLLECTIONS = {
+      categories: 'mockCategories',
+      tests: 'mockTests',
+      questions: 'mockQuestions',
+      results: 'mockResults',
+      subCategories: 'mockSubCategories'
+    };
+
+    // Path to the existing student mock exam page, used by the "Review" button
+    // to open the SAME student interface in Preview Mode (?preview=true).
+    // Adjust this path if the student exam page lives in a different folder.
+    const STUDENT_EXAM_PATH = 'mock-tests/exam.html';
+    const elements = {
+      statusBar: document.getElementById('statusBar'),
+      title: document.getElementById('categoryTitle'),
+      icon: document.getElementById('categoryIcon'),
+      order: document.getElementById('categoryOrder'),
+      description: document.getElementById('categoryDescription'),
+      active: document.getElementById('categoryActive'),
+      isFree: document.getElementById('categoryIsFree'),
+      originalPrice: document.getElementById('categoryOriginalPrice'),
+      offerPrice: document.getElementById('categoryOfferPrice'),
+      originalPriceWrapper: document.getElementById('categoryOriginalPriceWrapper'),
+      offerPriceWrapper: document.getElementById('categoryOfferPriceWrapper'),
+      saveBtn: document.getElementById('saveCategoryBtn'),
+      hasSubCategory: document.getElementById('categoryHasSubCategory'),
+      cancelBtn: document.getElementById('cancelEditBtn'),
+      clearBtn: document.getElementById('clearFieldsBtn'),
+      searchInput: document.getElementById('searchInput'),
+      categoryRows: document.getElementById('categoryRows'),
+      totalCategories: document.getElementById('totalCategories'),
+      activeCategories: document.getElementById('activeCategories'),
+      mockTestsCount: document.getElementById('mockTestsCount'),
+      refreshButton: document.getElementById('refreshButton'),
+      sortByOrderBtn: document.getElementById('sortByOrderBtn'),
+      uploadExcelBtn: document.getElementById('uploadExcelBtn'),
+      excelUploadInput: document.getElementById('excelUploadInput'),
+      setupPaymentBtn: document.getElementById('setupPaymentBtn'),
+      excelUploadStatusBar: document.getElementById('excelUploadStatusBar'),
+      mockUploadSelect: document.getElementById('mockUploadSelect'),
+      mockStatusBar: document.getElementById('mockStatusBar'),
+      mockCategorySelect: document.getElementById('mockCategorySelect'),
+      mockName: document.getElementById('mockName'),
+      mockQuestions: document.getElementById('mockQuestions'),
+      mockMarks: document.getElementById('mockMarks'),
+      mockDuration: document.getElementById('mockDuration'),
+      mockNegative: document.getElementById('mockNegative'),
+      mockPassingPercentage: document.getElementById('mockPassingPercentage'),
+      mockPdfLink: document.getElementById('mockPdfLink'),
+      publishMockBtn: document.getElementById('publishMockBtn'),
+      cancelMockBtn: document.getElementById('cancelMockBtn'),
+      mockTestList: document.getElementById('mockTestList'),
+      mockSubCategoryWrapper: document.getElementById('mockSubCategoryWrapper'),
+      mockSubCategorySelect: document.getElementById('mockSubCategorySelect'),
+      // Mock Test List filters (Category / Sub Category) — separate from the
+      // Publish form's own mockCategorySelect / mockSubCategorySelect above.
+      mockFilterCategorySelect: document.getElementById('mockFilterCategorySelect'),
+      mockFilterSubCategoryWrapper: document.getElementById('mockFilterSubCategoryWrapper'),
+      mockFilterSubCategorySelect: document.getElementById('mockFilterSubCategorySelect'),
+      mockFilterCount: document.getElementById('mockFilterCount'),
+      // FEATURE 1: Live Date & Live Time form fields
+      mockLiveDate: document.getElementById('mockLiveDate'),
+      mockLiveTime: document.getElementById('mockLiveTime'),
+      // FEATURE 6: Mock dashboard stat elements
+      mockStatTotal: document.getElementById('mockStatTotal'),
+      mockStatLive: document.getElementById('mockStatLive'),
+      mockStatScheduled: document.getElementById('mockStatScheduled'),
+      mockStatAttempts: document.getElementById('mockStatAttempts'),
+
+      subCategorySection: document.getElementById('subCategorySection'),
+      subCategoryStatusBar: document.getElementById('subCategoryStatusBar'),
+      selectedCategoryName: document.getElementById('selectedCategoryName'),
+      subCategoryName: document.getElementById('subCategoryName'),
+      subCategoryOrder: document.getElementById('subCategoryOrder'),
+      subCategoryActive: document.getElementById('subCategoryActive'),
+      saveSubCategoryBtn: document.getElementById('saveSubCategoryBtn'),
+      cancelSubCategoryBtn: document.getElementById('cancelSubCategoryBtn'),
+      closeSubCategoryBtn: document.getElementById('closeSubCategoryBtn'),
+      subCategoryRows: document.getElementById('subCategoryRows')
+    };
+
+    let categories = [];
+    let subCategories = [];
+    let mockFormSubCategories = [];
+    // Sub categories currently loaded for the Mock Test List filter bar
+    // (separate from mockFormSubCategories used by the Publish form).
+    let mockFilterSubCategories = [];
+
+    let editingCategoryId = null;
+    let editingSubCategoryId = null;
+
+    let currentSubCategoryCategoryId = null;
+
+    let orderAscending = true;
+
+    let mockTests = [];
+
+    let editingMockId = null;
+
+    // FEATURE 5: cache of { mockId: attemptCount } read from the results collection
+    let mockAttemptCounts = {};
+    function setStatus(message, type = 'info') {
+      elements.statusBar.textContent = message;
+      elements.statusBar.className = `status-bar ${type}`.trim();
+    }
+
+    // Category-level Premium system: when a category is marked Free, its price
+    // fields are irrelevant and hidden; when Premium, Original/Offer price are
+    // required so the payment page can display and charge the correct amount.
+    function updateCategoryPriceFieldsVisibility() {
+      const isFree = elements.isFree.value === 'true';
+      elements.originalPriceWrapper.style.display = isFree ? 'none' : '';
+      elements.offerPriceWrapper.style.display = isFree ? 'none' : '';
+    }
+
+    function setMockStatus(message, type = 'info') {
+      elements.mockStatusBar.textContent = message;
+      elements.mockStatusBar.className = `status-bar ${type}`.trim();
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeHeader(header) {
+      const key = String(header || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (['questionno', 'qno', 'sno', 'no'].includes(key)) return 'questionNo';
+      if (['question', 'ques', 'questiontext'].includes(key)) return 'question';
+      if (['questionhindi', 'question_hindi', 'hindiquestion', 'question_hi'].includes(key)) return 'questionHindi';
+      if (['questionenglish', 'question_english', 'englishquestion', 'question_en'].includes(key)) return 'questionEnglish';
+      if (['optiona', 'a', 'opt_a'].includes(key)) return 'optionA';
+      if (['optionahindi', 'option_a_hindi', 'optionahindi', 'optionahi'].includes(key)) return 'optionAHindi';
+      if (['optionaenglish', 'option_a_english', 'optionaenglish', 'optionaen'].includes(key)) return 'optionAEnglish';
+      if (['optionb', 'b', 'opt_b'].includes(key)) return 'optionB';
+      if (['optionbhindi', 'option_b_hindi', 'optionbhindi', 'optionbhi'].includes(key)) return 'optionBHindi';
+      if (['optionbenglish', 'option_b_english', 'optionbenglish', 'optionben'].includes(key)) return 'optionBEnglish';
+      if (['optionc', 'c', 'opt_c'].includes(key)) return 'optionC';
+      if (['optionchindi', 'option_c_hindi', 'optionchindi', 'optionchi'].includes(key)) return 'optionCHindi';
+      if (['optioncenglish', 'option_c_english', 'optioncenglish', 'optioncen'].includes(key)) return 'optionCEnglish';
+      if (['optiond', 'd', 'opt_d'].includes(key)) return 'optionD';
+      if (['optiondhindi', 'option_d_hindi', 'optiondhindi', 'optiondhi'].includes(key)) return 'optionDHindi';
+      if (['optiondenglish', 'option_d_english', 'optiondenglish', 'optionden'].includes(key)) return 'optionDEnglish';
+      if (['optione', 'e', 'opt_e'].includes(key)) return 'optionE';
+      if (['optionehindi', 'option_e_hindi', 'optionehindi', 'optionehi'].includes(key)) return 'optionEHindi';
+      if (['optioneenglish', 'option_e_english', 'optioneenglish', 'optioneen'].includes(key)) return 'optionEEnglish';
+      if (['answer', 'correct', 'correctanswer'].includes(key)) return 'correctAnswer';
+      if (['marks', 'mark', 'questionmarks', 'question_mark'].includes(key)) return 'marks';
+      if (['negativemarks', 'negative', 'negative_mark', 'penalty'].includes(key)) return 'negativeMarks';
+      if (['explanation', 'exp', 'solution'].includes(key)) return 'explanation';
+      if (['explanationhindi', 'explanation_hindi', 'hindiexplanation', 'explanation_hi'].includes(key)) return 'explanationHindi';
+      if (['explanationenglish', 'explanation_english', 'englishexplanation', 'explanation_en'].includes(key)) return 'explanationEnglish';
+      if (['image', 'imageurl', 'img'].includes(key)) return 'image';
+      return null;
+    }
+
+    function parseExcelQuestions(rows) {
+      return rows.map((row, index) => {
+        const questionNo = Number(row.questionNo || row.question_no || row.qno || index + 1);
+        const questionHindi = String(row.questionHindi || row.question || '')
+  .replace(/_x000D_/g, '\n')
+  .replace(/\r\n/g, '\n')
+  .replace(/\r/g, '\n')
+  .trim();
+        const questionEnglish = String(row.questionEnglish || '').trim();
+        const optionAHindi = String(row.optionAHindi || row.optionA || '').trim();
+        const optionAEnglish = String(row.optionAEnglish || '').trim();
+        const optionBHindi = String(row.optionBHindi || row.optionB || '').trim();
+        const optionBEnglish = String(row.optionBEnglish || '').trim();
+        const optionCHindi = String(row.optionCHindi || row.optionC || '').trim();
+        const optionCEnglish = String(row.optionCEnglish || '').trim();
+        const optionDHindi = String(row.optionDHindi || row.optionD || '').trim();
+        const optionDEnglish = String(row.optionDEnglish || '').trim();
+        const optionEHindi = String(row.optionEHindi || row.optionE || '').trim();
+        const optionEEnglish = String(row.optionEEnglish || '').trim();
+        const explanationHindi = String(row.explanationHindi || row.explanation || '').trim();
+        const explanationEnglish = String(row.explanationEnglish || '').trim();
+        return {
+          questionNo: Number.isFinite(questionNo) && questionNo > 0 ? questionNo : index + 1,
+          questionHindi,
+          questionEnglish,
+          question: questionHindi || questionEnglish || '',
+          optionAHindi,
+          optionAEnglish,
+          optionA: optionAHindi || optionAEnglish || '',
+          optionBHindi,
+          optionBEnglish,
+          optionB: optionBHindi || optionBEnglish || '',
+          optionCHindi,
+          optionCEnglish,
+          optionC: optionCHindi || optionCEnglish || '',
+          optionDHindi,
+          optionDEnglish,
+          optionD: optionDHindi || optionDEnglish || '',
+          optionEHindi,
+          optionEEnglish,
+          optionE: optionEHindi || optionEEnglish || '',
+          correctAnswer: row.correctAnswer || row.answer || '',
+          marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
+          negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
+          explanation: row.explanation || '',
+          explanationHindi,
+          explanationEnglish,
+          image: row.image || ''
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // Mock data
-        window.mockCategories = [
-            { id: 'cat1', name: 'JEE Main', code: 'JEE_MAIN' },
-            { id: 'cat2', name: 'JEE Advanced', code: 'JEE_ADV' },
-            { id: 'cat3', name: 'NEET', code: 'NEET' },
-            { id: 'cat4', name: 'GATE', code: 'GATE' }
-        ];
-
-        window.mockTests = [
-            { id: 'test1', name: 'JEE Main 2024 - Full Length', category: 'cat1', questions: 90, duration: 180 },
-            { id: 'test2', name: 'NEET 2024 - Full Syllabus', category: 'cat3', questions: 200, duration: 180 }
-        ];
-
-        window.currentEditingCouponId = null;
-        window.deletingCouponId = null;
-
-        // Switch sections
-        window.switchSection = function(sectionName) {
-            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            
-            const sectionId = `section-${sectionName}`;
-            document.getElementById(sectionId).classList.remove('hidden');
-            event.target.classList.add('active');
-            
-            if (sectionName === 'coupons') {
-                loadCoupons();
-                loadCategoriesForCheckbox();
-            } else if (sectionName === 'categories') {
-                displayCategories();
-            } else if (sectionName === 'tests') {
-                displayTests();
-                populateTestCategories();
-            }
-        };
-
-        // ==================== CATEGORY FUNCTIONS ====================
-        window.addCategory = function() {
-            const name = document.getElementById('categoryName').value.trim();
-            const code = document.getElementById('categoryCode').value.trim();
-            const desc = document.getElementById('categoryDesc').value.trim();
-
-            if (!name || !code) {
-                alert('Please fill all fields');
-                return;
-            }
-
-            const newCategory = {
-                id: 'cat' + Date.now(),
-                name: name,
-                code: code,
-                description: desc
-            };
-
-            window.mockCategories.push(newCategory);
-            displayCategories();
-            clearCategoryForm();
-        };
-
-        window.clearCategoryForm = function() {
-            document.getElementById('categoryName').value = '';
-            document.getElementById('categoryCode').value = '';
-            document.getElementById('categoryDesc').value = '';
-        };
-
-        window.deleteCategory = function(id) {
-            window.mockCategories = window.mockCategories.filter(cat => cat.id !== id);
-            displayCategories();
-        };
-
-        window.displayCategories = function() {
-            const container = document.getElementById('categoriesList');
-            if (window.mockCategories.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📚</div><p>No categories yet</p></div>';
-                return;
-            }
-
-            let html = `<table class="category-table"><thead><tr><th>Category Name</th><th>Code</th><th>Description</th><th>Actions</th></tr></thead><tbody>`;
-            
-            window.mockCategories.forEach(cat => {
-                html += `<tr>
-                    <td>${cat.name}</td>
-                    <td><code style="background: #f5f5f7; padding: 2px 6px; border-radius: 4px;">${cat.code}</code></td>
-                    <td>${cat.description || '-'}</td>
-                    <td><button class="button-link" onclick="deleteCategory('${cat.id}')">Delete</button></td>
-                </tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        };
-
-        // ==================== TEST FUNCTIONS ====================
-        window.populateTestCategories = function() {
-            const select = document.getElementById('testCategory');
-            select.innerHTML = '<option value="">Select Category</option>';
-            window.mockCategories.forEach(cat => {
-                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-            });
-        };
-
-        window.addTest = function() {
-            const name = document.getElementById('testName').value.trim();
-            const category = document.getElementById('testCategory').value;
-            const questions = parseInt(document.getElementById('testQuestions').value);
-            const duration = parseInt(document.getElementById('testDuration').value);
-            const desc = document.getElementById('testDesc').value.trim();
-
-            if (!name || !category || !questions || !duration) {
-                alert('Please fill all required fields');
-                return;
-            }
-
-            const newTest = {
-                id: 'test' + Date.now(),
-                name: name,
-                category: category,
-                questions: questions,
-                duration: duration,
-                description: desc
-            };
-
-            window.mockTests.push(newTest);
-            displayTests();
-            clearTestForm();
-        };
-
-        window.clearTestForm = function() {
-            document.getElementById('testName').value = '';
-            document.getElementById('testCategory').value = '';
-            document.getElementById('testQuestions').value = '';
-            document.getElementById('testDuration').value = '';
-            document.getElementById('testDesc').value = '';
-        };
-
-        window.deleteTest = function(id) {
-            window.mockTests = window.mockTests.filter(test => test.id !== id);
-            displayTests();
-        };
-
-        window.displayTests = function() {
-            const container = document.getElementById('testsList');
-            if (window.mockTests.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✏️</div><p>No tests created yet</p></div>';
-                return;
-            }
-
-            let html = `<table class="test-table"><thead><tr><th>Test Name</th><th>Category</th><th>Questions</th><th>Duration</th><th>Actions</th></tr></thead><tbody>`;
-            
-            window.mockTests.forEach(test => {
-                const category = window.mockCategories.find(c => c.id === test.category);
-                html += `<tr>
-                    <td>${test.name}</td>
-                    <td>${category ? category.name : 'Unknown'}</td>
-                    <td>${test.questions}</td>
-                    <td>${test.duration} min</td>
-                    <td><button class="button-link" onclick="deleteTest('${test.id}')">Delete</button></td>
-                </tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        };
-
-        // ==================== COUPON FUNCTIONS ====================
-        window.loadCategoriesForCheckbox = function() {
-            const container = document.getElementById('categoriesCheckboxList');
-            container.innerHTML = '';
-            
-            window.mockCategories.forEach(cat => {
-                const checkbox = document.createElement('div');
-                checkbox.className = 'checkbox-item';
-                checkbox.innerHTML = `
-                    <input type="checkbox" id="cat_${cat.id}" value="${cat.id}" data-category-id="${cat.id}">
-                    <label for="cat_${cat.id}">${cat.name}</label>
-                `;
-                container.appendChild(checkbox);
-            });
-        };
-
-        window.updateDiscountLabel = function() {
-            const type = document.getElementById('discountType').value;
-            const label = document.getElementById('discountValueLabel');
-            if (type === 'fixed') {
-                label.textContent = 'Discount Value (₹)';
-            } else {
-                label.textContent = 'Discount Value (%)';
-            }
-        };
-
-        window.addCoupon = async function() {
-            const code = document.getElementById('couponCode').value.trim().toUpperCase();
-            const name = document.getElementById('couponName').value.trim();
-            const discountType = document.getElementById('discountType').value;
-            const discountValue = parseFloat(document.getElementById('discountValue').value);
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const description = document.getElementById('couponDescription').value.trim();
-            const status = document.getElementById('couponStatus').value;
-
-            const selectedCategories = [];
-            document.querySelectorAll('#categoriesCheckboxList input[type="checkbox"]:checked').forEach(checkbox => {
-                selectedCategories.push(checkbox.value);
-            });
-
-            if (!code || !name || !discountValue || !startDate || !endDate) {
-                showMessage('Please fill all required fields', 'error');
-                return;
-            }
-
-            if (selectedCategories.length === 0) {
-                showMessage('Please select at least one category', 'error');
-                return;
-            }
-
-            // Check for duplicate code
-            const couponsRef = collection(db, 'couponCodes');
-            const q = query(couponsRef, where('code', '==', code));
-            const existingDocs = await getDocs(q);
-
-            if (!existingDocs.empty) {
-                showMessage('Coupon code already exists', 'error');
-                return;
-            }
-
-            try {
-                const docRef = await addDoc(couponsRef, {
-                    code: code,
-                    name: name,
-                    discountType: discountType,
-                    discountValue: discountValue,
-                    categories: selectedCategories,
-                    startDate: startDate,
-                    endDate: endDate,
-                    description: description,
-                    status: status,
-                    createdAt: new Date().toISOString()
-                });
-
-                showMessage('Coupon created successfully!', 'success');
-                clearCouponForm();
-                loadCoupons();
-            } catch (error) {
-                console.error('Error adding coupon:', error);
-                showMessage('Error creating coupon', 'error');
-            }
-        };
-
-        window.loadCoupons = async function() {
-            try {
-                const couponsRef = collection(db, 'couponCodes');
-                const querySnapshot = await getDocs(couponsRef);
-                const coupons = [];
-
-                querySnapshot.forEach((doc) => {
-                    coupons.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                displayCoupons(coupons);
-            } catch (error) {
-                console.error('Error loading coupons:', error);
-                showMessage('Error loading coupons', 'error');
-            }
-        };
-
-        window.displayCoupons = function(coupons) {
-            const container = document.getElementById('couponsList');
-            if (coupons.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎟️</div><p>No coupons yet</p></div>';
-                return;
-            }
-
-            let html = `<table class="coupon-table"><thead><tr><th>Code</th><th>Name</th><th>Discount</th><th>Categories</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>`;
-
-            coupons.forEach(coupon => {
-                const discount = coupon.discountType === 'fixed' ? `₹${coupon.discountValue}` : `${coupon.discountValue}%`;
-                const categoryNames = coupon.categories.map(catId => {
-                    const cat = window.mockCategories.find(c => c.id === catId);
-                    return cat ? cat.name : catId;
-                }).join(', ');
-
-                const statusBadge = coupon.status === 'enabled' 
-                    ? '<span class="badge badge-success">Enabled</span>' 
-                    : '<span class="badge badge-danger">Disabled</span>';
-
-                html += `<tr>
-                    <td><strong>${coupon.code}</strong></td>
-                    <td>${coupon.name}</td>
-                    <td>${discount}</td>
-                    <td><small>${categoryNames}</small></td>
-                    <td>${coupon.startDate}</td>
-                    <td>${coupon.endDate}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="button-link" onclick="editCoupon('${coupon.id}')">Edit</button>
-                            <button class="button-link" onclick="toggleCouponStatus('${coupon.id}', '${coupon.status}')">
-                                ${coupon.status === 'enabled' ? 'Disable' : 'Enable'}
-                            </button>
-                            <button class="button-link" style="color: #ff3b30;" onclick="showDeleteModal('${coupon.id}')">Delete</button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-            
-            // Store coupons for edit functionality
-            window.allCoupons = coupons;
-        };
-
-        window.editCoupon = function(couponId) {
-            const coupon = window.allCoupons.find(c => c.id === couponId);
-            if (!coupon) return;
-
-            // Populate form
-            document.getElementById('couponCode').value = coupon.code;
-            document.getElementById('couponCode').disabled = true;
-            document.getElementById('couponName').value = coupon.name;
-            document.getElementById('discountType').value = coupon.discountType;
-            document.getElementById('discountValue').value = coupon.discountValue;
-            document.getElementById('startDate').value = coupon.startDate;
-            document.getElementById('endDate').value = coupon.endDate;
-            document.getElementById('couponDescription').value = coupon.description || '';
-            document.getElementById('couponStatus').value = coupon.status;
-            updateDiscountLabel();
-
-            // Set categories checkboxes
-            document.querySelectorAll('#categoriesCheckboxList input[type="checkbox"]').forEach(checkbox => {
-                checkbox.checked = coupon.categories.includes(checkbox.value);
-            });
-
-            // Show update button
-            document.getElementById('addCouponBtn').style.display = 'none';
-            document.getElementById('updateCouponBtn').style.display = 'inline-block';
-            document.getElementById('cancelEditBtn').style.display = 'inline-block';
-
-            window.currentEditingCouponId = couponId;
-
-            // Scroll to form
-            document.querySelector('.form-grid').scrollIntoView({ behavior: 'smooth' });
-        };
-
-        window.updateCoupon = async function() {
-            if (!window.currentEditingCouponId) return;
-
-            const name = document.getElementById('couponName').value.trim();
-            const discountType = document.getElementById('discountType').value;
-            const discountValue = parseFloat(document.getElementById('discountValue').value);
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const description = document.getElementById('couponDescription').value.trim();
-            const status = document.getElementById('couponStatus').value;
-
-            const selectedCategories = [];
-            document.querySelectorAll('#categoriesCheckboxList input[type="checkbox"]:checked').forEach(checkbox => {
-                selectedCategories.push(checkbox.value);
-            });
-
-            if (!name || !discountValue || !startDate || !endDate) {
-                showMessage('Please fill all required fields', 'error');
-                return;
-            }
-
-            if (selectedCategories.length === 0) {
-                showMessage('Please select at least one category', 'error');
-                return;
-            }
-
-            try {
-                const couponRef = doc(db, 'couponCodes', window.currentEditingCouponId);
-                await updateDoc(couponRef, {
-                    name: name,
-                    discountType: discountType,
-                    discountValue: discountValue,
-                    categories: selectedCategories,
-                    startDate: startDate,
-                    endDate: endDate,
-                    description: description,
-                    status: status
-                });
-
-                showMessage('Coupon updated successfully!', 'success');
-                cancelCouponEdit();
-                loadCoupons();
-            } catch (error) {
-                console.error('Error updating coupon:', error);
-                showMessage('Error updating coupon', 'error');
-            }
-        };
-
-        window.toggleCouponStatus = async function(couponId, currentStatus) {
-            const newStatus = currentStatus === 'enabled' ? 'disabled' : 'enabled';
-            try {
-                const couponRef = doc(db, 'couponCodes', couponId);
-                await updateDoc(couponRef, {
-                    status: newStatus
-                });
-                showMessage(`Coupon ${newStatus} successfully!`, 'success');
-                loadCoupons();
-            } catch (error) {
-                console.error('Error updating status:', error);
-                showMessage('Error updating coupon status', 'error');
-            }
-        };
-
-        window.showDeleteModal = function(couponId) {
-            window.deletingCouponId = couponId;
-            document.getElementById('confirmModal').classList.add('show');
-        };
-
-        window.closeModal = function() {
-            document.getElementById('confirmModal').classList.remove('show');
-            window.deletingCouponId = null;
-        };
-
-        window.confirmDelete = async function() {
-            if (!window.deletingCouponId) return;
-
-            try {
-                const couponRef = doc(db, 'couponCodes', window.deletingCouponId);
-                await deleteDoc(couponRef);
-                showMessage('Coupon deleted successfully!', 'success');
-                closeModal();
-                loadCoupons();
-            } catch (error) {
-                console.error('Error deleting coupon:', error);
-                showMessage('Error deleting coupon', 'error');
-                closeModal();
-            }
-        };
-
-        window.cancelCouponEdit = function() {
-            window.currentEditingCouponId = null;
-            document.getElementById('couponCode').disabled = false;
-            document.getElementById('addCouponBtn').style.display = 'inline-block';
-            document.getElementById('updateCouponBtn').style.display = 'none';
-            document.getElementById('cancelEditBtn').style.display = 'none';
-            clearCouponForm();
-        };
-
-        window.clearCouponForm = function() {
-            document.getElementById('couponCode').value = '';
-            document.getElementById('couponCode').disabled = false;
-            document.getElementById('couponName').value = '';
-            document.getElementById('discountType').value = 'fixed';
-            document.getElementById('discountValue').value = '';
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            document.getElementById('couponDescription').value = '';
-            document.getElementById('couponStatus').value = 'enabled';
-            updateDiscountLabel();
-            document.querySelectorAll('#categoriesCheckboxList input[type="checkbox"]').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            document.getElementById('couponMessage').innerHTML = '';
-        };
-
-        window.showMessage = function(message, type) {
-            const container = document.getElementById('couponMessage');
-            const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-error' : 'alert-info';
-            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 4000);
-        };
-
-        // ==================== PAYMENT FUNCTIONS ====================
-        window.savePaymentConfig = function() {
-            const public_key = document.getElementById('stripePublic').value;
-            const secret_key = document.getElementById('stripeSecret').value;
-            
-            if (public_key && secret_key) {
-                alert('Payment configuration saved successfully!');
-            } else {
-                alert('Please fill all fields');
-            }
-        };
-
-        window.uploadExcel = function() {
-            const file = document.getElementById('excelFile').files[0];
-            if (!file) {
-                alert('Please select a file');
-                return;
-            }
-            alert('Excel upload would process: ' + file.name);
-        };
-
-        window.addPlan = function() {
-            const name = document.getElementById('planName').value;
-            const price = document.getElementById('planPrice').value;
-            
-            if (name && price) {
-                alert(`Plan "${name}" created with price ₹${price}`);
-            } else {
-                alert('Please fill all fields');
-            }
-        };
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            displayCategories();
-            populateTestCategories();
+      });
+    }
+
+    async function readExcelFile(file) {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        throw new Error('Excel must contain at least one sheet.');
+      }
+      const sheet = workbook.Sheets[sheetName];
+const rawRows = XLSX.utils.sheet_to_json(sheet, {
+    defval: "",
+    raw: false
+});
+      console.log("RAW QUESTION:");
+console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
+      if (!rawRows.length) {
+        throw new Error('Excel sheet contains no rows.');
+      }
+
+      const normalizedRows = rawRows.map(rawRow => {
+        const row = {};
+        Object.keys(rawRow).forEach(header => {
+          const normalizedKey = normalizeHeader(header);
+          if (normalizedKey) {
+            row[normalizedKey] = rawRow[header];
+          }
         });
-    </script>
+        return row;
+      });
+
+      return parseExcelQuestions(normalizedRows);
+    }
+
+    function formatCategoryRow(category) {
+      const activeLabel = category.active ? 'Active' : 'Inactive';
+      const subCategoryLabel = category.hasSubCategory ? 'Yes' : 'No';
+      const manageButton = category.hasSubCategory
+    ? `<button type="button" class="button-primary" data-action="manage-sub" data-id="${category.id}">Manage Sub Categories</button>`
+    : '';
+      const activeStyle = category.active ? 'color:#116d37;font-weight:700;' : 'color:#8a1f19;font-weight:700;';
+      const iconValue = (category.image || category.icon) ? `<a href="${escapeHtml(category.image || category.icon)}" target="_blank" rel="noreferrer">Preview</a>` : '—';
+
+      // Missing isFree (older categories not yet migrated) safely defaults to Free.
+      const isFree = category.isFree !== false;
+      const accessLabel = isFree
+        ? '<span style="color:#116d37;font-weight:700;">Free</span>'
+        : `<span style="color:#a15c00;font-weight:700;">Premium</span><br><span style="font-size:0.85rem;color:#5f6f8f;"><s>₹${escapeHtml(category.originalPrice ?? '—')}</s> ₹${escapeHtml(category.offerPrice ?? '—')}</span>`;
+
+      return `
+        <tr class="category-row">
+         <td>
+    <strong>${escapeHtml(category.name)}</strong>
+
+    <div style="margin-top:6px;color:#6b7a96;font-size:0.92rem;">
+        ${escapeHtml(category.description || 'No description')}
+    </div>
+
+    <div style="margin-top:6px;color:#0b4ea2;font-size:0.88rem;font-weight:600;">
+        Sub Category : ${subCategoryLabel}
+    </div>
+</td>
+          <td>${category.displayOrder ?? category.order ?? 0}</td>
+          <td style="${activeStyle}">${activeLabel}</td>
+          <td>${accessLabel}</td>
+          <td>${iconValue}</td>
+          <td>
+            <div class="category-actions">
+    ${manageButton}
+    <button type="button" class="button-secondary"
+        data-action="edit"
+        data-id="${category.id}">
+        Edit
+    </button>
+
+    <button type="button"
+        class="button-danger"
+        data-action="delete"
+        data-id="${category.id}">
+        Delete
+    </button>
+</div>
+          </td>
+        </tr>`;
+    }
+
+    function renderCategories() {
+      const queryText = elements.searchInput.value.trim().toLowerCase();
+      const filtered = categories.filter(category => {
+        const searchable = `${category.name} ${category.description || ''} ${category.icon || ''}`.toLowerCase();
+        return searchable.includes(queryText);
+      });
+
+      if (!filtered.length) {
+        elements.categoryRows.innerHTML = '<tr><td colspan="6" class="empty-state">No categories found. Use the form above to add a new category.</td></tr>';
+        return;
+      }
+
+      elements.categoryRows.innerHTML = filtered.map(formatCategoryRow).join('');
+      attachCategoryTableActions();
+    }
+
+    function renderCategoryDropdown() {
+      if (!categories.length) {
+        elements.mockCategorySelect.innerHTML = '<option value="">No categories available</option>';
+        return;
+      }
+
+      const options = ['<option value="">Select category</option>'];
+      categories.forEach(category => {
+        const isFree = category.isFree !== false;
+        const accessTag = isFree ? '' : ` (Premium ₹${category.offerPrice ?? '—'})`;
+        const label = `${category.name}${accessTag}${category.active ? '' : ' (inactive)'}`;
+        options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(label)}</option>`);
+      });
+
+      elements.mockCategorySelect.innerHTML = options.join('');
+      if (editingMockId) {
+        const currentMock = mockTests.find(mock => mock.id === editingMockId);
+        if (currentMock) {
+          elements.mockCategorySelect.value = currentMock.categoryId || '';
+        }
+      }
+    }
+
+    // Populates the Mock Test List filter's Category dropdown. Kept separate
+    // from renderCategoryDropdown() (used by the Publish form) because the
+    // two dropdowns have different defaults ("Select Category" vs
+    // "Select category") and different selection state.
+    function renderMockFilterCategoryDropdown() {
+      if (!categories.length) {
+        elements.mockFilterCategorySelect.innerHTML = '<option value="">No categories available</option>';
+        return;
+      }
+
+      const previousValue = elements.mockFilterCategorySelect.value;
+      const options = ['<option value="">Select Category</option>'];
+      categories.forEach(category => {
+        options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`);
+      });
+      elements.mockFilterCategorySelect.innerHTML = options.join('');
+
+      // Preserve the admin's current filter selection across a data refresh
+      // (e.g. clicking "Refresh Data") instead of silently resetting it.
+      if (previousValue && categories.some(category => category.id === previousValue)) {
+        elements.mockFilterCategorySelect.value = previousValue;
+      }
+    }
+
+    function renderMockUploadDropdown() {
+      if (!mockTests.length) {
+        elements.mockUploadSelect.innerHTML = '<option value="">No mock tests available</option>';
+        return;
+      }
+
+      const options = ['<option value="">Select mock test</option>'];
+      mockTests.forEach(mock => {
+        const title = mock.title || mock.name || 'Untitled test';
+        options.push(`<option value="${escapeHtml(mock.id)}">${escapeHtml(title)}</option>`);
+      });
+
+      elements.mockUploadSelect.innerHTML = options.join('');
+    }
+
+    function validateQuestionRow(row, index) {
+      const value = val => String(val || '').trim();
+      const questionHindi = value(row.questionHindi);
+      const questionEnglish = value(row.questionEnglish);
+      const question = value(row.question);
+      const optionAHindi = value(row.optionAHindi);
+      const optionAEnglish = value(row.optionAEnglish);
+      const optionA = value(row.optionA);
+      const optionBHindi = value(row.optionBHindi);
+      const optionBEnglish = value(row.optionBEnglish);
+      const optionB = value(row.optionB);
+      const optionCHindi = value(row.optionCHindi);
+      const optionCEnglish = value(row.optionCEnglish);
+      const optionC = value(row.optionC);
+      const optionDHindi = value(row.optionDHindi);
+      const optionDEnglish = value(row.optionDEnglish);
+      const optionD = value(row.optionD);
+      const optionEHindi = value(row.optionEHindi);
+      const optionEEnglish = value(row.optionEEnglish);
+      const optionE = value(row.optionE);
+      const correctAnswer = value(row.correctAnswer);
+      const marks = Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1;
+      const negativeMarks = Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0;
+      const explanation = value(row.explanation);
+      const explanationHindi = value(row.explanationHindi);
+      const explanationEnglish = value(row.explanationEnglish);
+      const requiredMissing = [];
+
+      if (!question) requiredMissing.push('Question');
+      if (!optionA) requiredMissing.push('OptionA');
+      if (!optionB) requiredMissing.push('OptionB');
+      if (!optionC) requiredMissing.push('OptionC');
+      if (!optionD) requiredMissing.push('OptionD');
+      if (!correctAnswer) requiredMissing.push('CorrectAnswer');
+
+      if (requiredMissing.length) {
+        throw new Error(`Row ${index + 1} is missing required columns: ${requiredMissing.join(', ')}`);
+      }
+
+      return {
+        questionHindi,
+        questionEnglish,
+        question,
+        optionAHindi,
+        optionAEnglish,
+        optionA,
+        optionBHindi,
+        optionBEnglish,
+        optionB,
+        optionCHindi,
+        optionCEnglish,
+        optionC,
+        optionDHindi,
+        optionDEnglish,
+        optionD,
+        optionEHindi,
+        optionEEnglish,
+        optionE,
+        correctAnswer,
+        marks,
+        negativeMarks,
+        explanation,
+        explanationHindi,
+        explanationEnglish,
+        image: value(row.image)
+      };
+    }
+
+    async function importMockQuestions(mockId, rows) {
+      const cleanedRows = rows.reduce((acc, row, idx) => {
+        const hasData = ['question', 'optionA', 'optionB', 'optionC', 'optionD', 'optionE', 'correctAnswer', 'explanation']
+          .some(key => String(row[key] || '').trim());
+        if (!hasData) return acc;
+        acc.push(validateQuestionRow(row, idx));
+        return acc;
+      }, []);
+
+      if (!cleanedRows.length) {
+        throw new Error('Excel file contains no valid question rows.');
+      }
+
+      const existingSnapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', mockId)));
+      const existingDocs = existingSnapshot.docs;
+      const batchSize = 450;
+      const batches = [];
+      let batch = writeBatch(db);
+      let opCount = 0;
+
+      existingDocs.forEach(docSnap => {
+        batch.delete(doc(db, COLLECTIONS.questions, docSnap.id));
+        opCount += 1;
+        if (opCount >= batchSize) {
+          batches.push(batch);
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      });
+
+      cleanedRows.forEach((row, index) => {
+        const questionRef = doc(collection(db, COLLECTIONS.questions));
+        batch.set(questionRef, {
+          mockId,
+          questionNo: row.questionNo || index + 1,
+          question: row.question,
+          questionHindi: row.questionHindi || row.question || '',
+          questionEnglish: row.questionEnglish || '',
+          optionA: row.optionA,
+          optionAHindi: row.optionAHindi || row.optionA || '',
+          optionAEnglish: row.optionAEnglish || '',
+          optionB: row.optionB,
+          optionBHindi: row.optionBHindi || row.optionB || '',
+          optionBEnglish: row.optionBEnglish || '',
+          optionC: row.optionC,
+          optionCHindi: row.optionCHindi || row.optionC || '',
+          optionCEnglish: row.optionCEnglish || '',
+          optionD: row.optionD,
+          optionDHindi: row.optionDHindi || row.optionD || '',
+          optionDEnglish: row.optionDEnglish || '',
+          optionE: row.optionE || '',
+          optionEHindi: row.optionEHindi || row.optionE || '',
+          optionEEnglish: row.optionEEnglish || '',
+          correctAnswer: row.correctAnswer,
+          marks: Number.isFinite(Number(row.marks)) ? Number(row.marks) : 1,
+          negativeMarks: Number.isFinite(Number(row.negativeMarks)) ? Number(row.negativeMarks) : 0,
+          explanation: row.explanation || null,
+          explanationHindi: row.explanationHindi || row.explanation || '',
+          explanationEnglish: row.explanationEnglish || '',
+          image: row.image || null,
+          createdAt: serverTimestamp()
+        });
+        opCount += 1;
+        if (opCount >= batchSize) {
+          batches.push(batch);
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      });
+
+      if (opCount > 0) {
+        batches.push(batch);
+      }
+
+      await Promise.all(batches.map(item => item.commit()));
+      return cleanedRows.length;
+    }
+
+    // FEATURE 3: Auto status calculation based on liveDateTime vs current time.
+    // Backward compatible: mocks without liveDateTime are treated as 'live' since
+    // they were already immediately available before this feature existed.
+    function computeMockStatus(mock) {
+      if (!mock.liveDateTime) {
+        return 'live';
+      }
+      const liveMoment = new Date(mock.liveDateTime);
+      if (Number.isNaN(liveMoment.getTime())) {
+        return 'live';
+      }
+      return liveMoment.getTime() > Date.now() ? 'scheduled' : 'live';
+    }
+
+    // FEATURE 4: Status badge markup (Scheduled = orange, Live = green, Expired = red)
+    function formatMockStatusBadge(status) {
+      const labels = { scheduled: 'Scheduled', live: 'Live', expired: 'Expired' };
+      const label = labels[status] || 'Live';
+      return `<span class="mock-badge status-${status}">${label}</span>`;
+    }
+
+    function formatMockRow(mock) {
+      const category = categories.find(category => category.id === mock.categoryId);
+      const categoryLabel = category ? category.name : 'Unknown category';
+      // Category-level Premium system: a mock has no access field of its own —
+      // access (Free/Premium) is entirely inherited from its Category. Missing
+      // isFree on an older/unconfigured category safely defaults to Free.
+      const isFree = !category || category.isFree !== false;
+      const badgeClass = isFree ? 'mock-badge' : 'mock-badge premium';
+      const accessLabel = isFree ? 'Free' : `Premium (₹${category?.offerPrice ?? '—'})`;
+      const totalQuestions = mock.totalQuestions ?? mock.questions ?? 0;
+      const durationMinutes = mock.duration ?? mock.durationMinutes ?? 0;
+      const passing = mock.passingPercentage != null ? `${mock.passingPercentage}%` : 'N/A';
+      const title = mock.title || mock.name || 'Untitled test';
+
+      // FEATURE 3 & 4: auto-computed status badge
+      const status = computeMockStatus(mock);
+      const statusBadge = formatMockStatusBadge(status);
+
+      // FEATURE 4: Live Date / Live Time display with safe defaults for old mocks
+      const liveDateLabel = mock.liveDate || 'Not set';
+      const liveTimeLabel = mock.liveTime || 'Not set';
+
+      // FEATURE 5: total attempts, defaults to 0 when no results exist for this mock
+      const attemptCount = mockAttemptCounts[mock.id] ?? 0;
+
+      return `
+        <article class="mock-card">
+          <div class="mock-card-header">
+            <div>
+              <p class="mock-card-title">${escapeHtml(title)}</p>
+              <div style="color:#5f6f8f;font-size:0.92rem;">${escapeHtml(categoryLabel)}</div>
+            </div>
+            <span class="${badgeClass}">${accessLabel}</span>
+          </div>
+          <div class="mock-card-meta">
+            <div><strong>Questions:</strong> ${totalQuestions}</div>
+            <div><strong>Duration:</strong> ${durationMinutes} min</div>
+            <div><strong>Passing:</strong> ${passing}</div>
+            <div><strong>Total marks:</strong> ${mock.totalMarks ?? 0}</div>
+            <div><strong>Live Date:</strong> ${escapeHtml(liveDateLabel)}</div>
+            <div><strong>Live Time:</strong> ${escapeHtml(liveTimeLabel)}</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            ${statusBadge}
+            <span class="mock-badge">${attemptCount} Attempts</span>
+          </div>
+          <div class="mock-actions">
+            <button type="button" class="button-secondary" data-mock-action="edit" data-id="${mock.id}">Edit</button>
+            <button type="button" class="button-danger" data-mock-action="delete" data-id="${mock.id}">Delete</button>
+            <button type="button" class="button-secondary" data-mock-action="review" data-id="${mock.id}">👁 Review</button>
+          </div>
+        </article>`;
+    }
+
+    // Returns mockTests narrowed down by whatever is currently selected in the
+    // Mock Test List filter bar. Pure client-side filtering over the already
+    // loaded `mockTests` array — no extra Firestore reads, no change to the
+    // document structure. Rules (per requirements):
+    //   - No category selected            -> show everything
+    //   - Category selected only          -> show all mocks of that category
+    //   - Category + Sub Category selected -> show only that exact combination
+    function getFilteredMockTests() {
+      const categoryId = elements.mockFilterCategorySelect ? elements.mockFilterCategorySelect.value : '';
+      const subCategoryId = elements.mockFilterSubCategorySelect ? elements.mockFilterSubCategorySelect.value : '';
+
+      if (!categoryId) {
+        return mockTests;
+      }
+
+      let filtered = mockTests.filter(mock => mock.categoryId === categoryId);
+
+      if (subCategoryId) {
+        filtered = filtered.filter(mock => mock.subCategoryId === subCategoryId);
+      }
+
+      return filtered;
+    }
+
+    // Loads Sub Categories for the Category chosen in the Mock Test List
+    // filter bar, populates the Sub Category dropdown, and re-renders the
+    // list instantly — no page reload. Mirrors handleMockCategoryChange()
+    // (used by the Publish form) but keeps its own dropdown/state so the two
+    // features never interfere with each other.
+    async function handleMockFilterCategoryChange() {
+      const categoryId = elements.mockFilterCategorySelect.value;
+      mockFilterSubCategories = [];
+      elements.mockFilterSubCategorySelect.innerHTML = '<option value="">All Sub Categories</option>';
+
+      if (!categoryId) {
+        elements.mockFilterSubCategoryWrapper.style.display = 'none';
+        renderMockTests();
+        return;
+      }
+
+      const selectedCategory = categories.find(category => category.id === categoryId);
+
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        try {
+          mockFilterSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        } catch (error) {
+          console.error(error);
+          mockFilterSubCategories = [];
+        }
+
+        const options = ['<option value="">All Sub Categories</option>'];
+        mockFilterSubCategories.forEach(subCategory => {
+          options.push(`<option value="${escapeHtml(subCategory.id)}">${escapeHtml(subCategory.name)}</option>`);
+        });
+        elements.mockFilterSubCategorySelect.innerHTML = options.join('');
+        elements.mockFilterSubCategoryWrapper.style.display = '';
+      } else {
+        elements.mockFilterSubCategoryWrapper.style.display = 'none';
+      }
+
+      renderMockTests();
+    }
+
+    function renderMockTests() {
+      const filtered = getFilteredMockTests();
+
+      if (elements.mockFilterCount) {
+        elements.mockFilterCount.textContent = `${filtered.length} test${filtered.length === 1 ? '' : 's'}`;
+      }
+
+      if (!mockTests.length) {
+        elements.mockTestList.innerHTML = '<div class="placeholder-item">No mock tests published yet.</div>';
+        return;
+      }
+
+      if (!filtered.length) {
+        elements.mockTestList.innerHTML = '<div class="placeholder-item">No mock tests match the selected Category / Sub Category.</div>';
+        return;
+      }
+
+      elements.mockTestList.innerHTML = filtered.map(formatMockRow).join('');
+      attachMockActions();
+    }
+
+    function updateStats() {
+      elements.totalCategories.textContent = categories.length;
+      elements.activeCategories.textContent = categories.filter(category => category.active).length;
+      elements.mockTestsCount.textContent = mockTests.length;
+      updateMockDashboardStats();
+    }
+
+    // FEATURE 6: Mock dashboard stats row - totals update automatically after Firestore loads
+    function updateMockDashboardStats() {
+      const totalMocks = mockTests.length;
+      const liveMocks = mockTests.filter(mock => computeMockStatus(mock) === 'live').length;
+      const scheduledMocks = mockTests.filter(mock => computeMockStatus(mock) === 'scheduled').length;
+      const totalAttempts = Object.values(mockAttemptCounts).reduce((sum, count) => sum + (count || 0), 0);
+
+      elements.mockStatTotal.textContent = totalMocks;
+      elements.mockStatLive.textContent = liveMocks;
+      elements.mockStatScheduled.textContent = scheduledMocks;
+      elements.mockStatAttempts.textContent = totalAttempts;
+    }
+
+    function resetCategoryForm() {
+      editingCategoryId = null;
+      elements.title.value = '';
+      elements.icon.value = '';
+      elements.order.value = '';
+      elements.description.value = '';
+      elements.active.value = 'true';
+      elements.hasSubCategory.value = 'false';
+      elements.isFree.value = 'true';
+      elements.originalPrice.value = '';
+      elements.offerPrice.value = '';
+      updateCategoryPriceFieldsVisibility();
+      elements.saveBtn.textContent = 'Add Category';
+      elements.cancelBtn.hidden = true;
+      setStatus('Ready to manage categories.');
+    }
+
+    function populateCategoryForm(category) {
+      editingCategoryId = category.id;
+      elements.title.value = category.name;
+      elements.icon.value = category.image || category.icon || '';
+      elements.order.value = category.displayOrder ?? category.order ?? 0;
+      elements.description.value = category.description || '';
+      elements.active.value = category.active ? 'true' : 'false';
+      elements.hasSubCategory.value = category.hasSubCategory ? 'true' : 'false';
+      // Missing isFree (older categories not yet migrated) safely defaults to Free.
+      const isFree = category.isFree !== false;
+      elements.isFree.value = isFree ? 'true' : 'false';
+      elements.originalPrice.value = category.originalPrice ?? '';
+      elements.offerPrice.value = category.offerPrice ?? '';
+      updateCategoryPriceFieldsVisibility();
+      elements.saveBtn.textContent = 'Update Category';
+      elements.cancelBtn.hidden = false;
+      setStatus(`Editing "${category.name}". Save to update or cancel to reset.`);
+    }
+
+    function resetMockForm() {
+      editingMockId = null;
+      elements.mockCategorySelect.value = '';
+      elements.mockName.value = '';
+      elements.mockQuestions.value = '';
+      elements.mockMarks.value = '';
+      elements.mockDuration.value = '';
+      elements.mockNegative.value = '';
+      elements.mockPassingPercentage.value = '';
+      elements.mockPdfLink.value = '';
+      // FEATURE 1: clear live date/time fields on reset
+      elements.mockLiveDate.value = '';
+      elements.mockLiveTime.value = '';
+      elements.publishMockBtn.textContent = 'Publish Mock Test';
+      elements.cancelMockBtn.hidden = true;
+      mockFormSubCategories = [];
+      elements.mockSubCategoryWrapper.style.display = 'none';
+      elements.mockSubCategorySelect.innerHTML = '<option value="">Select sub category</option>';
+      setMockStatus('Ready to publish mock tests.');
+    }
+
+    async function populateMockForm(mock) {
+      editingMockId = mock.id;
+      elements.mockCategorySelect.value = mock.categoryId || '';
+      elements.mockName.value = mock.title || mock.name || '';
+      elements.mockQuestions.value = mock.totalQuestions ?? mock.questions ?? '';
+      elements.mockMarks.value = mock.totalMarks ?? '';
+      elements.mockDuration.value = mock.duration ?? mock.durationMinutes ?? '';
+      elements.mockNegative.value = mock.negativeMarks ?? '';
+      elements.mockPassingPercentage.value = mock.passingPercentage ?? '';
+      elements.mockPdfLink.value = mock.pdfLink || '';
+      // FEATURE 7 & 9: load existing Live Date/Time; old mocks without these fields
+      // safely fall back to empty values instead of crashing.
+      elements.mockLiveDate.value = mock.liveDate || '';
+      elements.mockLiveTime.value = mock.liveTime || '';
+      elements.publishMockBtn.textContent = 'Update Mock Test';
+      elements.cancelMockBtn.hidden = false;
+      await handleMockCategoryChange(mock.subCategoryId || '');
+      setMockStatus(`Editing "${mock.title || mock.name}". Save to update or cancel to reset.`, 'info');
+    }
+
+    async function loadCategories() {
+      try {
+        setStatus('Loading categories...');
+        const snapshot = await getDocs(collection(db, COLLECTIONS.categories));
+        categories = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        categories.sort((a, b) => {
+          const orderA = Number.isFinite(a.order) ? a.order : 0;
+          const orderB = Number.isFinite(b.order) ? b.order : 0;
+          return orderAscending ? orderA - orderB : orderB - orderA;
+        });
+        renderCategories();
+        renderCategoryDropdown();
+        renderMockFilterCategoryDropdown();
+        updateStats();
+        setStatus(`Loaded ${categories.length} categories.`, 'success');
+      } catch (error) {
+        console.error(error);
+        setStatus('Unable to load categories. Check console for details.', 'error');
+      }
+    }
+
+    // FEATURE 5: Read attempt counts for every mock from the results collection.
+    // If the query fails or no attempts exist, mocks safely default to 0 attempts.
+    async function loadMockAttemptCounts() {
+      const counts = {};
+      await Promise.all(mockTests.map(async mock => {
+        try {
+          const countQuery = query(collection(db, COLLECTIONS.results), where('mockId', '==', mock.id));
+          const snapshot = await getCountFromServer(countQuery);
+          counts[mock.id] = snapshot.data().count;
+        } catch (error) {
+          console.error(error);
+          counts[mock.id] = 0;
+        }
+      }));
+      mockAttemptCounts = counts;
+    }
+
+    async function loadMockTests() {
+      try {
+        const snapshot = await getDocs(collection(db, COLLECTIONS.tests));
+        mockTests = snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+        mockTests.sort((a, b) => {
+          const toMillis = v => (v && typeof v.toMillis === 'function') ? v.toMillis() : 0;
+          return toMillis(b.createdAt) - toMillis(a.createdAt);
+        });
+        await loadMockAttemptCounts();
+        renderMockTests();
+        renderMockUploadDropdown();
+        updateStats();
+      } catch (error) {
+        console.error(error);
+        elements.mockTestList.innerHTML = '<div class="placeholder-item">Unable to load mock tests. See console for details.</div>';
+      }
+    }
+
+    async function saveCategory() {
+      const name = elements.title.value.trim();
+      const icon = elements.icon.value.trim();
+      const orderValue = Number(elements.order.value);
+      const description = elements.description.value.trim();
+      const active = elements.active.value === 'true';
+      const hasSubCategory = elements.hasSubCategory.value === 'true';
+      const isFree = elements.isFree.value === 'true';
+      if (!name) {
+        setStatus('Category name is required.', 'error');
+        return;
+      }
+
+      let originalPrice = null;
+      let offerPrice = null;
+      if (!isFree) {
+        originalPrice = Number(elements.originalPrice.value);
+        offerPrice = Number(elements.offerPrice.value);
+        if (!Number.isFinite(originalPrice) || originalPrice <= 0) {
+          setStatus('Original Price is required for a Premium category.', 'error');
+          return;
+        }
+        if (!Number.isFinite(offerPrice) || offerPrice <= 0) {
+          setStatus('Offer Price is required for a Premium category.', 'error');
+          return;
+        }
+        if (offerPrice > originalPrice) {
+          setStatus('Offer Price cannot be greater than Original Price.', 'error');
+          return;
+        }
+      }
+
+      const normalizedOrder = Number.isFinite(orderValue) ? orderValue : 0;
+
+      const newCategory = {
+        name,
+        // `image` is the field name going forward; `icon` is mirrored for any
+        // reader that hasn't been migrated yet (safe, non-breaking dual-write).
+        image: icon || null,
+        icon: icon || null,
+        // `displayOrder` is the field name going forward; `order` is mirrored
+        // because existing Firestore queries still orderBy('order').
+        displayOrder: normalizedOrder,
+        order: normalizedOrder,
+        description: description || null,
+        active,
+        hasSubCategory,
+        isFree,
+        originalPrice,
+        offerPrice,
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (editingCategoryId) {
+          await updateDoc(doc(db, COLLECTIONS.categories, editingCategoryId), newCategory);
+          setStatus('Category updated successfully.', 'success');
+        } else {
+          await addDoc(collection(db, COLLECTIONS.categories), {
+            ...newCategory,
+            createdAt: serverTimestamp()
+          });
+          setStatus('Category added successfully.', 'success');
+        }
+        resetCategoryForm();
+        await loadCategories();
+        // Mock list badges reflect the category's access/price, so refresh it too.
+        await loadMockTests();
+      } catch (error) {
+        console.error(error);
+        setStatus('Failed to save category. Open browser console for details.', 'error');
+      }
+    }
+
+    async function fetchSubCategoriesForCategory(categoryId) {
+      const q = query(
+        collection(db, COLLECTIONS.subCategories),
+        where('categoryId', '==', categoryId),
+        orderBy('order', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docSnapshot => ({ id: docSnapshot.id, ...docSnapshot.data() }));
+    }
+
+    async function countMockTestsForCategory(categoryId) {
+      const snapshot = await getDocs(query(collection(db, COLLECTIONS.tests), where('categoryId', '==', categoryId)));
+      return snapshot.size;
+    }
+
+    async function countMockTestsForSubCategory(subCategoryId) {
+      const snapshot = await getDocs(query(collection(db, COLLECTIONS.tests), where('subCategoryId', '==', subCategoryId)));
+      return snapshot.size;
+    }
+
+    async function deleteCategory(categoryId) {
+      try {
+        const [existingSubCategories, existingMockTests] = await Promise.all([
+          fetchSubCategoriesForCategory(categoryId),
+          countMockTestsForCategory(categoryId)
+        ]);
+
+        let confirmMessage = 'Delete this category? This will remove the category from selection.';
+        if (existingSubCategories.length || existingMockTests) {
+          confirmMessage = `This category has ${existingSubCategories.length} sub categor${existingSubCategories.length === 1 ? 'y' : 'ies'} and ${existingMockTests} mock test${existingMockTests === 1 ? '' : 's'} linked to it. Deleting the category will NOT delete those records, but they will no longer be reachable from this category. Continue?`;
+        }
+
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+
+        await deleteDoc(doc(db, COLLECTIONS.categories, categoryId));
+        setStatus('Category deleted.', 'success');
+        if (currentSubCategoryCategoryId === categoryId) {
+          closeSubCategorySection();
+        }
+        await loadCategories();
+      } catch (error) {
+        console.error(error);
+        setStatus('Unable to delete category. See console for details.', 'error');
+      }
+    }
+
+    function setSubCategoryStatus(message, type = 'info') {
+      elements.subCategoryStatusBar.textContent = message;
+      elements.subCategoryStatusBar.className = `status-bar ${type}`.trim();
+    }
+
+    function resetSubCategoryForm() {
+      editingSubCategoryId = null;
+      elements.subCategoryName.value = '';
+      elements.subCategoryOrder.value = '0';
+      elements.subCategoryActive.value = 'true';
+      elements.saveSubCategoryBtn.textContent = 'Save Sub Category';
+      elements.cancelSubCategoryBtn.hidden = true;
+    }
+
+    function populateSubCategoryForm(item) {
+      editingSubCategoryId = item.id;
+      elements.subCategoryName.value = item.name || '';
+      elements.subCategoryOrder.value = item.order ?? 0;
+      elements.subCategoryActive.value = item.active === false ? 'false' : 'true';
+      elements.saveSubCategoryBtn.textContent = 'Update Sub Category';
+      elements.cancelSubCategoryBtn.hidden = false;
+      setSubCategoryStatus(`Editing "${item.name}". Save to update or cancel to reset.`);
+    }
+
+    async function loadSubCategories(categoryId, categoryName) {
+      try {
+        currentSubCategoryCategoryId = categoryId;
+        elements.subCategorySection.style.display = '';
+        elements.selectedCategoryName.textContent = `Managing sub categories for: ${categoryName}`;
+        resetSubCategoryForm();
+        setSubCategoryStatus('Loading sub categories...');
+        subCategories = await fetchSubCategoriesForCategory(categoryId);
+        renderSubCategories();
+        setSubCategoryStatus(`Loaded ${subCategories.length} sub categories.`, 'success');
+        elements.subCategorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Unable to load sub categories. See console for details.', 'error');
+      }
+    }
+
+    function closeSubCategorySection() {
+      currentSubCategoryCategoryId = null;
+      subCategories = [];
+      resetSubCategoryForm();
+      elements.subCategorySection.style.display = 'none';
+    }
+
+    async function saveSubCategory() {
+      if (!currentSubCategoryCategoryId) {
+        setSubCategoryStatus('No category selected for sub categories.', 'error');
+        return;
+      }
+
+      const name = elements.subCategoryName.value.trim();
+      const orderValue = Number(elements.subCategoryOrder.value);
+      const active = elements.subCategoryActive.value === 'true';
+
+      if (!name) {
+        setSubCategoryStatus('Sub category name is required.', 'error');
+        return;
+      }
+
+      const payload = {
+        categoryId: currentSubCategoryCategoryId,
+        name,
+        description: '',
+        order: Number.isFinite(orderValue) ? orderValue : 0,
+        active,
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (editingSubCategoryId) {
+          await updateDoc(doc(db, COLLECTIONS.subCategories, editingSubCategoryId), payload);
+          setSubCategoryStatus('Sub category updated successfully.', 'success');
+        } else {
+          await addDoc(collection(db, COLLECTIONS.subCategories), {
+            ...payload,
+            createdAt: serverTimestamp()
+          });
+          setSubCategoryStatus('Sub category added successfully.', 'success');
+        }
+        resetSubCategoryForm();
+        subCategories = await fetchSubCategoriesForCategory(currentSubCategoryCategoryId);
+        renderSubCategories();
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Failed to save sub category. Open browser console for details.', 'error');
+      }
+    }
+
+    async function deleteSubCategory(subCategoryId) {
+      try {
+        const linkedMockTests = await countMockTestsForSubCategory(subCategoryId);
+        let confirmMessage = 'Delete this sub category?';
+        if (linkedMockTests) {
+          confirmMessage = `This sub category has ${linkedMockTests} mock test${linkedMockTests === 1 ? '' : 's'} linked to it. Deleting it will NOT delete those mock tests, but they will no longer be reachable from this sub category. Continue?`;
+        }
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+        await deleteDoc(doc(db, COLLECTIONS.subCategories, subCategoryId));
+        setSubCategoryStatus('Sub category deleted.', 'success');
+        if (editingSubCategoryId === subCategoryId) {
+          resetSubCategoryForm();
+        }
+        subCategories = await fetchSubCategoriesForCategory(currentSubCategoryCategoryId);
+        renderSubCategories();
+      } catch (error) {
+        console.error(error);
+        setSubCategoryStatus('Unable to delete sub category. See console for details.', 'error');
+      }
+    }
+
+    function attachSubCategoryActions() {
+      document.querySelectorAll('[data-sub-edit]').forEach(button => {
+        button.addEventListener('click', () => {
+          const item = subCategories.find(sub => sub.id === button.dataset.subEdit);
+          if (item) {
+            populateSubCategoryForm(item);
+          }
+        });
+      });
+      document.querySelectorAll('[data-sub-delete]').forEach(button => {
+        button.addEventListener('click', async () => {
+          await deleteSubCategory(button.dataset.subDelete);
+        });
+      });
+    }
+
+    function renderSubCategories() {
+      if (!subCategories.length) {
+        elements.subCategoryRows.innerHTML = `
+          <tr>
+            <td colspan="4" class="empty-state">
+              No Sub Categories Found
+            </td>
+          </tr>`;
+        return;
+      }
+
+      elements.subCategoryRows.innerHTML = subCategories.map(item => `
+        <tr>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${item.order || 0}</td>
+          <td>${item.active === false ? 'Inactive' : 'Active'}</td>
+          <td>
+            <button type="button" class="button-secondary" data-sub-edit="${item.id}">Edit</button>
+            <button type="button" class="button-danger" data-sub-delete="${item.id}">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+
+      attachSubCategoryActions();
+    }
+
+    function populateMockSubCategoryDropdown(list, selectedId) {
+      if (!list.length) {
+        elements.mockSubCategorySelect.innerHTML = '<option value="">No sub categories available</option>';
+        return;
+      }
+      const options = ['<option value="">Select sub category</option>'];
+      list.forEach(item => {
+        options.push(`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`);
+      });
+      elements.mockSubCategorySelect.innerHTML = options.join('');
+      if (selectedId) {
+        elements.mockSubCategorySelect.value = selectedId;
+      }
+    }
+
+    async function handleMockCategoryChange(selectedSubCategoryId) {
+      const categoryId = elements.mockCategorySelect.value;
+      const category = categories.find(item => item.id === categoryId);
+
+      if (!category || !category.hasSubCategory) {
+        mockFormSubCategories = [];
+        elements.mockSubCategoryWrapper.style.display = 'none';
+        elements.mockSubCategorySelect.innerHTML = '<option value="">Select sub category</option>';
+        return;
+      }
+
+      elements.mockSubCategoryWrapper.style.display = '';
+      try {
+        mockFormSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        populateMockSubCategoryDropdown(mockFormSubCategories, selectedSubCategoryId || '');
+      } catch (error) {
+        console.error(error);
+        elements.mockSubCategorySelect.innerHTML = '<option value="">Unable to load sub categories</option>';
+      }
+    }
+
+    async function syncMockQuestions(mockId, questionsPayload) {
+      if (!questionsPayload.length) {
+        return;
+      }
+
+      const existingSnapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', mockId)));
+      const existingByQuestionNo = new Map(existingSnapshot.docs.map(item => [item.data().questionNo, { id: item.id, data: item.data() }]));
+      const batch = writeBatch(db);
+
+      const matchedQuestionNos = new Set();
+
+      questionsPayload.forEach(question => {
+        const normalizedQuestion = {
+          mockId,
+          questionNo: Number(question.questionNo) || 0,
+          question: question.question || '',
+          optionA: question.optionA || '',
+          optionB: question.optionB || '',
+          optionC: question.optionC || '',
+          optionD: question.optionD || '',
+          optionE: question.optionE || '',
+          correctAnswer: question.correctAnswer || question.answer || '',
+          marks: Number.isFinite(Number(question.marks)) ? Number(question.marks) : 1,
+          negativeMarks: Number.isFinite(Number(question.negativeMarks)) ? Number(question.negativeMarks) : 0,
+          explanation: question.explanation || '',
+          image: question.image || '',
+          updatedAt: serverTimestamp()
+        };
+
+        const existing = existingByQuestionNo.get(normalizedQuestion.questionNo);
+        if (existing) {
+          batch.update(doc(db, COLLECTIONS.questions, existing.id), normalizedQuestion);
+          matchedQuestionNos.add(normalizedQuestion.questionNo);
+        } else {
+          const newQuestionRef = doc(collection(db, COLLECTIONS.questions));
+          batch.set(newQuestionRef, {
+            ...normalizedQuestion,
+            createdAt: serverTimestamp()
+          });
+        }
+      });
+
+      existingByQuestionNo.forEach((existing, questionNo) => {
+        if (!matchedQuestionNos.has(questionNo)) {
+          batch.delete(doc(db, COLLECTIONS.questions, existing.id));
+        }
+      });
+
+      await batch.commit();
+    }
+
+    async function saveMockTest() {
+      const categoryId = elements.mockCategorySelect.value;
+      const title = elements.mockName.value.trim();
+      const totalQuestions = Number(elements.mockQuestions.value);
+      const totalMarks = Number(elements.mockMarks.value);
+      const duration = Number(elements.mockDuration.value);
+      const negativeMarks = Number(elements.mockNegative.value);
+      const passingPercentageRaw = elements.mockPassingPercentage.value.trim();
+      const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
+      // Secure Question Paper PDF Download feature: optional pdfLink field.
+      const pdfLink = elements.mockPdfLink.value.trim();
+      // FEATURE 1: read Live Date / Live Time from the form
+      const liveDate = elements.mockLiveDate.value;
+      const liveTime = elements.mockLiveTime.value;
+
+      if (!categoryId) {
+        setMockStatus('Please select a category for the mock test.', 'error');
+        return;
+      }
+      if (!title) {
+        setMockStatus('Mock test name is required.', 'error');
+        return;
+      }
+      if (!Number.isFinite(totalQuestions) || totalQuestions < 0) {
+        setMockStatus('Total questions must be a non-negative number.', 'error');
+        return;
+      }
+      if (passingPercentageRaw === '' || !Number.isFinite(passingPercentage) || passingPercentage < 0 || passingPercentage > 100) {
+        setMockStatus('Passing percentage must be a number between 0 and 100.', 'error');
+        return;
+      }
+      // FEATURE 1: Live Date and Live Time are required fields
+      if (!liveDate) {
+        setMockStatus('Live Date is required.', 'error');
+        return;
+      }
+      if (!liveTime) {
+        setMockStatus('Live Time is required.', 'error');
+        return;
+      }
+
+      const selectedCategory = categories.find(item => item.id === categoryId);
+      let subCategoryId = null;
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        subCategoryId = elements.mockSubCategorySelect.value || '';
+        if (!subCategoryId) {
+          setMockStatus('Please select a sub category for this category.', 'error');
+          return;
+        }
+      }
+
+      // FEATURE 2: combine date + time into a single ISO-like liveDateTime string
+      // e.g. 2026-07-04 + 21:00 -> 2026-07-04T21:00:00
+      const liveDateTime = `${liveDate}T${liveTime}:00`;
+
+      const mockPayload = {
+        categoryId,
+        subCategoryId,
+        title,
+        totalQuestions,
+        totalMarks: totalMarks || 0,
+        duration: duration || 0,
+        negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
+        passingPercentage,
+        pdfLink: pdfLink || null,
+        liveDate,
+        liveTime,
+        liveDateTime,
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (editingMockId) {
+          // CLEANUP: Mock-level Premium is removed. Access is now controlled
+          // entirely by the mock's Category, so strip any legacy fields left
+          // over from the old per-mock Free/Premium system. deleteField() is
+          // only valid on update()/merge-set(), never on a brand-new document,
+          // so this only applies when editing an existing mock.
+          await updateDoc(doc(db, COLLECTIONS.tests, editingMockId), {
+            ...mockPayload,
+            isFree: deleteField(),
+            premium: deleteField()
+          });
+          setMockStatus('Mock test updated successfully.', 'success');
+        } else {
+          await addDoc(collection(db, COLLECTIONS.tests), {
+            ...mockPayload,
+            createdAt: serverTimestamp()
+          });
+          setMockStatus('Mock test published successfully.', 'success');
+        }
+
+        resetMockForm();
+        await loadMockTests();
+      } catch (error) {
+        console.error(error);
+        setMockStatus('Unable to save mock test. Check console for details.', 'error');
+      }
+    }
+
+    async function deleteMockTest(mockId) {
+      if (!window.confirm('Delete this mock test? This action cannot be undone.')) {
+        return;
+      }
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.tests, mockId));
+        setMockStatus('Mock test deleted successfully.', 'success');
+        resetMockForm();
+        await loadMockTests();
+      } catch (error) {
+        console.error(error);
+        setMockStatus('Failed to delete mock test. See console for details.', 'error');
+      }
+    }
+
+    function attachCategoryTableActions() {
+      const buttons = document.querySelectorAll('[data-action]');
+      buttons.forEach(button => {
+        button.addEventListener('click', async () => {
+          const action = button.dataset.action;
+          const categoryId = button.dataset.id;
+          const targetCategory = categories.find(item => item.id === categoryId);
+          if (!targetCategory) {
+            setStatus('Selected category cannot be found.', 'error');
+            return;
+          }
+
+          if (action === 'edit') {
+            populateCategoryForm(targetCategory);
+            return;
+          }
+
+          if (action === 'manage-sub') {
+            await loadSubCategories(targetCategory.id, targetCategory.name);
+            return;
+          }
+
+          if (action === 'delete') {
+            await deleteCategory(categoryId);
+          }
+        });
+      });
+    }
+
+    function attachMockActions() {
+      const buttons = document.querySelectorAll('[data-mock-action]');
+      buttons.forEach(button => {
+        button.addEventListener('click', async () => {
+          const action = button.dataset.mockAction;
+          const mockId = button.dataset.id;
+          const target = mockTests.find(item => item.id === mockId);
+          if (!target) {
+            setMockStatus('Unable to locate mock test.', 'error');
+            return;
+          }
+          if (action === 'edit') {
+            await populateMockForm(target);
+          }
+          if (action === 'delete') {
+            await deleteMockTest(mockId);
+          }
+          if (action === 'review') {
+            window.open(`${STUDENT_EXAM_PATH}?mockId=${encodeURIComponent(mockId)}&preview=true`, '_blank');
+          }
+        });
+      });
+    }
+
+    function attachListeners() {
+      elements.saveBtn.addEventListener('click', saveCategory);
+      elements.cancelBtn.addEventListener('click', resetCategoryForm);
+      elements.clearBtn.addEventListener('click', resetCategoryForm);
+      elements.isFree.addEventListener('change', updateCategoryPriceFieldsVisibility);
+      elements.searchInput.addEventListener('input', renderCategories);
+      elements.refreshButton.addEventListener('click', loadCategories);
+      elements.sortByOrderBtn.addEventListener('click', async () => {
+        orderAscending = !orderAscending;
+        elements.sortByOrderBtn.textContent = orderAscending ? 'Sort by Order' : 'Sort by Order ↓';
+        await loadCategories();
+      });
+      elements.uploadExcelBtn.addEventListener('click', async () => {
+        const mockId = elements.mockUploadSelect.value;
+        const file = elements.excelUploadInput.files[0];
+
+        if (!mockId) {
+          elements.excelUploadStatusBar.textContent = 'Select a mock test before uploading question data.';
+          elements.excelUploadStatusBar.className = 'status-bar error';
+          return;
+        }
+        if (!file) {
+          elements.excelUploadStatusBar.textContent = 'Please choose an Excel (.xlsx) file to upload.';
+          elements.excelUploadStatusBar.className = 'status-bar error';
+          return;
+        }
+
+        try {
+          elements.excelUploadStatusBar.textContent = `Importing questions for selected mock test...`;
+          elements.excelUploadStatusBar.className = 'status-bar';
+          const rows = await readExcelFile(file);
+          const importedCount = await importMockQuestions(mockId, rows);
+          elements.excelUploadStatusBar.textContent = `Imported ${importedCount} questions and replaced old questions for the selected mock.`;
+          elements.excelUploadStatusBar.className = 'status-bar success';
+          await loadMockTests();
+        } catch (error) {
+          console.error(error);
+          elements.excelUploadStatusBar.textContent = `Upload failed: ${error.message}`;
+          elements.excelUploadStatusBar.className = 'status-bar error';
+        }
+      });
+      elements.setupPaymentBtn.addEventListener('click', () => {
+        setStatus('Payment integration is prepared. Add payment gateway details when ready.', 'info');
+      });
+      elements.publishMockBtn.addEventListener('click', saveMockTest);
+      elements.cancelMockBtn.addEventListener('click', resetMockForm);
+      elements.mockCategorySelect.addEventListener('change', () => {
+        handleMockCategoryChange();
+      });
+      // Mock Test List filter bar: changing Category loads its Sub
+      // Categories and instantly re-renders the visible list (no reload).
+      elements.mockFilterCategorySelect.addEventListener('change', () => {
+        handleMockFilterCategoryChange();
+      });
+      elements.mockFilterSubCategorySelect.addEventListener('change', () => {
+        renderMockTests();
+      });
+      elements.saveSubCategoryBtn.addEventListener('click', saveSubCategory);
+      elements.cancelSubCategoryBtn.addEventListener('click', resetSubCategoryForm);
+      elements.closeSubCategoryBtn.addEventListener('click', closeSubCategorySection);
+    }
+
+   console.log("B: about to register DOMContentLoaded listener");
+
+   document.addEventListener('DOMContentLoaded', async () => {
+
+    console.log("STEP 1");
+
+    // Blocks all page interaction until a signed-in, allow-listed admin
+    // account is present. Real enforcement happens in firestore.rules.
+    // This now lives inside the listener (not as a top-level await) and is
+    // wrapped in try/catch so a failure here can't silently kill the whole
+    // module before the listener even gets attached.
+    try {
+      console.log("STEP 1a: calling guardAdmin(app)");
+      await guardAdmin(app);
+      console.log("STEP 1b: guardAdmin(app) resolved OK");
+    } catch (err) {
+      console.error("STEP 1 CRASH POINT: guardAdmin(app) threw/rejected:", err);
+      setStatus(`Admin check failed: ${err && err.message ? err.message : err}`, 'error');
+      return; // stop here — don't wire up the rest of the admin UI
+    }
+
+    console.log("STEP 2: attaching listeners");
+
+    attachListeners();
+
+    console.log("STEP 3: setting price field visibility");
+
+    updateCategoryPriceFieldsVisibility();
+
+    console.log("STEP 4: loading categories");
+
+    await loadCategories();
+
+    console.log("STEP 5: loading mock tests");
+
+    await loadMockTests();
+
+    console.log("STEP 6: init complete");
+});
+  </script>
 </body>
 </html>
