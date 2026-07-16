@@ -292,3 +292,49 @@ export async function queryDocumentsByField(env, collection, fieldName, value) {
       };
     });
 }
+/**
+ * Generic multi-field query.
+ * filters = [
+ *   { field:'mobile', op:'==', value:'9999999999' },
+ *   { field:'couponCode', op:'==', value:'ABC50' }
+ * ]
+ */
+export async function queryDocuments(env, collection, filters) {
+  let results = null;
+
+  for (const filter of filters) {
+    const docs = await queryDocumentsByField(
+      env,
+      collection,
+      filter.field,
+      filter.value
+    );
+
+    if (results === null) {
+      results = docs;
+      continue;
+    }
+
+    results = results.filter(existing =>
+      docs.some(d => d.id === existing.id)
+    );
+  }
+
+  return results || [];
+}
+/**
+ * Creates a document only if it does not already exist.
+ * Throws { code:'ALREADY_EXISTS' } when the document exists.
+ */
+export async function createDocument(env, collection, docId, fields) {
+
+  const existing = await getDocument(env, collection, docId);
+
+  if (existing) {
+    const err = new Error('ALREADY_EXISTS');
+    err.code = 'ALREADY_EXISTS';
+    throw err;
+  }
+
+  return await setDocument(env, collection, docId, fields);
+}
