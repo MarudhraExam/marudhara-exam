@@ -1,1 +1,424 @@
+/**
+ * android/css/app.css
+ *
+ * Marudhara Exam — Android Application Visual Layer
+ * ----------------------------------------------------
+ * This stylesheet is loaded ONLY inside the official Marudhara Exam
+ * Android application (see android/js/loader.js). It is injected into
+ * <head> AFTER every page's own CSS/inline <style>, so it can safely
+ * override the site's existing rules purely through source order —
+ * no !important, no specificity hacks.
+ *
+ * Every selector in this file is scoped under html.android-app so it
+ * NEVER affects the desktop site, mobile browsers, or tablet browsers.
+ * Nothing here touches HTML, JavaScript, Firebase, payments, login,
+ * admin panels, mock-test logic, or result logic — this is presentation
+ * only, reusing the project's real, existing classes:
+ *
+ *   - Main site   : style.css, index.html, downloads.html, omr.html,
+ *                   results.html, test.html, vacancy*.html,
+ *                   rpsc/rssb-papers.html, daily-suja-sar.html,
+ *                   daily-sujas-quiz.html, student-corner.html
+ *   - Mock Tests  : mock-tests/index.html, category.html, confirm.html,
+ *                   exam.html, result.html, account.html, payment.html
+ *
+ * Goal: a compact, Material 3 inspired, premium native feel — without
+ * ever duplicating or fighting the site's existing design language.
+ */
 
+/* =====================================================================
+   Variables
+   Local design tokens for this Android layer only. These do not
+   replace the site's own (hard-coded) color palette — they only give
+   this stylesheet consistent, reusable values for radius/spacing/
+   elevation so the Android overrides stay uniform across every page.
+   ===================================================================== */
+
+html.android-app {
+  --android-safe-top: env(safe-area-inset-top, 0px);
+  --android-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --android-safe-left: env(safe-area-inset-left, 0px);
+  --android-safe-right: env(safe-area-inset-right, 0px);
+
+  --android-radius-sm: 12px;
+  --android-radius-md: 16px;
+  --android-radius-lg: 20px;
+  --android-radius-pill: 999px;
+
+  --android-space-xs: 6px;
+  --android-space-sm: 10px;
+  --android-space-md: 14px;
+  --android-space-lg: 20px;
+
+  --android-elevation-1: 0 2px 8px rgba(15, 26, 48, 0.08);
+  --android-elevation-2: 0 8px 20px rgba(15, 26, 48, 0.1);
+
+  --android-touch-height: 48px;
+}
+
+/* =====================================================================
+   Safe Area
+   Applied at the body level so it works uniformly across every page,
+   regardless of whether that page uses a <header> tag or not. Fixed
+   position overlays (modals, admin preview badge) are handled
+   separately below since fixed elements ignore body padding.
+   ===================================================================== */
+
+html.android-app body {
+  padding-top: var(--android-safe-top);
+  padding-bottom: var(--android-safe-bottom);
+  padding-left: var(--android-safe-left);
+  padding-right: var(--android-safe-right);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fixed-position overlays must add the safe area on top of their own
+   inset:0 / padding, since body padding does not apply to them. */
+html.android-app .modal-overlay,
+html.android-app #confirmOverlay {
+  padding-top: calc(18px + var(--android-safe-top));
+  padding-bottom: calc(18px + var(--android-safe-bottom));
+  padding-left: calc(18px + var(--android-safe-left));
+  padding-right: calc(18px + var(--android-safe-right));
+}
+
+html.android-app .admin-preview-badge {
+  top: calc(10px + var(--android-safe-top));
+  right: calc(10px + var(--android-safe-right));
+}
+
+/* Sticky sidebar in the exam screen should not tuck under the status
+   bar area on tall/notched screens. */
+html.android-app .palette-card {
+  top: calc(20px + var(--android-safe-top));
+}
+
+/* =====================================================================
+   Layout
+   Compact the generic page wrappers used across the site. Reduces
+   large desktop-oriented gaps without changing the grid structure.
+   ===================================================================== */
+
+html.android-app .container {
+  padding: var(--android-space-lg) var(--android-space-md);
+}
+
+html.android-app .page-shell {
+  padding: var(--android-space-lg) var(--android-space-md) 28px;
+}
+
+html.android-app .features {
+  padding: 32px 5%;
+}
+
+html.android-app .offer-section {
+  padding: 0 var(--android-space-md);
+  margin: var(--android-space-md) auto;
+}
+
+html.android-app .hero-banner img {
+  border-radius: 0;
+}
+
+/* =====================================================================
+   Header
+   Compact height and spacing. Overlap with the status bar is already
+   prevented by the body-level safe-area padding above; this section
+   only tightens the header's own visual size for a native feel.
+   ===================================================================== */
+
+html.android-app header {
+  padding: var(--android-space-md) 5%;
+  gap: var(--android-space-sm);
+}
+
+html.android-app .brand .logo,
+html.android-app .logo:not(img) {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--android-radius-sm);
+}
+
+html.android-app .brand h1 {
+  font-size: 1.4rem;
+}
+
+html.android-app .brand small {
+  font-size: 0.85rem;
+}
+
+html.android-app .logo img {
+  height: 54px;
+}
+
+/* =====================================================================
+   Navigation
+   Main site top nav and the mock-tests top-action button rows.
+   ===================================================================== */
+
+html.android-app nav {
+  gap: var(--android-space-xs);
+}
+
+html.android-app nav a {
+  margin-left: 0;
+  font-size: 15px;
+  padding: 8px 10px;
+}
+
+html.android-app .top-actions {
+  gap: var(--android-space-xs);
+}
+
+html.android-app .top-actions a,
+html.android-app .top-actions button {
+  padding: 10px var(--android-space-md);
+  border-radius: var(--android-radius-pill);
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* =====================================================================
+   Cards
+   Every card-shaped surface across the site (home features, offer
+   banners, mock category/test cards, result cards, palettes, papers,
+   dashboard rows) gets a consistent radius, softer elevation, and
+   tighter internal spacing.
+   ===================================================================== */
+
+html.android-app .card,
+html.android-app .test-card,
+html.android-app .offer-card,
+html.android-app .question-card,
+html.android-app .palette-card,
+html.android-app .summary-card,
+html.android-app .question-review-card,
+html.android-app .empty-state,
+html.android-app .paper,
+html.android-app .mock-row,
+html.android-app .category-summary,
+html.android-app .table-wrap,
+html.android-app .profile-card {
+  border-radius: var(--android-radius-lg);
+  box-shadow: var(--android-elevation-1);
+}
+
+html.android-app .card:hover,
+html.android-app .test-card:hover,
+html.android-app .summary-card:hover {
+  box-shadow: var(--android-elevation-2);
+}
+
+html.android-app .card {
+  padding: var(--android-space-lg);
+}
+
+html.android-app .card-body,
+html.android-app .test-card,
+html.android-app .question-review-card {
+  padding: var(--android-space-lg);
+}
+
+html.android-app .paper,
+html.android-app .mock-row {
+  padding: var(--android-space-md);
+  border-radius: var(--android-radius-md);
+}
+
+html.android-app .cards,
+html.android-app .grid,
+html.android-app .tests-grid {
+  gap: var(--android-space-md);
+}
+
+/* =====================================================================
+   Buttons
+   Consistent, touch-friendly Material-style buttons across every
+   button-* class and bare <button> elements used by the OMR, results,
+   test, and daily quiz pages.
+   ===================================================================== */
+
+html.android-app button,
+html.android-app .button-primary,
+html.android-app .button-secondary,
+html.android-app .button-coupon-apply,
+html.android-app .button-coupon-remove,
+html.android-app .filter-button,
+html.android-app .nav-buttons button,
+html.android-app .nav-controls button,
+html.android-app .submit-card button {
+  min-height: var(--android-touch-height);
+  border-radius: var(--android-radius-md);
+  font-weight: 700;
+}
+
+html.android-app .button-primary,
+html.android-app .button-secondary,
+html.android-app .button-coupon-apply,
+html.android-app .button-coupon-remove {
+  padding: 13px var(--android-space-lg);
+}
+
+html.android-app .badge,
+html.android-app .status-pill {
+  border-radius: var(--android-radius-pill);
+  padding: 8px 14px;
+}
+
+html.android-app .palette-item,
+html.android-app .question-pill {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+html.android-app button:active,
+html.android-app .button-primary:active,
+html.android-app .button-secondary:active,
+html.android-app .card:active,
+html.android-app .test-card:active {
+  transform: scale(0.98);
+}
+
+/* =====================================================================
+   Forms
+   Consistent, comfortable, rounded inputs and selects across the OMR
+   form, results search, login/signup modal, coupon fields, and the
+   mock exam confirmation form.
+   ===================================================================== */
+
+html.android-app input,
+html.android-app select,
+html.android-app .form-group input,
+html.android-app .coupon-input,
+html.android-app .language-select {
+  min-height: var(--android-touch-height);
+  border-radius: var(--android-radius-sm);
+  font-size: 16px;
+  padding: 12px var(--android-space-md);
+}
+
+html.android-app .options-list label {
+  padding: var(--android-space-md);
+  border-radius: var(--android-radius-sm);
+  min-height: var(--android-touch-height);
+  display: flex;
+  align-items: center;
+}
+
+/* =====================================================================
+   Dialogs
+   The login / create account / forgot password modal (mock-tests) and
+   the confirm-exit overlay (student-mock) are centered, responsive,
+   and safe-area aware (see the Safe Area section above for insets).
+   ===================================================================== */
+
+html.android-app .modal-box,
+html.android-app .confirm-panel {
+  width: 100%;
+  max-width: 380px;
+  border-radius: var(--android-radius-lg);
+  padding: var(--android-space-lg);
+  box-shadow: var(--android-elevation-2);
+}
+
+/* =====================================================================
+   Mock Test
+   Exam-taking screen: compact question card, touch-friendly answer
+   palette, and a timer/submit area that stays easy to reach on phones.
+   ===================================================================== */
+
+html.android-app .exam-grid {
+  gap: var(--android-space-md);
+}
+
+html.android-app .meta-list {
+  gap: var(--android-space-sm);
+}
+
+html.android-app .meta-item {
+  border-radius: var(--android-radius-sm);
+  padding: var(--android-space-sm) var(--android-space-md);
+}
+
+html.android-app .palette-grid {
+  gap: var(--android-space-xs);
+}
+
+html.android-app .timer-box {
+  border-radius: var(--android-radius-md);
+  padding: 12px var(--android-space-md);
+}
+
+html.android-app .nav-buttons {
+  gap: var(--android-space-sm);
+}
+
+/* =====================================================================
+   Result
+   Score summary, answer-review palette, and option chips get the same
+   consistent radius/spacing treatment as the rest of the app.
+   ===================================================================== */
+
+html.android-app .card-grid,
+html.android-app .result-grid {
+  gap: var(--android-space-md);
+}
+
+html.android-app .summary-row,
+html.android-app .details-item,
+html.android-app .neutral-note,
+html.android-app .review-stats {
+  border-radius: var(--android-radius-md);
+  padding: var(--android-space-sm) var(--android-space-md);
+}
+
+html.android-app .option-chip {
+  border-radius: var(--android-radius-sm);
+  padding: var(--android-space-md);
+}
+
+html.android-app .question-palette {
+  gap: var(--android-space-xs);
+}
+
+/* =====================================================================
+   Downloads
+   RPSC/RSSB paper listings and the Daily Sujas Sar PDF library share
+   the same compact card treatment as the rest of the app.
+   ===================================================================== */
+
+html.android-app .buttons a,
+html.android-app .view-btn,
+html.android-app .download-btn {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--android-radius-sm);
+}
+
+/* =====================================================================
+   Utilities
+   Responsive tables and images so nothing overflows the app's
+   narrower viewport. Horizontal scroll is enabled only where a table
+   genuinely needs it; vertical scrolling is never disabled.
+   ===================================================================== */
+
+html.android-app .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html.android-app table {
+  font-size: 0.92rem;
+}
+
+html.android-app th,
+html.android-app td {
+  padding: var(--android-space-sm) var(--android-space-md);
+}
+
+html.android-app img {
+  max-width: 100%;
+  height: auto;
+}
