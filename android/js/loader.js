@@ -37,7 +37,7 @@
   const VERSION = "1.0.0";
 
   /** Base path where the Android-only assets live. */
-  const ANDROID_BASE_PATH = "android/";
+  const ANDROID_BASE_PATH = "/android/";
 
   /** Assets to load, in required order: CSS first, then bridge, then app. */
   const ASSETS = [
@@ -128,6 +128,26 @@
   }
 
   /**
+   * Safely adds the "android-app" class to document.body.
+   * If body already exists, the class is added immediately.
+   * Otherwise, waits for DOMContentLoaded once and then adds it.
+   */
+  function addBodyAndroidClass() {
+    if (document.body) {
+      document.body.classList.add("android-app");
+      return;
+    }
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        document.body.classList.add("android-app");
+      },
+      { once: true }
+    );
+  }
+
+  /**
    * Loads a single asset descriptor ({ type, path }) using the
    * appropriate loader function.
    *
@@ -197,7 +217,7 @@
       }
 
       document.documentElement.classList.add("android-app");
-      document.body.classList.add("android-app");
+      addBodyAndroidClass();
 
       this.__loadPromise = loadAssetsInOrder().then(() => {
         this.loaded = true;
@@ -216,6 +236,7 @@
         version: this.version,
         isAndroid: this.isAndroid,
         loaded: this.loaded,
+        assets: ASSETS.map((asset) => asset.path),
       };
     },
   };
