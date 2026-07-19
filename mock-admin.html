@@ -925,9 +925,21 @@ No Sub Categories
           <div class="status-bar" id="excelUploadStatusBar">Select a mock test, choose a worksheet, and upload your question bank.</div>
           <div class="form-grid">
             <label>
-              Select mock test
+              Category
+              <select id="mockUploadCategorySelect">
+                <option value="">Select Category</option>
+              </select>
+            </label>
+            <label id="mockUploadSubCategoryWrapper" style="display:none;">
+              Sub Category
+              <select id="mockUploadSubCategorySelect">
+                <option value="">Select Sub Category</option>
+              </select>
+            </label>
+            <label>
+              Mock Test
               <select id="mockUploadSelect">
-                <option value="">Loading mock tests...</option>
+                <option value="">Select category first</option>
               </select>
             </label>
             <label>
@@ -1128,6 +1140,13 @@ No Sub Categories
       setupPaymentBtn: document.getElementById('setupPaymentBtn'),
       excelUploadStatusBar: document.getElementById('excelUploadStatusBar'),
       mockUploadSelect: document.getElementById('mockUploadSelect'),
+      // Excel Upload filters: Category -> Sub Category -> Mock Test, so the
+      // "Select mock test" dropdown only ever lists mocks that belong to the
+      // chosen Category (+ Sub Category). Upload logic itself is unchanged —
+      // this only narrows what appears in mockUploadSelect.
+      mockUploadCategorySelect: document.getElementById('mockUploadCategorySelect'),
+      mockUploadSubCategoryWrapper: document.getElementById('mockUploadSubCategoryWrapper'),
+      mockUploadSubCategorySelect: document.getElementById('mockUploadSubCategorySelect'),
       mockStatusBar: document.getElementById('mockStatusBar'),
       mockCategorySelect: document.getElementById('mockCategorySelect'),
       mockName: document.getElementById('mockName'),
@@ -1191,6 +1210,7 @@ No Sub Categories
     // Sub categories currently loaded for the Mock Test List filter bar
     // (separate from mockFormSubCategories used by the Publish form).
     let mockFilterSubCategories = [];
+    let mockUploadSubCategories = [];
 
     let editingCategoryId = null;
     let editingSubCategoryId = null;
@@ -1467,14 +1487,91 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       }
     }
 
+    // Populates the Excel Upload section's Category dropdown. Kept separate
+    // from renderCategoryDropdown() / renderMockFilterCategoryDropdown() so
+    // none of the three Category dropdowns interfere with each other.
+    function renderMockUploadCategoryDropdown() {
+      if (!elements.mockUploadCategorySelect) return;
+
+      if (!categories.length) {
+        elements.mockUploadCategorySelect.innerHTML = '<option value="">No categories available</option>';
+        return;
+      }
+
+      const previousValue = elements.mockUploadCategorySelect.value;
+      const options = ['<option value="">Select Category</option>'];
+      categories.forEach(category => {
+        options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`);
+      });
+      elements.mockUploadCategorySelect.innerHTML = options.join('');
+
+      if (previousValue && categories.some(category => category.id === previousValue)) {
+        elements.mockUploadCategorySelect.value = previousValue;
+      }
+    }
+
+    // Loads Sub Categories for the Category chosen in the Excel Upload
+    // section, populates the Sub Category dropdown, and refreshes the Mock
+    // Test dropdown. Mirrors handleMockFilterCategoryChange().
+    async function handleMockUploadCategoryChange() {
+      const categoryId = elements.mockUploadCategorySelect.value;
+      mockUploadSubCategories = [];
+      elements.mockUploadSubCategorySelect.innerHTML = '<option value="">Select Sub Category</option>';
+
+      if (!categoryId) {
+        elements.mockUploadSubCategoryWrapper.style.display = 'none';
+        renderMockUploadDropdown();
+        return;
+      }
+
+      const selectedCategory = categories.find(category => category.id === categoryId);
+
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        try {
+          mockUploadSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        } catch (error) {
+          console.error(error);
+          mockUploadSubCategories = [];
+        }
+
+        const options = ['<option value="">Select Sub Category</option>'];
+        mockUploadSubCategories.forEach(subCategory => {
+          options.push(`<option value="${escapeHtml(subCategory.id)}">${escapeHtml(subCategory.name)}</option>`);
+        });
+        elements.mockUploadSubCategorySelect.innerHTML = options.join('');
+        elements.mockUploadSubCategoryWrapper.style.display = '';
+      } else {
+        elements.mockUploadSubCategoryWrapper.style.display = 'none';
+      }
+
+      renderMockUploadDropdown();
+    }
+
+    // Lists only the mock tests belonging to the Category (+ Sub Category)
+    // currently selected in the Excel Upload section. Upload logic itself
+    // (uploadExcelBtn handler, importMockQuestions, Firestore writes) is
+    // completely unchanged — this only narrows what appears in the dropdown.
     function renderMockUploadDropdown() {
-      if (!mockTests.length) {
+      const categoryId = elements.mockUploadCategorySelect ? elements.mockUploadCategorySelect.value : '';
+      const subCategoryId = elements.mockUploadSubCategorySelect ? elements.mockUploadSubCategorySelect.value : '';
+
+      if (!categoryId) {
+        elements.mockUploadSelect.innerHTML = '<option value="">Select category first</option>';
+        return;
+      }
+
+      let filtered = mockTests.filter(mock => mock.categoryId === categoryId);
+      if (subCategoryId) {
+        filtered = filtered.filter(mock => mock.subCategoryId === subCategoryId);
+      }
+
+      if (!filtered.length) {
         elements.mockUploadSelect.innerHTML = '<option value="">No mock tests available</option>';
         return;
       }
 
       const options = ['<option value="">Select mock test</option>'];
-      mockTests.forEach(mock => {
+      filtered.forEach(mock => {
         const title = mock.title || mock.name || 'Untitled test';
         options.push(`<option value="${escapeHtml(mock.id)}">${escapeHtml(title)}</option>`);
       });
@@ -1707,15 +1804,22 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     // Mock Test List filter bar. Pure client-side filtering over the already
     // loaded `mockTests` array — no extra Firestore reads, no change to the
     // document structure. Rules (per requirements):
-    //   - No category selected            -> show everything
-    //   - Category selected only          -> show all mocks of that category
-    //   - Category + Sub Category selected -> show only that exact combination
+    //   - No category selected                                -> show nothing
+    //   - Category selected, category has Sub Categories,
+    //     Sub Category not yet selected                        -> show nothing
+    //   - Category selected (no Sub Categories on it)          -> show that category's mocks
+    //   - Category + Sub Category selected                     -> show only that exact combination
     function getFilteredMockTests() {
       const categoryId = elements.mockFilterCategorySelect ? elements.mockFilterCategorySelect.value : '';
       const subCategoryId = elements.mockFilterSubCategorySelect ? elements.mockFilterSubCategorySelect.value : '';
 
       if (!categoryId) {
-        return mockTests;
+        return [];
+      }
+
+      const selectedCategory = categories.find(category => category.id === categoryId);
+      if (selectedCategory && selectedCategory.hasSubCategory && !subCategoryId) {
+        return [];
       }
 
       let filtered = mockTests.filter(mock => mock.categoryId === categoryId);
@@ -1767,10 +1871,20 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     }
 
     function renderMockTests() {
+      const categoryId = elements.mockFilterCategorySelect ? elements.mockFilterCategorySelect.value : '';
+      const subCategoryId = elements.mockFilterSubCategorySelect ? elements.mockFilterSubCategorySelect.value : '';
+      const selectedCategory = categories.find(category => category.id === categoryId);
+      const needsSubCategory = Boolean(selectedCategory && selectedCategory.hasSubCategory && !subCategoryId);
+
       const filtered = getFilteredMockTests();
 
       if (elements.mockFilterCount) {
         elements.mockFilterCount.textContent = `${filtered.length} test${filtered.length === 1 ? '' : 's'}`;
+      }
+
+      if (!categoryId || needsSubCategory) {
+        elements.mockTestList.innerHTML = '<div class="placeholder-item" style="text-align:center;">Please select Category and Sub Category to view Mock Tests.</div>';
+        return;
       }
 
       if (!mockTests.length) {
@@ -1897,6 +2011,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         renderCategories();
         renderCategoryDropdown();
         renderMockFilterCategoryDropdown();
+        renderMockUploadCategoryDropdown();
         updateStats();
         setStatus(`Loaded ${categories.length} categories.`, 'success');
       } catch (error) {
@@ -2736,6 +2851,13 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       });
       elements.mockFilterSubCategorySelect.addEventListener('change', () => {
         renderMockTests();
+      });
+      // Excel Upload section: Category -> Sub Category -> Mock Test flow.
+      elements.mockUploadCategorySelect.addEventListener('change', () => {
+        handleMockUploadCategoryChange();
+      });
+      elements.mockUploadSubCategorySelect.addEventListener('change', () => {
+        renderMockUploadDropdown();
       });
       elements.saveSubCategoryBtn.addEventListener('click', saveSubCategory);
       elements.cancelSubCategoryBtn.addEventListener('click', resetSubCategoryForm);
