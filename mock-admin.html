@@ -813,6 +813,22 @@ No Sub Categories
           <div class="status-bar" id="mockStatusBar">Ready to publish mock tests.</div>
           <p style="margin:-10px 0 18px;color:#5f6f8f;font-size:0.92rem;">Free/Premium access and pricing are controlled entirely by the mock's <strong>Category</strong> (see Category Manager above). There is no per-mock pricing anymore.</p>
 
+          <!-- Bulk Upload feature: a mode switch above the existing form.
+               "Single Upload" (default) shows the original form unchanged.
+               "Bulk Upload" shows a new, separate form below it. Switching
+               modes only toggles which container is visible — none of the
+               Single Upload markup, ids, or logic are touched. -->
+          <div class="form-grid" style="margin-bottom:4px;">
+            <label>
+              Upload Mode
+              <select id="mockUploadModeSelect">
+                <option value="single" selected>Single Upload</option>
+                <option value="bulk">Bulk Upload</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="singleMockUploadSection">
           <div class="form-grid">
             <label>
               Category
@@ -871,6 +887,78 @@ No Sub Categories
           <div class="action-group">
             <button type="button" class="button-primary" id="publishMockBtn">Publish Mock Test</button>
             <button type="button" class="button-secondary" id="cancelMockBtn" hidden>Cancel Edit</button>
+          </div>
+          </div>
+
+          <!-- Bulk Upload UI: Category -> Sub Category -> count -> generated
+               per-mock Name/PDF Link fields -> single shared block of common
+               settings -> one "Create All Mock Tests" button. Hidden unless
+               Upload Mode = Bulk Upload. -->
+          <div id="bulkMockUploadSection" style="display:none;">
+            <div class="form-grid">
+              <label>
+                Category
+                <select id="bulkMockCategorySelect">
+                  <option value="">Select Category</option>
+                </select>
+              </label>
+              <label id="bulkMockSubCategoryWrapper" style="display:none;">
+                Sub Category
+                <select id="bulkMockSubCategorySelect">
+                  <option value="">Select Sub Category</option>
+                </select>
+              </label>
+              <label>
+                Number of Mock Tests
+                <input type="number" id="bulkMockCount" min="1" max="100" placeholder="e.g. 10" />
+              </label>
+            </div>
+            <div class="action-group">
+              <button type="button" class="button-secondary" id="bulkGenerateFormBtn">Generate Form</button>
+            </div>
+
+            <div id="bulkMockSharedSection" style="display:none;">
+              <hr class="mock-list-divider" />
+              <h3 style="margin-bottom:4px;color:#3f4e72;">Shared Information (applies to every mock below)</h3>
+              <div class="form-grid">
+                <label>
+                  Total Questions
+                  <input type="number" id="bulkMockQuestions" min="0" placeholder="Total number of questions" />
+                </label>
+                <label>
+                  Total Marks
+                  <input type="number" id="bulkMockMarks" min="0" placeholder="Total marks available" />
+                </label>
+                <label>
+                  Duration (Minutes)
+                  <input type="number" id="bulkMockDuration" min="0" placeholder="Duration in minutes" />
+                </label>
+                <label>
+                  Negative Marks
+                  <input type="number" id="bulkMockNegative" min="0" step="0.25" placeholder="Negative marks per wrong answer" />
+                </label>
+                <label>
+                  Passing Percentage
+                  <input type="number" id="bulkMockPassingPercentage" min="0" max="100" step="0.1" placeholder="Passing percentage" />
+                </label>
+                <label>
+                  Live Date
+                  <input type="date" id="bulkMockLiveDate" required />
+                </label>
+                <label>
+                  Live Time
+                  <input type="time" id="bulkMockLiveTime" required />
+                </label>
+              </div>
+
+              <hr class="mock-list-divider" />
+              <h3 style="margin-bottom:4px;color:#3f4e72;">Individual Mock Details</h3>
+              <div id="bulkMockIndividualList"></div>
+
+              <div class="action-group">
+                <button type="button" class="button-primary" id="createAllMocksBtn">Create All Mock Tests</button>
+              </div>
+            </div>
           </div>
 
           <hr class="mock-list-divider" />
@@ -1149,6 +1237,27 @@ No Sub Categories
       mockUploadSubCategorySelect: document.getElementById('mockUploadSubCategorySelect'),
       mockStatusBar: document.getElementById('mockStatusBar'),
       mockCategorySelect: document.getElementById('mockCategorySelect'),
+      // Bulk Upload feature: mode switch + the two form containers it toggles,
+      // plus every control inside the new Bulk Upload form. The Single Upload
+      // elements above (mockCategorySelect, mockName, etc.) are untouched.
+      mockUploadModeSelect: document.getElementById('mockUploadModeSelect'),
+      singleMockUploadSection: document.getElementById('singleMockUploadSection'),
+      bulkMockUploadSection: document.getElementById('bulkMockUploadSection'),
+      bulkMockCategorySelect: document.getElementById('bulkMockCategorySelect'),
+      bulkMockSubCategoryWrapper: document.getElementById('bulkMockSubCategoryWrapper'),
+      bulkMockSubCategorySelect: document.getElementById('bulkMockSubCategorySelect'),
+      bulkMockCount: document.getElementById('bulkMockCount'),
+      bulkGenerateFormBtn: document.getElementById('bulkGenerateFormBtn'),
+      bulkMockSharedSection: document.getElementById('bulkMockSharedSection'),
+      bulkMockQuestions: document.getElementById('bulkMockQuestions'),
+      bulkMockMarks: document.getElementById('bulkMockMarks'),
+      bulkMockDuration: document.getElementById('bulkMockDuration'),
+      bulkMockNegative: document.getElementById('bulkMockNegative'),
+      bulkMockPassingPercentage: document.getElementById('bulkMockPassingPercentage'),
+      bulkMockLiveDate: document.getElementById('bulkMockLiveDate'),
+      bulkMockLiveTime: document.getElementById('bulkMockLiveTime'),
+      bulkMockIndividualList: document.getElementById('bulkMockIndividualList'),
+      createAllMocksBtn: document.getElementById('createAllMocksBtn'),
       mockName: document.getElementById('mockName'),
       mockQuestions: document.getElementById('mockQuestions'),
       mockMarks: document.getElementById('mockMarks'),
@@ -1211,6 +1320,7 @@ No Sub Categories
     // (separate from mockFormSubCategories used by the Publish form).
     let mockFilterSubCategories = [];
     let mockUploadSubCategories = [];
+    let bulkMockSubCategories = [];
 
     let editingCategoryId = null;
     let editingSubCategoryId = null;
@@ -2012,6 +2122,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         renderCategoryDropdown();
         renderMockFilterCategoryDropdown();
         renderMockUploadCategoryDropdown();
+        renderBulkMockCategoryDropdown();
         updateStats();
         setStatus(`Loaded ${categories.length} categories.`, 'success');
       } catch (error) {
@@ -2421,6 +2532,16 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       await batch.commit();
     }
 
+    // Shared creation helper: writes a new mock test document exactly the way
+    // saveMockTest() already does for a brand-new mock. Bulk Upload calls this
+    // same function once per mock instead of duplicating the Firestore logic.
+    async function createMockDocument(mockPayload) {
+      await addDoc(collection(db, COLLECTIONS.tests), {
+        ...mockPayload,
+        createdAt: serverTimestamp()
+      });
+    }
+
     async function saveMockTest() {
       const categoryId = elements.mockCategorySelect.value;
       const title = elements.mockName.value.trim();
@@ -2506,10 +2627,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           });
           setMockStatus('Mock test updated successfully.', 'success');
         } else {
-          await addDoc(collection(db, COLLECTIONS.tests), {
-            ...mockPayload,
-            createdAt: serverTimestamp()
-          });
+          await createMockDocument(mockPayload);
           setMockStatus('Mock test published successfully.', 'success');
         }
 
@@ -2533,6 +2651,235 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       } catch (error) {
         console.error(error);
         setMockStatus('Failed to delete mock test. See console for details.', 'error');
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // BULK UPLOAD FEATURE
+    // Adds a second mode to the existing Mock Test Manager form. Single
+    // Upload (default) is completely unchanged. Bulk Upload lets the admin
+    // fill shared settings once and generate N sets of Mock Name / PDF Link
+    // fields, then creates every mock using the same createMockDocument()
+    // helper the Single Upload form already uses — no new Firestore
+    // collection, no schema change, no duplicated validation/business logic.
+    // ---------------------------------------------------------------------
+
+    function switchMockUploadMode() {
+      const mode = elements.mockUploadModeSelect.value;
+      if (mode === 'bulk') {
+        elements.singleMockUploadSection.style.display = 'none';
+        elements.bulkMockUploadSection.style.display = '';
+      } else {
+        elements.bulkMockUploadSection.style.display = 'none';
+        elements.singleMockUploadSection.style.display = '';
+      }
+    }
+
+    // Populates the Bulk Upload Category dropdown. Kept separate from the
+    // other Category dropdowns on this page so none of them interfere.
+    function renderBulkMockCategoryDropdown() {
+      if (!elements.bulkMockCategorySelect) return;
+
+      if (!categories.length) {
+        elements.bulkMockCategorySelect.innerHTML = '<option value="">No categories available</option>';
+        return;
+      }
+
+      const previousValue = elements.bulkMockCategorySelect.value;
+      const options = ['<option value="">Select Category</option>'];
+      categories.forEach(category => {
+        options.push(`<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}</option>`);
+      });
+      elements.bulkMockCategorySelect.innerHTML = options.join('');
+
+      if (previousValue && categories.some(category => category.id === previousValue)) {
+        elements.bulkMockCategorySelect.value = previousValue;
+      }
+    }
+
+    // Loads Sub Categories for the Category chosen in the Bulk Upload form.
+    // Mirrors handleMockCategoryChange() / handleMockFilterCategoryChange().
+    async function handleBulkMockCategoryChange() {
+      const categoryId = elements.bulkMockCategorySelect.value;
+      bulkMockSubCategories = [];
+      elements.bulkMockSubCategorySelect.innerHTML = '<option value="">Select Sub Category</option>';
+
+      // Category changed -> any previously generated form is stale.
+      elements.bulkMockSharedSection.style.display = 'none';
+      elements.bulkMockIndividualList.innerHTML = '';
+
+      if (!categoryId) {
+        elements.bulkMockSubCategoryWrapper.style.display = 'none';
+        return;
+      }
+
+      const selectedCategory = categories.find(category => category.id === categoryId);
+
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        try {
+          bulkMockSubCategories = await fetchSubCategoriesForCategory(categoryId);
+        } catch (error) {
+          console.error(error);
+          bulkMockSubCategories = [];
+        }
+
+        const options = ['<option value="">Select Sub Category</option>'];
+        bulkMockSubCategories.forEach(subCategory => {
+          options.push(`<option value="${escapeHtml(subCategory.id)}">${escapeHtml(subCategory.name)}</option>`);
+        });
+        elements.bulkMockSubCategorySelect.innerHTML = options.join('');
+        elements.bulkMockSubCategoryWrapper.style.display = '';
+      } else {
+        elements.bulkMockSubCategoryWrapper.style.display = 'none';
+      }
+    }
+
+    // Renders one Mock Name / PDF Link row template for the generated form.
+    function formatBulkMockRow(index) {
+      return `
+        <div class="form-grid bulk-mock-row" style="padding:16px;border:1px dashed #dbe2f6;border-radius:14px;margin-bottom:14px;">
+          <label style="grid-column:1 / -1;margin-bottom:-6px;"><strong>Mock ${index + 1}</strong></label>
+          <label>
+            Mock Test Name
+            <input type="text" class="bulk-mock-name" data-index="${index}" placeholder="Enter mock test name" />
+          </label>
+          <label>
+            Question Paper PDF Link
+            <input type="url" class="bulk-mock-pdf" data-index="${index}" placeholder="https://raw.githubusercontent.com/..." />
+          </label>
+        </div>`;
+    }
+
+    // Step 3/4: validates Category, Sub Category (if applicable) and count,
+    // then dynamically builds `count` Mock Name / PDF Link field pairs plus
+    // the one-time Shared Information block.
+    function generateBulkMockForm() {
+      const categoryId = elements.bulkMockCategorySelect.value;
+      if (!categoryId) {
+        setMockStatus('Please select a category for bulk upload.', 'error');
+        return;
+      }
+
+      const selectedCategory = categories.find(item => item.id === categoryId);
+      if (selectedCategory && selectedCategory.hasSubCategory && !elements.bulkMockSubCategorySelect.value) {
+        setMockStatus('Please select a sub category for bulk upload.', 'error');
+        return;
+      }
+
+      const count = Number(elements.bulkMockCount.value);
+      if (!Number.isInteger(count) || count < 1) {
+        setMockStatus('Number of mock tests must be a whole number of at least 1.', 'error');
+        return;
+      }
+
+      const rows = [];
+      for (let i = 0; i < count; i++) {
+        rows.push(formatBulkMockRow(i));
+      }
+      elements.bulkMockIndividualList.innerHTML = rows.join('');
+      elements.bulkMockSharedSection.style.display = '';
+      setMockStatus(`Generated ${count} mock test row${count === 1 ? '' : 's'}. Fill in the shared and individual details below.`, 'info');
+    }
+
+    // Step 5: validates shared fields (same rules as saveMockTest) plus every
+    // individual Mock Name / PDF Link, then calls createMockDocument() once
+    // per mock — reusing the exact same creation logic as Single Upload.
+    async function createAllBulkMocks() {
+      const categoryId = elements.bulkMockCategorySelect.value;
+      const selectedCategory = categories.find(item => item.id === categoryId);
+      let subCategoryId = null;
+      if (selectedCategory && selectedCategory.hasSubCategory) {
+        subCategoryId = elements.bulkMockSubCategorySelect.value || '';
+        if (!subCategoryId) {
+          setMockStatus('Please select a sub category for bulk upload.', 'error');
+          return;
+        }
+      }
+
+      const totalQuestions = Number(elements.bulkMockQuestions.value);
+      const totalMarks = Number(elements.bulkMockMarks.value);
+      const duration = Number(elements.bulkMockDuration.value);
+      const negativeMarks = Number(elements.bulkMockNegative.value);
+      const passingPercentageRaw = elements.bulkMockPassingPercentage.value.trim();
+      const passingPercentage = passingPercentageRaw === '' ? NaN : Number(passingPercentageRaw);
+      const liveDate = elements.bulkMockLiveDate.value;
+      const liveTime = elements.bulkMockLiveTime.value;
+
+      if (!Number.isFinite(totalQuestions) || totalQuestions < 0) {
+        setMockStatus('Total questions must be a non-negative number.', 'error');
+        return;
+      }
+      if (passingPercentageRaw === '' || !Number.isFinite(passingPercentage) || passingPercentage < 0 || passingPercentage > 100) {
+        setMockStatus('Passing percentage must be a number between 0 and 100.', 'error');
+        return;
+      }
+      if (!liveDate) {
+        setMockStatus('Live Date is required.', 'error');
+        return;
+      }
+      if (!liveTime) {
+        setMockStatus('Live Time is required.', 'error');
+        return;
+      }
+
+      const nameInputs = elements.bulkMockIndividualList.querySelectorAll('.bulk-mock-name');
+      const pdfInputs = elements.bulkMockIndividualList.querySelectorAll('.bulk-mock-pdf');
+
+      if (!nameInputs.length) {
+        setMockStatus('Generate the form before creating mock tests.', 'error');
+        return;
+      }
+
+      const mocks = [];
+      for (let i = 0; i < nameInputs.length; i++) {
+        const title = nameInputs[i].value.trim();
+        const pdfLink = pdfInputs[i].value.trim();
+
+        if (!title) {
+          setMockStatus(`Mock ${i + 1}: Mock test name is required.`, 'error');
+          return;
+        }
+        if (!pdfLink) {
+          setMockStatus(`Mock ${i + 1}: Question Paper PDF Link is required.`, 'error');
+          return;
+        }
+
+        mocks.push({ title, pdfLink });
+      }
+
+      const liveDateTime = `${liveDate}T${liveTime}:00`;
+
+      try {
+        setMockStatus(`Creating ${mocks.length} mock tests...`, 'info');
+
+        for (const mock of mocks) {
+          const mockPayload = {
+            categoryId,
+            subCategoryId,
+            title: mock.title,
+            totalQuestions,
+            totalMarks: totalMarks || 0,
+            duration: duration || 0,
+            negativeMarks: Number.isFinite(negativeMarks) ? negativeMarks : 0,
+            passingPercentage,
+            pdfLink: mock.pdfLink || null,
+            liveDate,
+            liveTime,
+            liveDateTime,
+            updatedAt: serverTimestamp()
+          };
+
+          await createMockDocument(mockPayload);
+        }
+
+        setMockStatus(`Created ${mocks.length} mock tests successfully.`, 'success');
+        elements.bulkMockIndividualList.innerHTML = '';
+        elements.bulkMockSharedSection.style.display = 'none';
+        elements.bulkMockCount.value = '';
+        await loadMockTests();
+      } catch (error) {
+        console.error(error);
+        setMockStatus('Unable to create all mock tests. Check console for details.', 'error');
       }
     }
 
@@ -2859,6 +3206,18 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       elements.mockUploadSubCategorySelect.addEventListener('change', () => {
         renderMockUploadDropdown();
       });
+      // Bulk Upload feature wiring.
+      elements.mockUploadModeSelect.addEventListener('change', switchMockUploadMode);
+      elements.bulkMockCategorySelect.addEventListener('change', () => {
+        handleBulkMockCategoryChange();
+      });
+      elements.bulkMockSubCategorySelect.addEventListener('change', () => {
+        // Sub Category changed -> previously generated rows are stale.
+        elements.bulkMockSharedSection.style.display = 'none';
+        elements.bulkMockIndividualList.innerHTML = '';
+      });
+      elements.bulkGenerateFormBtn.addEventListener('click', generateBulkMockForm);
+      elements.createAllMocksBtn.addEventListener('click', createAllBulkMocks);
       elements.saveSubCategoryBtn.addEventListener('click', saveSubCategory);
       elements.cancelSubCategoryBtn.addEventListener('click', resetSubCategoryForm);
       elements.closeSubCategoryBtn.addEventListener('click', closeSubCategorySection);
