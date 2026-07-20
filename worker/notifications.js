@@ -120,10 +120,10 @@ async function importPrivateKey(pem) {
  * which is available natively in the Workers runtime — no extra deps.
  */
 async function getAccessToken(env) {
-  const clientEmail = env.FCM_CLIENT_EMAIL;
-  const rawPrivateKey = env.FCM_PRIVATE_KEY;
+  const clientEmail = env.FIREBASE_CLIENT_EMAIL;
+  const rawPrivateKey = env.FIREBASE_PRIVATE_KEY;
 
-  if (!clientEmail || !rawPrivateKey || !env.FCM_PROJECT_ID) {
+  if (!clientEmail || !rawPrivateKey || !env.FIREBASE_PROJECT_ID) {
     throw new Error(
       "FCM credentials are not configured. Set FCM_PROJECT_ID, FCM_CLIENT_EMAIL and FCM_PRIVATE_KEY as Worker environment variables."
     );
