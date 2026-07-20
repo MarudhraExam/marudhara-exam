@@ -884,6 +884,30 @@ No Sub Categories
             </label>
           </div>
 
+          <!-- Notification Configuration (Step 4A): saves config only, does not send anything. -->
+          <div style="border:1px solid #dbe2f6;padding:15px;border-radius:10px;margin-top:15px;">
+            <label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+              <input type="checkbox" id="mockNotifEnabled" checked style="width:auto;margin:0;">
+              🔔 Send Push Notification
+            </label>
+            <label>
+              Notification Title
+              <input type="text" id="mockNotifTitle" placeholder="Auto-filled from Mock Test Name" />
+            </label>
+            <label>
+              Notification Message
+              <input type="text" id="mockNotifMessage" placeholder="Auto-filled" />
+            </label>
+            <label>
+              Priority
+              <select id="mockNotifPriority">
+                <option value="High">High</option>
+                <option value="Normal" selected>Normal</option>
+                <option value="Silent">Silent</option>
+              </select>
+            </label>
+          </div>
+
           <div class="action-group">
             <button type="button" class="button-primary" id="publishMockBtn">Publish Mock Test</button>
             <button type="button" class="button-secondary" id="cancelMockBtn" hidden>Cancel Edit</button>
@@ -1279,6 +1303,11 @@ No Sub Categories
       // FEATURE 1: Live Date & Live Time form fields
       mockLiveDate: document.getElementById('mockLiveDate'),
       mockLiveTime: document.getElementById('mockLiveTime'),
+      // Notification Configuration (Step 4A): config only, nothing is sent
+      mockNotifEnabled: document.getElementById('mockNotifEnabled'),
+      mockNotifTitle: document.getElementById('mockNotifTitle'),
+      mockNotifMessage: document.getElementById('mockNotifMessage'),
+      mockNotifPriority: document.getElementById('mockNotifPriority'),
       // FEATURE 6: Mock dashboard stat elements
       mockStatTotal: document.getElementById('mockStatTotal'),
       mockStatLive: document.getElementById('mockStatLive'),
@@ -1352,6 +1381,84 @@ No Sub Categories
       elements.originalPriceWrapper.style.display = isFree ? 'none' : '';
       elements.offerPriceWrapper.style.display = isFree ? 'none' : '';
     }
+
+    // ---- Notification Configuration (Step 4A: config only, nothing is sent) ----
+    // Wires the "Send Push Notification" checkbox + Title/Message/Priority
+    // fields added to the Mock Test Manager Publish form. Returns helpers to
+    // read the current values (for saving) and to reset/populate the block.
+    function setupNotificationConfig(ids, getDefaultTitle, getDefaultMessage, watchIds) {
+      const enabledEl = document.getElementById(ids.enabled);
+      const titleEl = document.getElementById(ids.title);
+      const messageEl = document.getElementById(ids.message);
+      const priorityEl = document.getElementById(ids.priority);
+      if (!enabledEl || !titleEl || !messageEl || !priorityEl) return null;
+
+      let titleTouched = false;
+      let messageTouched = false;
+
+      function applyEnabledState() {
+        const on = enabledEl.checked;
+        titleEl.disabled = !on;
+        messageEl.disabled = !on;
+        priorityEl.disabled = !on;
+      }
+
+      function autoFill() {
+        if (!titleTouched && getDefaultTitle) titleEl.value = getDefaultTitle();
+        if (!messageTouched && getDefaultMessage) messageEl.value = getDefaultMessage();
+      }
+
+      titleEl.addEventListener('input', () => { titleTouched = true; });
+      messageEl.addEventListener('input', () => { messageTouched = true; });
+      enabledEl.addEventListener('change', applyEnabledState);
+
+      (watchIds || []).forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', autoFill);
+      });
+
+      applyEnabledState();
+
+      return {
+        getData() {
+          return {
+            notificationEnabled: enabledEl.checked,
+            notificationTitle: titleEl.value.trim(),
+            notificationMessage: messageEl.value.trim(),
+            notificationPriority: priorityEl.value
+          };
+        },
+        reset() {
+          enabledEl.checked = true;
+          priorityEl.value = 'Normal';
+          titleEl.value = '';
+          messageEl.value = '';
+          titleTouched = false;
+          messageTouched = false;
+          applyEnabledState();
+        },
+        populate(data) {
+          if (!data) { this.reset(); return; }
+          enabledEl.checked = data.notificationEnabled !== false;
+          titleEl.value = data.notificationTitle || '';
+          messageEl.value = data.notificationMessage || '';
+          priorityEl.value = data.notificationPriority || 'Normal';
+          titleTouched = !!data.notificationTitle;
+          messageTouched = !!data.notificationMessage;
+          applyEnabledState();
+        }
+      };
+    }
+
+    const mockNotif = setupNotificationConfig(
+      { enabled: 'mockNotifEnabled', title: 'mockNotifTitle', message: 'mockNotifMessage', priority: 'mockNotifPriority' },
+      () => elements.mockName.value,
+      () => {
+        const name = elements.mockName.value;
+        return name ? ('New Mock Test Published: ' + name) : '';
+      },
+      ['mockName']
+    );
 
     function setMockStatus(message, type = 'info') {
       elements.mockStatusBar.textContent = message;
@@ -2085,6 +2192,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       mockFormSubCategories = [];
       elements.mockSubCategoryWrapper.style.display = 'none';
       elements.mockSubCategorySelect.innerHTML = '<option value="">Select sub category</option>';
+      if (mockNotif) mockNotif.reset();
       setMockStatus('Ready to publish mock tests.');
     }
 
@@ -2102,6 +2210,14 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       // safely fall back to empty values instead of crashing.
       elements.mockLiveDate.value = mock.liveDate || '';
       elements.mockLiveTime.value = mock.liveTime || '';
+      if (mockNotif) {
+        mockNotif.populate({
+          notificationEnabled: mock.notificationEnabled,
+          notificationTitle: mock.notificationTitle,
+          notificationMessage: mock.notificationMessage,
+          notificationPriority: mock.notificationPriority
+        });
+      }
       elements.publishMockBtn.textContent = 'Update Mock Test';
       elements.cancelMockBtn.hidden = false;
       await handleMockCategoryChange(mock.subCategoryId || '');
@@ -2597,6 +2713,10 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       // e.g. 2026-07-04 + 21:00 -> 2026-07-04T21:00:00
       const liveDateTime = `${liveDate}T${liveTime}:00`;
 
+      // Notification Configuration (Step 4A): config only, saved alongside
+      // the mock document. Nothing is sent from here.
+      const notifData = mockNotif ? mockNotif.getData() : {};
+
       const mockPayload = {
         categoryId,
         subCategoryId,
@@ -2610,7 +2730,8 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
         liveDate,
         liveTime,
         liveDateTime,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        ...notifData
       };
 
       try {
