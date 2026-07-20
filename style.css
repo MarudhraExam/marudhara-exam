@@ -332,163 +332,138 @@ height:22px;
 
 
 /* ================================
-   Official Android App Download Badge START
+   Official Android App Download Card START
    ================================ */
 
-.app-badge-section{
+.app-cta-section{
 width:100%;
-padding:18px 8% 0;
+padding:16px 8% 0;
 }
 
-.app-badge-card{
+.app-cta-card{
 max-width:1200px;
 margin:0 auto;
-min-height:130px;
-max-height:150px;
 background:#ffffff;
-border:1px solid #0d6efd33;
-border-radius:16px;
-box-shadow:0 4px 16px rgba(0,0,0,.08);
-padding:18px 30px;
+border:1px solid #0d6efd2b;
+border-radius:18px;
+box-shadow:0 4px 18px rgba(0,43,91,.08);
+padding:18px 28px;
 display:flex;
 align-items:center;
 justify-content:space-between;
 gap:20px;
 flex-wrap:wrap;
-transition:box-shadow .3s ease;
+transition:box-shadow .3s ease, transform .3s ease;
 }
 
-.app-badge-card:hover{
-box-shadow:0 8px 22px rgba(0,0,0,.12);
+.app-cta-card:hover{
+box-shadow:0 8px 26px rgba(0,43,91,.14);
+transform:translateY(-2px);
 }
 
-.app-badge-left{
+.app-cta-info{
 flex:1 1 auto;
 min-width:0;
 }
 
-.app-badge-label{
+.app-cta-badge{
 display:inline-block;
-font-size:13px;
+font-size:12.5px;
 font-weight:bold;
 color:#0d6efd;
-background:#0d6efd14;
+background:#0d6efd12;
 padding:4px 12px;
 border-radius:20px;
 margin-bottom:6px;
 }
 
-.app-badge-title{
-font-size:20px;
+.app-cta-title{
+font-size:19px;
 color:#002B5B;
-margin-bottom:4px;
 line-height:1.3;
+margin-bottom:3px;
 }
 
-.app-badge-sub{
+.app-cta-sub{
 font-size:14px;
 color:#555;
-margin-bottom:4px;
+margin-bottom:3px;
 }
 
-.app-badge-meta{
+.app-cta-version{
 font-size:12px;
 color:#888;
 }
 
-.app-badge-right{
+.download-btn{
 flex:0 0 auto;
-}
-
-.app-badge-btn{
 display:inline-flex;
 align-items:center;
 gap:8px;
 background:#0d6efd;
 color:#fff;
-font-size:16px;
+font-size:15px;
 font-weight:bold;
-padding:12px 26px;
-border-radius:10px;
+padding:13px 28px;
+border-radius:12px;
 text-decoration:none;
-box-shadow:0 4px 12px rgba(13,110,253,.35);
-transition:transform .3s ease, box-shadow .3s ease, background .3s ease;
 white-space:nowrap;
+box-shadow:0 4px 14px rgba(13,110,253,.35);
+transition:transform .3s ease, box-shadow .3s ease, background .3s ease;
 }
 
-.app-badge-btn:hover{
+.download-btn:hover{
 background:#0b5ed7;
 transform:translateY(-3px);
-box-shadow:0 8px 18px rgba(13,110,253,.45);
+box-shadow:0 10px 20px rgba(13,110,253,.45);
 }
 
-.app-badge-btn:active{
+.download-btn:active{
 transform:translateY(-1px);
 }
 
 @media(max-width:768px){
 
-.app-badge-section{
-padding:10px 4% 0;
+.app-cta-section{
+padding:12px 5% 0;
 }
 
-.app-badge-card{
+.app-cta-card{
 flex-direction:column;
 align-items:center;
 justify-content:center;
 text-align:center;
-min-height:auto;
-max-height:none;
-padding:14px 16px;
-border-radius:16px;
-gap:6px;
+padding:18px 20px;
+gap:8px;
 }
 
-.app-badge-left{
-display:contents;
+.app-cta-badge{
+font-size:11.5px;
+padding:4px 11px;
 }
 
-.app-badge-label{
-order:1;
-font-size:11px;
-padding:3px 10px;
-margin-bottom:2px;
+.app-cta-title{
+font-size:17px;
 }
 
-.app-badge-title{
-order:2;
-font-size:16px;
-margin-bottom:2px;
+.app-cta-sub{
+font-size:13px;
 }
 
-.app-badge-sub{
-order:3;
-font-size:12.5px;
-margin-bottom:2px;
+.app-cta-version{
+font-size:11.5px;
+margin-bottom:4px;
 }
 
-.app-badge-meta{
-order:5;
-font-size:11px;
-margin-top:4px;
-margin-bottom:0;
-}
-
-.app-badge-right{
-order:4;
-width:100%;
-}
-
-.app-badge-btn{
+.download-btn{
 width:100%;
 justify-content:center;
-font-size:14px;
-padding:10px 18px;
-border-radius:10px;
+font-size:14.5px;
+padding:12px 20px;
 }
 
 }
 
 /* ================================
-   Official Android App Download Badge END
+   Official Android App Download Card END
    ================================ */
