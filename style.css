@@ -332,298 +332,126 @@ height:22px;
 
 
 /* ================================
-   Official Android App Download Section START
+   Official Android App Download Badge START
    ================================ */
 
-.app-download-section{
+.app-badge-section{
 width:100%;
-padding:20px 8% 10px;
+padding:18px 8% 0;
 }
 
-.app-download-card{
-position:relative;
+.app-badge-card{
 max-width:1200px;
 margin:0 auto;
+min-height:130px;
+max-height:150px;
+background:#ffffff;
+border:1px solid #0d6efd33;
+border-radius:16px;
+box-shadow:0 4px 16px rgba(0,0,0,.08);
+padding:18px 30px;
 display:flex;
 align-items:center;
 justify-content:space-between;
-gap:40px;
-background:linear-gradient(135deg,#002B5B 0%,#004080 55%,#0059b3 100%);
-border-radius:24px;
-padding:50px 55px;
-box-shadow:0 15px 40px rgba(0,43,91,.35);
-overflow:hidden;
-opacity:0;
-transform:translateY(40px);
-transition:opacity .6s ease, transform .6s ease, box-shadow .3s ease;
+gap:20px;
+flex-wrap:wrap;
+transition:box-shadow .3s ease;
 }
 
-.app-download-card::before{
-content:"";
-position:absolute;
-top:-80px;
-right:-80px;
-width:260px;
-height:260px;
-background:radial-gradient(circle, rgba(255,179,71,.25) 0%, rgba(255,179,71,0) 70%);
-pointer-events:none;
+.app-badge-card:hover{
+box-shadow:0 8px 22px rgba(0,0,0,.12);
 }
 
-.app-download-card.is-visible{
-opacity:1;
-transform:translateY(0);
-}
-
-.app-download-card:hover{
-box-shadow:0 20px 50px rgba(0,43,91,.45);
-}
-
-.app-download-left{
-flex:1 1 55%;
-color:#fff;
+.app-badge-left{
+flex:1 1 auto;
 min-width:0;
 }
 
-.app-download-badge{
+.app-badge-label{
 display:inline-block;
-background:rgba(255,255,255,.15);
-border:1px solid rgba(255,255,255,.35);
-color:#fff;
-font-size:14px;
+font-size:13px;
 font-weight:bold;
-padding:7px 18px;
-border-radius:30px;
-margin-bottom:18px;
-backdrop-filter:blur(4px);
-}
-
-.app-download-heading{
-font-size:34px;
-line-height:1.3;
-margin-bottom:14px;
-color:#fff;
-}
-
-.app-download-desc{
-font-size:17px;
-line-height:1.8;
-color:rgba(255,255,255,.9);
-margin-bottom:22px;
-max-width:560px;
-}
-
-.app-download-features{
-list-style:none;
-display:grid;
-grid-template-columns:repeat(2,minmax(140px,1fr));
-gap:10px 20px;
-margin-bottom:30px;
-max-width:520px;
-}
-
-.app-download-features li{
-font-size:15px;
-font-weight:bold;
-color:#fff;
-background:rgba(255,255,255,.08);
-padding:8px 14px;
-border-radius:10px;
-}
-
-.app-download-btn{
-display:inline-flex;
-align-items:center;
-gap:10px;
-background:#FFB347;
-color:#002B5B;
-font-size:19px;
-font-weight:bold;
-padding:16px 38px;
-border-radius:14px;
-text-decoration:none;
-box-shadow:0 8px 20px rgba(255,179,71,.4);
-transition:transform .3s ease, box-shadow .3s ease, background .3s ease;
-}
-
-.app-download-btn:hover{
-transform:translateY(-4px);
-box-shadow:0 14px 28px rgba(255,179,71,.55);
-background:#ffc266;
-}
-
-.app-download-btn:active{
-transform:translateY(-1px);
-}
-
-.app-download-meta{
-display:flex;
-flex-wrap:wrap;
-gap:10px;
-align-items:center;
-margin-top:20px;
-font-size:14px;
-color:rgba(255,255,255,.85);
-}
-
-.app-download-meta span:nth-child(even){
-color:rgba(255,255,255,.5);
-}
-
-.app-download-right{
-flex:0 0 auto;
-position:relative;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.app-download-phone{
-position:relative;
-width:190px;
-height:380px;
-background:linear-gradient(160deg,#0a1f3d,#001531);
-border-radius:34px;
-border:6px solid rgba(255,255,255,.15);
-box-shadow:0 25px 45px rgba(0,0,0,.35);
-padding:14px 12px;
-animation:appPhoneFloat 4s ease-in-out infinite;
-}
-
-.app-download-phone-notch{
-width:60px;
-height:8px;
-background:rgba(255,255,255,.25);
-border-radius:10px;
-margin:0 auto 12px;
-}
-
-.app-download-phone-screen{
-background:linear-gradient(160deg,#ffffff,#eef3fb);
-border-radius:22px;
-height:100%;
-padding:20px 14px;
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:10px;
-}
-
-.app-download-app-icon{
-width:52px;
-height:52px;
-border-radius:14px;
-background:linear-gradient(135deg,#FFB347,#ff9800);
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:26px;
-box-shadow:0 6px 14px rgba(255,152,0,.4);
+color:#0d6efd;
+background:#0d6efd14;
+padding:4px 12px;
+border-radius:20px;
 margin-bottom:6px;
 }
 
-.app-download-screen-line{
-width:85%;
-height:9px;
-border-radius:6px;
-background:#dbe4f3;
+.app-badge-title{
+font-size:20px;
+color:#002B5B;
+margin-bottom:4px;
+line-height:1.3;
 }
 
-.app-download-screen-line--wide{
-width:90%;
+.app-badge-sub{
+font-size:14px;
+color:#555;
+margin-bottom:4px;
 }
 
-.app-download-screen-line--short{
-width:55%;
-margin-bottom:8px;
-}
-
-.app-download-screen-chip{
-width:90%;
-background:#002B5B;
-color:#fff;
+.app-badge-meta{
 font-size:12px;
-font-weight:bold;
-padding:8px 10px;
-border-radius:8px;
-text-align:left;
+color:#888;
 }
 
-.app-download-android-badge{
-position:absolute;
-bottom:-14px;
-right:-14px;
-width:56px;
-height:56px;
-background:#fff;
-border-radius:50%;
-display:flex;
+.app-badge-right{
+flex:0 0 auto;
+}
+
+.app-badge-btn{
+display:inline-flex;
 align-items:center;
-justify-content:center;
-font-size:28px;
-box-shadow:0 8px 18px rgba(0,0,0,.25);
-animation:appBadgePulse 2.5s ease-in-out infinite;
+gap:8px;
+background:#0d6efd;
+color:#fff;
+font-size:16px;
+font-weight:bold;
+padding:12px 26px;
+border-radius:10px;
+text-decoration:none;
+box-shadow:0 4px 12px rgba(13,110,253,.35);
+transition:transform .3s ease, box-shadow .3s ease, background .3s ease;
+white-space:nowrap;
 }
 
-@keyframes appPhoneFloat{
-0%,100%{ transform:translateY(0); }
-50%{ transform:translateY(-12px); }
+.app-badge-btn:hover{
+background:#0b5ed7;
+transform:translateY(-3px);
+box-shadow:0 8px 18px rgba(13,110,253,.45);
 }
 
-@keyframes appBadgePulse{
-0%,100%{ transform:scale(1); }
-50%{ transform:scale(1.08); }
+.app-badge-btn:active{
+transform:translateY(-1px);
 }
 
-@media(max-width:900px){
+@media(max-width:768px){
 
-.app-download-section{
-padding:15px 5% 5px;
+.app-badge-section{
+padding:14px 5% 0;
 }
 
-.app-download-card{
-flex-direction:column-reverse;
-padding:35px 25px;
+.app-badge-card{
+flex-direction:column;
+align-items:stretch;
 text-align:center;
-gap:25px;
+min-height:auto;
+max-height:none;
+padding:20px 20px;
 }
 
-.app-download-left{
-text-align:center;
+.app-badge-right{
+width:100%;
 }
 
-.app-download-desc{
-max-width:100%;
-}
-
-.app-download-heading{
-font-size:26px;
-}
-
-.app-download-features{
-grid-template-columns:repeat(2,minmax(120px,1fr));
-max-width:100%;
-margin-left:auto;
-margin-right:auto;
-}
-
-.app-download-btn{
+.app-badge-btn{
 width:100%;
 justify-content:center;
-font-size:17px;
-padding:16px 20px;
-}
-
-.app-download-meta{
-justify-content:center;
-}
-
-.app-download-phone{
-width:150px;
-height:300px;
 }
 
 }
 
 /* ================================
-   Official Android App Download Section END
+   Official Android App Download Badge END
    ================================ */
