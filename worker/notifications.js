@@ -305,8 +305,7 @@ export async function sendFcmNotification(env, { title, message, priority, topic
     message: buildFcmMessage({ topic, title, message, priority: resolvedPriority })
   };
 
-  const endpoint = `https://fcm.googleapis.com/v1/projects/${env.FCM_PROJECT_ID}/messages:send`;
-
+const endpoint = `https://fcm.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/messages:send`;
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
