@@ -24,6 +24,24 @@ th{background:#002B5B;color:#fff}
 <input id="examName">
 <label>Result PDF</label>
 <input id="resultPdf" type="file" accept=".pdf">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="resultNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="resultNotifTitle" placeholder="Auto-filled from Exam Name">
+<label>Notification Message</label>
+<input type="text" id="resultNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="resultNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
+
 <button onclick="saveResult()">Upload Result</button>
 
 <table>
@@ -55,6 +73,73 @@ const db=getFirestore(app);
 // account is present. Real enforcement happens in firestore.rules.
 await guardAdmin(app);
 
+// ---- Notification Configuration (Step 4A: config only, nothing is sent) ----
+// Wires the "Send Push Notification" checkbox + Title/Message/Priority
+// fields added to the Publish form. Returns helpers to read the current
+// values (for saving) and to reset/populate the block.
+function setupNotificationConfig(ids, getDefaultTitle, getDefaultMessage, watchIds){
+  const enabledEl = document.getElementById(ids.enabled);
+  const titleEl = document.getElementById(ids.title);
+  const messageEl = document.getElementById(ids.message);
+  const priorityEl = document.getElementById(ids.priority);
+  if(!enabledEl || !titleEl || !messageEl || !priorityEl) return null;
+
+  let titleTouched = false;
+  let messageTouched = false;
+
+  function applyEnabledState(){
+    const on = enabledEl.checked;
+    titleEl.disabled = !on;
+    messageEl.disabled = !on;
+    priorityEl.disabled = !on;
+  }
+
+  function autoFill(){
+    if(!titleTouched && getDefaultTitle) titleEl.value = getDefaultTitle();
+    if(!messageTouched && getDefaultMessage) messageEl.value = getDefaultMessage();
+  }
+
+  titleEl.addEventListener("input", ()=>{ titleTouched = true; });
+  messageEl.addEventListener("input", ()=>{ messageTouched = true; });
+  enabledEl.addEventListener("change", applyEnabledState);
+
+  (watchIds || []).forEach((id)=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("input", autoFill);
+  });
+
+  applyEnabledState();
+
+  return {
+    getData(){
+      return {
+        notificationEnabled: enabledEl.checked,
+        notificationTitle: titleEl.value.trim(),
+        notificationMessage: messageEl.value.trim(),
+        notificationPriority: priorityEl.value
+      };
+    },
+    reset(){
+      enabledEl.checked = true;
+      priorityEl.value = "Normal";
+      titleEl.value = "";
+      messageEl.value = "";
+      titleTouched = false;
+      messageTouched = false;
+      applyEnabledState();
+    }
+  };
+}
+
+const resultNotif = setupNotificationConfig(
+  { enabled:"resultNotifEnabled", title:"resultNotifTitle", message:"resultNotifMessage", priority:"resultNotifPriority" },
+  () => document.getElementById("examName").value,
+  () => {
+    const name = document.getElementById("examName").value;
+    return name ? ("Result Published: " + name) : "";
+  },
+  ["examName"]
+);
 
 async function readPdf(file){
  const ab=await file.arrayBuffer();
@@ -74,13 +159,16 @@ window.saveResult=async()=>{
  if(!file){alert("PDF Select karo");return;}
  const text=await readPdf(file);
  console.log(text);
+ const notifData = resultNotif ? resultNotif.getData() : {};
  await addDoc(collection(db,"results"),{
    examName:exam,
    pdfName:file.name,
    pdfText:text,
-   createdAt:new Date().toISOString()
+   createdAt:new Date().toISOString(),
+   ...notifData
  });
  alert("Saved");
+ if(resultNotif) resultNotif.reset();
  loadResults();
 };
 
