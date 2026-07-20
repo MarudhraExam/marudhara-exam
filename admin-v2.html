@@ -194,6 +194,23 @@ Loading Exams...
 <label>Official Website</label>
 <input type="text" id="officialLink">
 
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="vacancyNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="vacancyNotifTitle" placeholder="Auto-filled from Vacancy Name">
+<label>Notification Message</label>
+<input type="text" id="vacancyNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="vacancyNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
+
 <button onclick="saveVacancy()">
 Publish Vacancy
 </button>
@@ -217,6 +234,23 @@ Loading...
 
 <label>Google Drive PDF Link</label>
 <input type="text" id="dailyPdfLink">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="dailyNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="dailyNotifTitle" placeholder="Auto-filled from PDF Title">
+<label>Notification Message</label>
+<input type="text" id="dailyNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="dailyNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
 
 <button onclick="saveDailyPdf()">
 Publish PDF
@@ -248,6 +282,23 @@ Loading...
 
 <label>PDF Link</label>
 <input type="text" id="paperLink">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="downloadNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="downloadNotifTitle" placeholder="Auto-filled from Paper Name">
+<label>Notification Message</label>
+<input type="text" id="downloadNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="downloadNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
 
 <button onclick="saveDownloadPaper()">
 Publish Paper
@@ -292,6 +343,24 @@ Question | A | B | C | D | E | Answer
 <button onclick="addQuestion()">
 ➕ Add Question
 </button>
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="quizNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="quizNotifTitle" placeholder="Auto-filled from Quiz Title">
+<label>Notification Message</label>
+<input type="text" id="quizNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="quizNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
+
 <button onclick="saveQuiz()">
 🚀 Publish Quiz
 </button>
@@ -368,6 +437,23 @@ style="background:red;color:white;margin-left:10px;">
 <label>PDF Link</label>
 <input type="text" id="notePdfLink">
 
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="notesNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="notesNotifTitle" placeholder="Auto-filled from PDF Title">
+<label>Notification Message</label>
+<input type="text" id="notesNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="notesNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
+
 <button onclick="saveNote()">
 🚀 Upload Notes
 </button>
@@ -425,6 +511,23 @@ Loading...
 
 <label>Display Order</label>
 <input type="number" id="annOrder" value="1">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="annNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="annNotifTitle" placeholder="Auto-filled">
+<label>Notification Message</label>
+<input type="text" id="annNotifMessage" placeholder="Auto-filled from Message">
+<label>Priority</label>
+<select id="annNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
 
 <button id="annSaveBtn" onclick="saveAnnouncement()">
 ➕ Add Announcement
@@ -510,6 +613,131 @@ getFirestore(app);
 // Blocks all page interaction until a signed-in, allow-listed admin
 // account is present. Real enforcement happens in firestore.rules.
 await guardAdmin(app);
+
+// ---- Notification Configuration (Step 4A: config only, nothing is sent) ----
+// Wires the "Send Push Notification" checkbox + Title/Message/Priority
+// fields added to every Publish/Create form below. Returns helpers to read
+// the current values (for saving) and to reset/populate the block.
+function setupNotificationConfig(ids, getDefaultTitle, getDefaultMessage, watchIds){
+  const enabledEl = document.getElementById(ids.enabled);
+  const titleEl = document.getElementById(ids.title);
+  const messageEl = document.getElementById(ids.message);
+  const priorityEl = document.getElementById(ids.priority);
+  if(!enabledEl || !titleEl || !messageEl || !priorityEl) return null;
+
+  let titleTouched = false;
+  let messageTouched = false;
+
+  function applyEnabledState(){
+    const on = enabledEl.checked;
+    titleEl.disabled = !on;
+    messageEl.disabled = !on;
+    priorityEl.disabled = !on;
+  }
+
+  function autoFill(){
+    if(!titleTouched && getDefaultTitle) titleEl.value = getDefaultTitle();
+    if(!messageTouched && getDefaultMessage) messageEl.value = getDefaultMessage();
+  }
+
+  titleEl.addEventListener("input", ()=>{ titleTouched = true; });
+  messageEl.addEventListener("input", ()=>{ messageTouched = true; });
+  enabledEl.addEventListener("change", applyEnabledState);
+
+  (watchIds || []).forEach((id)=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("input", autoFill);
+  });
+
+  applyEnabledState();
+
+  return {
+    getData(){
+      return {
+        notificationEnabled: enabledEl.checked,
+        notificationTitle: titleEl.value.trim(),
+        notificationMessage: messageEl.value.trim(),
+        notificationPriority: priorityEl.value
+      };
+    },
+    reset(){
+      enabledEl.checked = true;
+      priorityEl.value = "Normal";
+      titleEl.value = "";
+      messageEl.value = "";
+      titleTouched = false;
+      messageTouched = false;
+      applyEnabledState();
+    },
+    populate(data){
+      if(!data){ this.reset(); return; }
+      enabledEl.checked = data.notificationEnabled !== false;
+      titleEl.value = data.notificationTitle || "";
+      messageEl.value = data.notificationMessage || "";
+      priorityEl.value = data.notificationPriority || "Normal";
+      titleTouched = !!data.notificationTitle;
+      messageTouched = !!data.notificationMessage;
+      applyEnabledState();
+    }
+  };
+}
+
+const vacancyNotif = setupNotificationConfig(
+  { enabled:"vacancyNotifEnabled", title:"vacancyNotifTitle", message:"vacancyNotifMessage", priority:"vacancyNotifPriority" },
+  () => document.getElementById("vacancyName").value,
+  () => {
+    const name = document.getElementById("vacancyName").value;
+    return name ? ("नई भर्ती जारी: " + name) : "";
+  },
+  ["vacancyName"]
+);
+
+const dailyNotif = setupNotificationConfig(
+  { enabled:"dailyNotifEnabled", title:"dailyNotifTitle", message:"dailyNotifMessage", priority:"dailyNotifPriority" },
+  () => document.getElementById("dailyTitle").value,
+  () => {
+    const title = document.getElementById("dailyTitle").value;
+    return title ? ("Daily Suja Sar Available: " + title) : "";
+  },
+  ["dailyTitle"]
+);
+
+const downloadNotif = setupNotificationConfig(
+  { enabled:"downloadNotifEnabled", title:"downloadNotifTitle", message:"downloadNotifMessage", priority:"downloadNotifPriority" },
+  () => document.getElementById("paperName").value,
+  () => {
+    const name = document.getElementById("paperName").value;
+    return name ? ("New Paper Added: " + name) : "";
+  },
+  ["paperName"]
+);
+
+const quizNotif = setupNotificationConfig(
+  { enabled:"quizNotifEnabled", title:"quizNotifTitle", message:"quizNotifMessage", priority:"quizNotifPriority" },
+  () => document.getElementById("quizTitle").value,
+  () => {
+    const title = document.getElementById("quizTitle").value;
+    return title ? ("New Quiz Published: " + title) : "";
+  },
+  ["quizTitle"]
+);
+
+const notesNotif = setupNotificationConfig(
+  { enabled:"notesNotifEnabled", title:"notesNotifTitle", message:"notesNotifMessage", priority:"notesNotifPriority" },
+  () => document.getElementById("noteTitle").value,
+  () => {
+    const title = document.getElementById("noteTitle").value;
+    return title ? ("New Notes Uploaded: " + title) : "";
+  },
+  ["noteTitle"]
+);
+
+const announcementNotif = setupNotificationConfig(
+  { enabled:"annNotifEnabled", title:"annNotifTitle", message:"annNotifMessage", priority:"annNotifPriority" },
+  () => "New Announcement",
+  () => document.getElementById("annMessage").value,
+  ["annMessage"]
+);
 
 async function loadExams(){
 
@@ -672,12 +900,16 @@ return;
 
 }
 
+const dailyNotifData =
+dailyNotif ? dailyNotif.getData() : {};
+
 await addDoc(
 collection(db,"dailySujas"),
 {
 title,
 pdfLink,
-createdAt:new Date().toISOString()
+createdAt:new Date().toISOString(),
+...dailyNotifData
 }
 );
 
@@ -685,6 +917,7 @@ alert("PDF Published ✅");
 
 document.getElementById("dailyTitle").value="";
 document.getElementById("dailyPdfLink").value="";
+if(dailyNotif) dailyNotif.reset();
 
 loadDailyPdfs();
 
@@ -778,13 +1011,17 @@ return;
 
 }
 
+const downloadNotifData =
+downloadNotif ? downloadNotif.getData() : {};
+
 await addDoc(
 collection(db,"downloads"),
 {
 category,
 paperName,
 paperLink,
-createdAt:new Date().toISOString()
+createdAt:new Date().toISOString(),
+...downloadNotifData
 }
 );
 
@@ -792,6 +1029,7 @@ alert("Paper Published ✅");
 
 document.getElementById("paperName").value="";
 document.getElementById("paperLink").value="";
+if(downloadNotif) downloadNotif.reset();
 
 loadDownloadPapers();
 
@@ -975,6 +1213,9 @@ return;
 
 }
 
+const vacancyNotifData =
+vacancyNotif ? vacancyNotif.getData() : {};
+
 await addDoc(
 collection(db,"vacancies"),
 {
@@ -985,11 +1226,14 @@ pdfLink,
 applyLink,
 officialLink,
 createdAt:
-new Date().toISOString()
+new Date().toISOString(),
+...vacancyNotifData
 }
 );
 
 alert("Vacancy Published ✅");
+
+if(vacancyNotif) vacancyNotif.reset();
 
 loadVacanciesAdmin();
 
@@ -1507,6 +1751,9 @@ alert("PDF Title भरें");
 return;
 }
 
+const notesNotifData =
+notesNotif ? notesNotif.getData() : {};
+
 await addDoc(
 collection(db,"notesPdfs"),
 {
@@ -1516,7 +1763,8 @@ topicName,
 topicId,
 noteTitle,
 pdfLink,
-createdAt:new Date().toISOString()
+createdAt:new Date().toISOString(),
+...notesNotifData
 }
 );
 
@@ -1524,6 +1772,7 @@ alert("Notes Uploaded ✅");
 
 document.getElementById("noteTitle").value="";
 document.getElementById("notePdfLink").value="";
+if(notesNotif) notesNotif.reset();
 
 }
 catch(error){
@@ -1579,13 +1828,17 @@ alert("कम से कम 1 Question जोड़ें");
 return;
 }
 
+const quizNotifData =
+quizNotif ? quizNotif.getData() : {};
+
 await addDoc(
 collection(db,"quizzes"),
 {
 quizTitle,
 quizDate,
 questions,
-createdAt:new Date().toISOString()
+createdAt:new Date().toISOString(),
+...quizNotifData
 }
 );
 
@@ -1596,6 +1849,7 @@ document.getElementById("quizTitle").value = "";
 document.getElementById("quizDate").value = "";
 document.getElementById("questionsContainer").innerHTML = "";
 questionCount = 0;
+if(quizNotif) quizNotif.reset();
 
 }
 catch(error){
@@ -1760,6 +2014,8 @@ announcementEditingId = null;
 document.getElementById("annSaveBtn").textContent = "➕ Add Announcement";
 document.getElementById("annCancelBtn").style.display = "none";
 
+if(announcementNotif) announcementNotif.reset();
+
 }
 
 window.cancelAnnouncementEdit = function(){
@@ -1792,6 +2048,9 @@ alert("Message भरें");
 return;
 }
 
+const announcementNotifData =
+announcementNotif ? announcementNotif.getData() : {};
+
 if(announcementEditingId){
 
 // Edit mode - update the existing document only
@@ -1802,7 +2061,8 @@ message,
 link,
 color,
 speed,
-order
+order,
+...announcementNotifData
 }
 );
 
@@ -1820,7 +2080,8 @@ color,
 speed,
 order,
 active:true,
-createdAt:serverTimestamp()
+createdAt:serverTimestamp(),
+...announcementNotifData
 }
 );
 
@@ -1855,6 +2116,15 @@ document.getElementById("annOrder").value = item.order || 1;
 
 document.getElementById("annSaveBtn").textContent = "💾 Update Announcement";
 document.getElementById("annCancelBtn").style.display = "inline-block";
+
+if(announcementNotif){
+announcementNotif.populate({
+notificationEnabled: item.notificationEnabled,
+notificationTitle: item.notificationTitle,
+notificationMessage: item.notificationMessage,
+notificationPriority: item.notificationPriority
+});
+}
 
 document.getElementById("annMessage").scrollIntoView({behavior:"smooth",block:"center"});
 
