@@ -18,9 +18,9 @@
  *   }
  *
  * Required Worker environment variables:
- *   FCM_PROJECT_ID     - Firebase project id
- *   FCM_CLIENT_EMAIL   - service account client_email
- *   FCM_PRIVATE_KEY    - service account private_key (PEM). If stored with
+ *   FIREBASE_PROJECT_ID    - Firebase project id
+ *   FIREBASE_CLIENT_EMAIL   - service account client_email
+ *   FIREBASE_PRIVATE_KEY    - service account private_key (PEM). If stored with
  *                        literal "\n" sequences (common when pasted into a
  *                        single-line secret), this module unescapes them
  *                        automatically.
