@@ -429,25 +429,62 @@ transform:translateY(-1px);
 @media(max-width:768px){
 
 .app-badge-section{
-padding:14px 5% 0;
+padding:10px 4% 0;
 }
 
 .app-badge-card{
 flex-direction:column;
-align-items:stretch;
+align-items:center;
+justify-content:center;
 text-align:center;
 min-height:auto;
 max-height:none;
-padding:20px 20px;
+padding:14px 16px;
+border-radius:16px;
+gap:6px;
+}
+
+.app-badge-left{
+display:contents;
+}
+
+.app-badge-label{
+order:1;
+font-size:11px;
+padding:3px 10px;
+margin-bottom:2px;
+}
+
+.app-badge-title{
+order:2;
+font-size:16px;
+margin-bottom:2px;
+}
+
+.app-badge-sub{
+order:3;
+font-size:12.5px;
+margin-bottom:2px;
+}
+
+.app-badge-meta{
+order:5;
+font-size:11px;
+margin-top:4px;
+margin-bottom:0;
 }
 
 .app-badge-right{
+order:4;
 width:100%;
 }
 
 .app-badge-btn{
 width:100%;
 justify-content:center;
+font-size:14px;
+padding:10px 18px;
+border-radius:10px;
 }
 
 }
