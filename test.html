@@ -204,19 +204,138 @@ parseInt(
 examData.totalQuestions
 );
 
-const answerArray =
-examData.answerKey
-.split(",");
+function parseAnswerKey(rawAnswerKey){
 
-let answerKey = {};
+const rawText =
+(rawAnswerKey || "")
+.trim();
 
-answerArray.forEach(
+if(!rawText){
+
+alert(
+"उत्तर कुंजी खाली है"
+);
+
+throw new Error(
+"Empty answer key"
+);
+
+}
+
+const tokens =
+rawText
+.split(/[\s,]+/)
+.filter(t=>t.length>0);
+
+const isOldFormat =
+tokens.every(
+t=>/^[A-Ea-e]$/.test(t)
+);
+
+let parsedKey = {};
+
+if(isOldFormat){
+
+tokens.forEach(
 (ans,index)=>{
 
-answerKey[index+1] =
-ans.trim();
+parsedKey[index+1] =
+ans.toUpperCase();
 
 });
+
+}
+else{
+
+if(tokens.length % 2 !== 0){
+
+alert(
+"उत्तर कुंजी अपूर्ण है - प्रश्न संख्या या उत्तर गुम है"
+);
+
+throw new Error(
+"Incomplete answer key pair"
+);
+
+}
+
+for(
+let i=0;
+i<tokens.length;
+i+=2
+){
+
+const qToken = tokens[i];
+const aToken = tokens[i+1];
+
+if(!/^\d+$/.test(qToken)){
+
+alert(
+"अमान्य प्रश्न संख्या: " +
+qToken
+);
+
+throw new Error(
+"Invalid question number: " +
+qToken
+);
+
+}
+
+const qNum =
+parseInt(qToken,10);
+
+if(!/^[A-Ea-e]$/.test(aToken)){
+
+alert(
+"अमान्य उत्तर: प्रश्न " +
+qNum +
+" के लिए '" +
+aToken +
+"'"
+);
+
+throw new Error(
+"Invalid answer for question " +
+qNum
+);
+
+}
+
+if(
+Object.prototype.hasOwnProperty.call(
+parsedKey,
+qNum
+)
+){
+
+alert(
+"डुप्लीकेट प्रश्न संख्या: " +
+qNum
+);
+
+throw new Error(
+"Duplicate question number: " +
+qNum
+);
+
+}
+
+parsedKey[qNum] =
+aToken.toUpperCase();
+
+}
+
+}
+
+return parsedKey;
+
+}
+
+let answerKey =
+parseAnswerKey(
+examData.answerKey
+);
 
 let current = 1;
 
@@ -569,5 +688,3 @@ loadQuestion();
 
 </body>
 </html>
-
-
