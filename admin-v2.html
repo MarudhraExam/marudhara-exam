@@ -682,6 +682,40 @@ function setupNotificationConfig(ids, getDefaultTitle, getDefaultMessage, watchI
   };
 }
 
+// ---- Push Notification Sender (Step 4B) ----
+// Single reusable helper: fires the already-saved notification config to
+// the Cloudflare Worker endpoint. Called ONLY after a Firestore save has
+// already succeeded. A failure here is logged and swallowed - it must
+// never roll back or block the publish flow that already completed.
+const PUSH_NOTIFICATION_ENDPOINT = "https://marudhara-payment-api.jmdseller2025.workers.dev/api/send-notification";
+const PUSH_NOTIFICATION_AUTH = "Bearer Marudhara@2026*notify";
+
+async function sendPushNotification(notificationData){
+  try{
+    if(!notificationData || !notificationData.notificationEnabled) return;
+    const res = await fetch(PUSH_NOTIFICATION_ENDPOINT,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":PUSH_NOTIFICATION_AUTH
+      },
+      body:JSON.stringify({
+        enabled: notificationData.notificationEnabled,
+        title: notificationData.notificationTitle,
+        message: notificationData.notificationMessage,
+        priority: notificationData.notificationPriority,
+        topic: "marudhara_updates"
+      })
+    });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data || data.success !== true){
+      console.error("sendPushNotification: non-success response", res.status, data);
+    }
+  }catch(e){
+    console.error("sendPushNotification failed:", e);
+  }
+}
+
 const vacancyNotif = setupNotificationConfig(
   { enabled:"vacancyNotifEnabled", title:"vacancyNotifTitle", message:"vacancyNotifMessage", priority:"vacancyNotifPriority" },
   () => document.getElementById("vacancyName").value,
@@ -915,6 +949,8 @@ createdAt:new Date().toISOString(),
 
 alert("PDF Published ✅");
 
+sendPushNotification(dailyNotifData);
+
 document.getElementById("dailyTitle").value="";
 document.getElementById("dailyPdfLink").value="";
 if(dailyNotif) dailyNotif.reset();
@@ -1026,6 +1062,8 @@ createdAt:new Date().toISOString(),
 );
 
 alert("Paper Published ✅");
+
+sendPushNotification(downloadNotifData);
 
 document.getElementById("paperName").value="";
 document.getElementById("paperLink").value="";
@@ -1232,6 +1270,8 @@ new Date().toISOString(),
 );
 
 alert("Vacancy Published ✅");
+
+sendPushNotification(vacancyNotifData);
 
 if(vacancyNotif) vacancyNotif.reset();
 
@@ -1770,6 +1810,8 @@ createdAt:new Date().toISOString(),
 
 alert("Notes Uploaded ✅");
 
+sendPushNotification(notesNotifData);
+
 document.getElementById("noteTitle").value="";
 document.getElementById("notePdfLink").value="";
 if(notesNotif) notesNotif.reset();
@@ -1843,6 +1885,9 @@ createdAt:new Date().toISOString(),
 );
 
 alert("Quiz Published Successfully ✅");
+
+sendPushNotification(quizNotifData);
+
 loadQuizzes();
 
 document.getElementById("quizTitle").value = "";
@@ -2068,6 +2113,8 @@ order,
 
 alert("Announcement Updated Successfully ✅");
 
+sendPushNotification(announcementNotifData);
+
 }else{
 
 // Add mode - create a new document
@@ -2086,6 +2133,8 @@ createdAt:serverTimestamp(),
 );
 
 alert("Announcement Added Successfully ✅");
+
+sendPushNotification(announcementNotifData);
 
 }
 
