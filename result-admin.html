@@ -131,6 +131,40 @@ function setupNotificationConfig(ids, getDefaultTitle, getDefaultMessage, watchI
   };
 }
 
+// ---- Push Notification Sender (Step 4B) ----
+// Single reusable helper: fires the already-saved notification config to
+// the Cloudflare Worker endpoint. Called ONLY after a Firestore save has
+// already succeeded. A failure here is logged and swallowed - it must
+// never roll back or block the publish flow that already completed.
+const PUSH_NOTIFICATION_ENDPOINT = "https://marudhara-payment-api.jmdseller2025.workers.dev/api/send-notification";
+const PUSH_NOTIFICATION_AUTH = "Bearer Marudhara@2026*notify";
+
+async function sendPushNotification(notificationData){
+  try{
+    if(!notificationData || !notificationData.notificationEnabled) return;
+    const res = await fetch(PUSH_NOTIFICATION_ENDPOINT,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":PUSH_NOTIFICATION_AUTH
+      },
+      body:JSON.stringify({
+        enabled: notificationData.notificationEnabled,
+        title: notificationData.notificationTitle,
+        message: notificationData.notificationMessage,
+        priority: notificationData.notificationPriority,
+        topic: "marudhara_updates"
+      })
+    });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data || data.success !== true){
+      console.error("sendPushNotification: non-success response", res.status, data);
+    }
+  }catch(e){
+    console.error("sendPushNotification failed:", e);
+  }
+}
+
 const resultNotif = setupNotificationConfig(
   { enabled:"resultNotifEnabled", title:"resultNotifTitle", message:"resultNotifMessage", priority:"resultNotifPriority" },
   () => document.getElementById("examName").value,
@@ -168,6 +202,7 @@ window.saveResult=async()=>{
    ...notifData
  });
  alert("Saved");
+ sendPushNotification(notifData);
  if(resultNotif) resultNotif.reset();
  loadResults();
 };
