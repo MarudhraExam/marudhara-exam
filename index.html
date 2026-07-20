@@ -46,6 +46,108 @@
      Announcement Ticker System END
      ================================ -->
 
+<!-- ================================
+     Official Android App Download Section START
+     ================================ -->
+<section class="app-download-section" aria-labelledby="appDownloadHeading">
+
+<div class="app-download-card js-fade-up">
+
+<div class="app-download-left">
+
+<span class="app-download-badge">📱 Official Android App</span>
+
+<h2 id="appDownloadHeading" class="app-download-heading">मरुधरा एग्जाम Android App</h2>
+
+<p class="app-download-desc">
+अब Mock Test, Results, Daily Sujas, Notes, Current Affairs, Vacancy Updates और सभी सुविधाएं सीधे अपने मोबाइल में।
+</p>
+
+<ul class="app-download-features">
+<li>✅ Mock Tests</li>
+<li>✅ Results</li>
+<li>✅ Daily Sujas</li>
+<li>✅ Notes</li>
+<li>✅ Current Affairs</li>
+<li>✅ Fast Performance</li>
+<li>✅ Instant Updates</li>
+<li>✅ Completely Free</li>
+</ul>
+
+<a
+href="https://marudhraexam.github.io/marudhara-notes/androidapp/marudharaexam.apk"
+download
+class="app-download-btn">
+⬇ Download Android App
+</a>
+
+<div class="app-download-meta">
+<span>Version 1.0</span>
+<span>•</span>
+<span>Android 7.0+</span>
+<span>•</span>
+<span>APK Size ~20 MB</span>
+<span>•</span>
+<span>100% Free</span>
+</div>
+
+</div>
+
+<div class="app-download-right" aria-hidden="true">
+
+<div class="app-download-phone">
+
+<div class="app-download-phone-notch"></div>
+
+<div class="app-download-phone-screen">
+
+<div class="app-download-app-icon">📘</div>
+
+<div class="app-download-screen-line app-download-screen-line--wide"></div>
+<div class="app-download-screen-line"></div>
+<div class="app-download-screen-line app-download-screen-line--short"></div>
+
+<div class="app-download-screen-chip">✔ Mock Test</div>
+<div class="app-download-screen-chip">✔ Result</div>
+<div class="app-download-screen-chip">✔ Notes</div>
+
+</div>
+
+</div>
+
+<div class="app-download-android-badge">🤖</div>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+(function(){
+if(!("IntersectionObserver" in window)){
+document.querySelectorAll(".js-fade-up").forEach(function(el){
+el.classList.add("is-visible");
+});
+return;
+}
+var observer = new IntersectionObserver(function(entries){
+entries.forEach(function(entry){
+if(entry.isIntersecting){
+entry.target.classList.add("is-visible");
+observer.unobserve(entry.target);
+}
+});
+}, { threshold: 0.15 });
+document.querySelectorAll(".js-fade-up").forEach(function(el){
+observer.observe(el);
+});
+})();
+</script>
+<!-- ================================
+     Official Android App Download Section END
+     ================================ -->
+
 <section class="offer-section">
 
 <div id="offerContainer"></div>
