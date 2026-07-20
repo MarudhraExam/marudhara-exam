@@ -19,6 +19,8 @@ const routes = [
   // against the users collection, then admin-resets the Firebase Auth
   // password directly.
   { method: 'POST', path: '/api/reset-password', handler: handleResetPassword }
+  ,
+{ method: 'POST', path: '/api/send-notification', handler: handleSendNotification }
 ];
 
 export async function route(request, env, ctx) {
