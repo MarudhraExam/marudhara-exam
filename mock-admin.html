@@ -1450,6 +1450,40 @@ No Sub Categories
       };
     }
 
+    // ---- Push Notification Sender (Step 4B) ----
+    // Single reusable helper: fires the already-saved notification config to
+    // the Cloudflare Worker endpoint. Called ONLY after a Firestore save has
+    // already succeeded. A failure here is logged and swallowed - it must
+    // never roll back or block the publish flow that already completed.
+    const PUSH_NOTIFICATION_ENDPOINT = 'https://marudhara-payment-api.jmdseller2025.workers.dev/api/send-notification';
+    const PUSH_NOTIFICATION_AUTH = 'Bearer Marudhara@2026*notify';
+
+    async function sendPushNotification(notificationData) {
+      try {
+        if (!notificationData || !notificationData.notificationEnabled) return;
+        const res = await fetch(PUSH_NOTIFICATION_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': PUSH_NOTIFICATION_AUTH
+          },
+          body: JSON.stringify({
+            enabled: notificationData.notificationEnabled,
+            title: notificationData.notificationTitle,
+            message: notificationData.notificationMessage,
+            priority: notificationData.notificationPriority,
+            topic: 'marudhara_updates'
+          })
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data || data.success !== true) {
+          console.error('sendPushNotification: non-success response', res.status, data);
+        }
+      } catch (e) {
+        console.error('sendPushNotification failed:', e);
+      }
+    }
+
     const mockNotif = setupNotificationConfig(
       { enabled: 'mockNotifEnabled', title: 'mockNotifTitle', message: 'mockNotifMessage', priority: 'mockNotifPriority' },
       () => elements.mockName.value,
@@ -2747,9 +2781,11 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
             premium: deleteField()
           });
           setMockStatus('Mock test updated successfully.', 'success');
+          sendPushNotification(notifData);
         } else {
           await createMockDocument(mockPayload);
           setMockStatus('Mock test published successfully.', 'success');
+          sendPushNotification(notifData);
         }
 
         resetMockForm();
@@ -2970,6 +3006,11 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
       const liveDateTime = `${liveDate}T${liveTime}:00`;
 
+      // Reuses the same shared notification config block (Enabled/Title/
+      // Message/Priority) already used by Single Upload - no new UI, no
+      // duplicated config. Read once; applied to every mock in this batch.
+      const notifData = mockNotif ? mockNotif.getData() : {};
+
       try {
         setMockStatus(`Creating ${mocks.length} mock tests...`, 'info');
 
@@ -2987,10 +3028,15 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
             liveDate,
             liveTime,
             liveDateTime,
-            updatedAt: serverTimestamp()
+            updatedAt: serverTimestamp(),
+            ...notifData
           };
 
           await createMockDocument(mockPayload);
+
+          // Notification is sent only after this mock's Firestore save
+          // succeeds above, and only when notifications are enabled.
+          sendPushNotification(notifData);
         }
 
         setMockStatus(`Created ${mocks.length} mock tests successfully.`, 'success');
