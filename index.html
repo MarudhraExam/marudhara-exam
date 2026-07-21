@@ -671,10 +671,8 @@ return;
 
 }
 
-const html = items.map(newsItemHTML).join("") + items.map(newsItemHTML).join("");
-
+const html = items.map(newsItemHTML).join("");
 track.innerHTML = html;
-
 // Roughly 3 seconds per item - keeps longer lists scrolling at a
 // steady, readable pace instead of speeding up or crawling.
 const duration = Math.max(items.length * 3, 10);
