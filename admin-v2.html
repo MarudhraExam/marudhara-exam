@@ -86,6 +86,27 @@ border:1px solid #ccc;
 border-radius:8px;
 box-sizing:border-box;
 }
+
+/* Added for Latest News table (News Manager) - does not affect
+   any other section since no other section uses <table>. */
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+
+table th,
+table td{
+padding:10px;
+border-bottom:1px solid #eee;
+text-align:left;
+font-size:14px;
+}
+
+table th{
+background:#002B5B;
+color:white;
+}
 </style>
 </head>
 
@@ -129,6 +150,9 @@ box-sizing:border-box;
 </div>
 <div class="card" onclick="showSection('announcementSection')">
 📣 Announcements
+</div>
+<div class="card" onclick="showSection('newsSection')">
+📰 Latest News
 </div>
 </div>
 
@@ -555,6 +579,83 @@ Loading...
 <!-- ================================
      Announcement System END
      ================================ -->
+
+<!-- ================================
+     Latest News System START
+     ================================ -->
+<div id="newsSection" class="section">
+
+<h2>📰 Latest News Manager</h2>
+
+<label>News Title *</label>
+<input type="text" id="newsTitle" placeholder="जैसे: RSSB CET Result Declared">
+
+<label>News Date *</label>
+<input type="date" id="newsDate">
+
+<label>News Description (Optional)</label>
+<textarea id="newsDescription" rows="3"></textarea>
+
+<label>News Link *</label>
+<input type="text" id="newsLink" placeholder="https://example.com">
+
+<label style="display:flex;align-items:center;gap:8px;">
+<input type="checkbox" id="newsIsNew" checked style="width:auto;margin:0;">
+Show NEW Badge
+</label>
+
+<label>Status</label>
+<select id="newsStatus">
+<option value="Active" selected>Active</option>
+<option value="Inactive">Inactive</option>
+</select>
+
+<label>Priority</label>
+<input type="number" id="newsPriority" value="1">
+
+<button id="newsSaveBtn" onclick="saveNews()">
+➕ Add News
+</button>
+
+<button id="newsCancelBtn"
+onclick="cancelNewsEdit()"
+style="background:#888;margin-left:10px;display:none;">
+✖ Cancel Edit
+</button>
+
+<hr>
+
+<h3>🔍 Live Preview</h3>
+
+<div id="newsLivePreview"></div>
+
+<hr>
+
+<h3 style="margin-top:15px;">📋 News List</h3>
+
+<div style="overflow-x:auto;">
+<table id="newsTable">
+<thead>
+<tr>
+<th>Date</th>
+<th>Title</th>
+<th>Status</th>
+<th>Priority</th>
+<th>Edit</th>
+<th>Delete</th>
+</tr>
+</thead>
+<tbody id="newsTableBody">
+<tr><td colspan="6">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+<!-- ================================
+     Latest News System END
+     ================================ -->
+
 <script type="module">
 
 import {
@@ -2381,6 +2482,318 @@ attachAnnouncementAdminListener();
 
 // ================================
 // Announcement System END
+// ================================
+
+// ================================
+// Latest News System START
+// ================================
+// Reuses the same db/firestore imports already loaded above - no
+// second Firebase initialization. Mirrors the Announcement Manager's
+// add/edit/delete/toggle/realtime pattern for consistency.
+
+let newsLiveList = [];
+let newsEditingId = null;
+
+function renderNewsPreview(){
+
+const titleEl = document.getElementById("newsTitle");
+const dateEl = document.getElementById("newsDate");
+const descEl = document.getElementById("newsDescription");
+const isNewEl = document.getElementById("newsIsNew");
+const preview = document.getElementById("newsLivePreview");
+
+if(!titleEl || !preview) return;
+
+const title = titleEl.value.trim() || "News Title";
+const date = dateEl.value || "";
+const description = descEl.value.trim();
+const isNew = isNewEl.checked;
+
+preview.innerHTML = `
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;background:#fafafa;max-width:420px;">
+
+${isNew ? '<span style="background:red;color:white;font-size:11px;font-weight:bold;padding:3px 10px;border-radius:20px;margin-right:8px;">🔴 NEW</span>' : ""}
+
+<b>${date}</b>
+
+<div style="margin-top:6px;font-weight:bold;color:#002B5B;">
+${title}
+</div>
+
+${description ? `<div style="margin-top:6px;font-size:14px;color:#555;">${description}</div>` : ""}
+
+<button style="margin-top:10px;padding:8px 16px;">
+Click Here
+</button>
+
+</div>
+
+`;
+
+}
+
+["newsTitle","newsDate","newsDescription","newsIsNew"].forEach((id)=>{
+
+const el = document.getElementById(id);
+
+if(el){
+el.addEventListener("input", renderNewsPreview);
+el.addEventListener("change", renderNewsPreview);
+}
+
+});
+
+renderNewsPreview();
+
+window.saveNews = async function(){
+
+try{
+
+const title = document.getElementById("newsTitle").value.trim();
+const date = document.getElementById("newsDate").value;
+const description = document.getElementById("newsDescription").value.trim();
+const link = document.getElementById("newsLink").value.trim();
+const isNew = document.getElementById("newsIsNew").checked;
+const status = document.getElementById("newsStatus").value;
+const priority = Number(document.getElementById("newsPriority").value) || 1;
+
+if(title === ""){
+alert("News Title भरें");
+return;
+}
+
+if(date === ""){
+alert("News Date भरें");
+return;
+}
+
+if(link === ""){
+alert("News Link भरें");
+return;
+}
+
+if(newsEditingId){
+
+await updateDoc(
+doc(db,"news",newsEditingId),
+{
+title,
+date,
+description,
+link,
+isNew,
+status,
+priority,
+updatedAt:new Date().toISOString()
+}
+);
+
+alert("News Updated ✅");
+
+}else{
+
+await addDoc(
+collection(db,"news"),
+{
+title,
+date,
+description,
+link,
+isNew,
+status,
+priority,
+createdAt:new Date().toISOString(),
+updatedAt:new Date().toISOString()
+}
+);
+
+alert("News Added ✅");
+
+}
+
+resetNewsForm();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+function resetNewsForm(){
+
+newsEditingId = null;
+
+document.getElementById("newsTitle").value = "";
+document.getElementById("newsDate").value = "";
+document.getElementById("newsDescription").value = "";
+document.getElementById("newsLink").value = "";
+document.getElementById("newsIsNew").checked = true;
+document.getElementById("newsStatus").value = "Active";
+document.getElementById("newsPriority").value = 1;
+
+document.getElementById("newsSaveBtn").textContent = "➕ Add News";
+document.getElementById("newsCancelBtn").style.display = "none";
+
+renderNewsPreview();
+
+}
+
+window.cancelNewsEdit = function(){
+
+resetNewsForm();
+
+};
+
+window.editNews = function(id){
+
+const item = newsLiveList.find((n)=>n.id === id);
+
+if(!item) return;
+
+newsEditingId = id;
+
+document.getElementById("newsTitle").value = item.title || "";
+document.getElementById("newsDate").value = item.date || "";
+document.getElementById("newsDescription").value = item.description || "";
+document.getElementById("newsLink").value = item.link || "";
+document.getElementById("newsIsNew").checked = item.isNew !== false;
+document.getElementById("newsStatus").value = item.status || "Active";
+document.getElementById("newsPriority").value = item.priority || 1;
+
+document.getElementById("newsSaveBtn").textContent = "💾 Update News";
+document.getElementById("newsCancelBtn").style.display = "inline-block";
+
+renderNewsPreview();
+
+document.getElementById("newsTitle").scrollIntoView({behavior:"smooth",block:"center"});
+
+};
+
+window.deleteNews = async function(id){
+
+if(!confirm("News Delete करना है?"))
+return;
+
+await deleteDoc(
+doc(db,"news",id)
+);
+
+if(newsEditingId === id){
+resetNewsForm();
+}
+
+alert("News Deleted ✅");
+
+};
+
+window.toggleNewsStatus = async function(id,currentStatus){
+
+const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+
+await updateDoc(
+doc(db,"news",id),
+{
+status:newStatus,
+updatedAt:new Date().toISOString()
+}
+);
+
+};
+
+function renderNewsTable(){
+
+const body = document.getElementById("newsTableBody");
+
+if(!body) return;
+
+if(!newsLiveList.length){
+body.innerHTML = '<tr><td colspan="6">कोई News नहीं मिली</td></tr>';
+return;
+}
+
+body.innerHTML = "";
+
+newsLiveList.forEach((item)=>{
+
+body.innerHTML += `
+
+<tr>
+<td>${item.date || ""}</td>
+<td>${item.title || ""}</td>
+<td>
+<button
+onclick="toggleNewsStatus('${item.id}','${item.status}')"
+style="background:${item.status === "Active" ? "#28a745" : "#888"};padding:6px 12px;font-size:13px;">
+${item.status === "Active" ? "🟢 Active" : "🔴 Inactive"}
+</button>
+</td>
+<td>${item.priority || 0}</td>
+<td>
+<button onclick="editNews('${item.id}')" style="padding:6px 12px;font-size:13px;">
+✏️ Edit
+</button>
+</td>
+<td>
+<button
+onclick="deleteNews('${item.id}')"
+style="background:red;padding:6px 12px;font-size:13px;">
+🗑 Delete
+</button>
+</td>
+</tr>
+
+`;
+
+});
+
+}
+
+function attachNewsAdminListener(){
+
+// Single realtime listener - keeps the table live in sync with
+// Firestore (add/edit/delete/status toggle), same pattern as the
+// Announcement Manager above.
+onSnapshot(collection(db,"news"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+items.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+// Newest date first; priority used only as a tie-breaker for
+// same-date items (lower priority number shows first).
+items.sort((a,b)=>{
+
+const dateCompare = (b.date || "").localeCompare(a.date || "");
+
+if(dateCompare !== 0) return dateCompare;
+
+return (a.priority || 0) - (b.priority || 0);
+
+});
+
+newsLiveList = items;
+
+renderNewsTable();
+
+});
+
+}
+
+attachNewsAdminListener();
+
+// ================================
+// Latest News System END
 // ================================
 
 </script>
