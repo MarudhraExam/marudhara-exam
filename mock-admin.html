@@ -568,6 +568,289 @@
     #couponCategorySelect {
       min-height: 120px;
     }
+    /* =========================================================
+       QUESTION MANAGER (Mock Preview upgrade) — additive only.
+       Scoped entirely under .qm- classes so nothing existing is
+       affected. Reuses the same palette/radius/shadow language
+       as the rest of the Admin Panel (see .mock-card, .button-*,
+       .status-bar, .mock-badge above).
+       ========================================================= */
+    .qm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 26, 51, 0.55);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .qm-overlay.open {
+      display: flex;
+    }
+
+    .qm-panel {
+      background: #f4f7fb;
+      border-radius: 24px;
+      max-width: 1200px;
+      width: 100%;
+      padding: 26px;
+      box-shadow: 0 30px 60px rgba(16, 26, 51, 0.3);
+      margin-bottom: 32px;
+    }
+
+    .qm-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .qm-panel-header h2 {
+      margin: 0 0 4px;
+      color: #102a52;
+      font-size: 1.4rem;
+    }
+
+    .qm-panel-header small {
+      color: #62738b;
+    }
+
+    .qm-close-btn {
+      border: 0;
+      background: #eef2ff;
+      color: #1f3f7c;
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .qm-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .qm-stat {
+      background: #fff;
+      border: 1px solid rgba(35, 49, 79, 0.08);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .qm-stat span {
+      display: block;
+      font-size: 0.8rem;
+      color: #62738b;
+    }
+
+    .qm-stat strong {
+      font-size: 1.15rem;
+      color: #102a52;
+    }
+
+    .qm-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .qm-toolbar input[type="text"],
+    .qm-toolbar select {
+      border-radius: 14px;
+      border: 1px solid #d8e0ef;
+      background: #fbfdff;
+      padding: 10px 14px;
+      color: #23314f;
+      font: inherit;
+    }
+
+    .qm-toolbar .qm-search {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .qm-bulkbar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #eef2ff;
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+
+    .qm-bulkbar.active {
+      display: flex;
+    }
+
+    .qm-errors {
+      background: #ffe7e6;
+      color: #8a1f19;
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .qm-errors.show {
+      display: block;
+    }
+
+    .qm-errors ul {
+      margin: 6px 0 0;
+      padding-left: 20px;
+    }
+
+    .qm-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .qm-qcard {
+      background: #fff;
+      border: 1px solid #dbe2f6;
+      border-radius: 18px;
+      padding: 16px 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .qm-qcard-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .qm-qno {
+      font-weight: 700;
+      color: #0b4ea2;
+    }
+
+    .qm-qtext {
+      color: #23314f;
+      line-height: 1.5;
+    }
+
+    .qm-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 6px;
+      font-size: 0.92rem;
+      color: #4d5f7d;
+    }
+
+    .qm-options .correct {
+      color: #1e583a;
+      font-weight: 700;
+    }
+
+    .qm-explain {
+      font-size: 0.88rem;
+      color: #62738b;
+    }
+
+    .qm-qimg {
+      max-width: 160px;
+      border-radius: 10px;
+      border: 1px solid #dbe2f6;
+    }
+
+    .qm-qactions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .qm-qactions button {
+      border: 0;
+      font: inherit;
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+      background: #eef2ff;
+      color: #1f3f7c;
+      font-size: 0.88rem;
+    }
+
+    .qm-qactions button.qm-danger {
+      background: #ffe7e6;
+      color: #8a1f19;
+    }
+
+    .qm-edit-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 26, 51, 0.55);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+      overflow-y: auto;
+      z-index: 1100;
+    }
+
+    .qm-edit-overlay.open {
+      display: flex;
+    }
+
+    .qm-edit-modal {
+      background: #fff;
+      border-radius: 22px;
+      max-width: 720px;
+      width: 100%;
+      padding: 24px;
+      display: grid;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .qm-edit-modal h3 {
+      margin: 0;
+      color: #102a52;
+    }
+
+    .qm-edit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .qm-edit-grid label {
+      display: grid;
+      gap: 6px;
+      font-size: 0.88rem;
+      color: #5b6887;
+    }
+
+    .qm-edit-grid input,
+    .qm-edit-grid textarea,
+    .qm-edit-grid select {
+      border-radius: 12px;
+      border: 1px solid #d8e0ef;
+      padding: 10px 12px;
+      font: inherit;
+      color: #23314f;
+    }
+
+    .qm-edit-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -1159,6 +1442,102 @@ No Sub Categories
     </div>
   </div>
 
+  <!-- ================================================================
+       QUESTION MANAGER — additive feature. Upgrades the "👁 Review"
+       preview into a full in-panel question manager. Nothing above
+       this point was changed.
+       ================================================================ -->
+  <div id="qmOverlay" class="qm-overlay">
+    <div class="qm-panel">
+      <div class="qm-panel-header">
+        <div>
+          <h2>Question Manager</h2>
+          <small id="qmMockTitle">Loading mock test…</small>
+        </div>
+        <button type="button" class="qm-close-btn" id="qmCloseBtn" title="Close">✕</button>
+      </div>
+
+      <div class="qm-stats" id="qmStats"></div>
+
+      <div class="qm-errors" id="qmErrors"></div>
+
+      <div class="qm-toolbar">
+        <input type="text" class="qm-search" id="qmSearchInput" placeholder="Search by Question No. or keyword (e.g. 57 or संविधान)">
+        <select id="qmFilterSelect">
+          <option value="all">All Questions</option>
+          <option value="withImage">Image Questions</option>
+          <option value="withoutImage">Questions Without Images</option>
+          <option value="missingExplanation">Questions Missing Explanation</option>
+          <option value="missingCorrect">Questions Missing Correct Answer</option>
+          <option value="hindiOnly">Hindi Only</option>
+          <option value="englishOnly">English Only</option>
+        </select>
+        <button type="button" class="button-secondary" id="qmValidateBtn">✅ Validate</button>
+        <button type="button" class="button-secondary" id="qmRefreshBtn">↻ Refresh</button>
+      </div>
+
+      <div class="qm-bulkbar" id="qmBulkBar">
+        <span id="qmSelectedCount">0 selected</span>
+        <button type="button" class="button-danger" id="qmBulkDeleteBtn">Delete Selected</button>
+        <button type="button" class="button-secondary" id="qmBulkDuplicateBtn">Duplicate Selected</button>
+        <button type="button" class="button-secondary" id="qmBulkExportBtn">Export Selected</button>
+      </div>
+
+      <div class="qm-list" id="qmList"></div>
+    </div>
+  </div>
+
+  <div id="qmEditOverlay" class="qm-edit-overlay">
+    <div class="qm-edit-modal">
+      <h3>Edit Question</h3>
+      <div class="qm-edit-grid">
+        <label>Question (Hindi)
+          <textarea id="qmEditQHindi"></textarea>
+        </label>
+        <label>Question (English)
+          <textarea id="qmEditQEnglish"></textarea>
+        </label>
+        <label>Option A
+          <input type="text" id="qmEditOptA">
+        </label>
+        <label>Option B
+          <input type="text" id="qmEditOptB">
+        </label>
+        <label>Option C
+          <input type="text" id="qmEditOptC">
+        </label>
+        <label>Option D
+          <input type="text" id="qmEditOptD">
+        </label>
+        <label>Option E (optional)
+          <input type="text" id="qmEditOptE">
+        </label>
+        <label>Correct Answer
+          <input type="text" id="qmEditCorrect" placeholder="e.g. A">
+        </label>
+        <label>Explanation (Hindi)
+          <textarea id="qmEditExplHindi"></textarea>
+        </label>
+        <label>Explanation (English)
+          <textarea id="qmEditExplEnglish"></textarea>
+        </label>
+        <label>Question Image URL
+          <input type="text" id="qmEditImage">
+        </label>
+        <label>Marks
+          <input type="number" id="qmEditMarks" step="0.1">
+        </label>
+        <label>Negative Marks
+          <input type="number" id="qmEditNegative" step="0.1">
+        </label>
+      </div>
+      <div class="qm-edit-actions">
+        <button type="button" class="button-secondary" id="qmEditCancelBtn">Cancel</button>
+        <button type="button" class="button-primary" id="qmEditSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { db, app } from './firebase.js';
     import { guardAdmin } from './admin-auth.js';
@@ -1368,6 +1747,13 @@ No Sub Categories
     // ---- Coupon Manager state ----
     let coupons = [];
     let editingCouponId = null;
+
+    // ---- Question Manager state (Mock Preview upgrade) ----
+    let qmMockId = null;
+    let qmMock = null;
+    let qmQuestions = [];
+    let qmSelected = new Set();
+    let qmEditingQuestionId = null;
     function setStatus(message, type = 'info') {
       elements.statusBar.textContent = message;
       elements.statusBar.className = `status-bar ${type}`.trim();
@@ -2047,6 +2433,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
             <button type="button" class="button-secondary" data-mock-action="edit" data-id="${mock.id}">Edit</button>
             <button type="button" class="button-danger" data-mock-action="delete" data-id="${mock.id}">Delete</button>
             <button type="button" class="button-secondary" data-mock-action="review" data-id="${mock.id}">👁 Review</button>
+            <button type="button" class="button-secondary" data-mock-action="questions" data-id="${mock.id}">📝 Manage Questions</button>
           </div>
         </article>`;
     }
@@ -3099,9 +3486,470 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           if (action === 'review') {
             window.open(`${STUDENT_EXAM_PATH}?mockId=${encodeURIComponent(mockId)}&preview=true`, '_blank');
           }
+          if (action === 'questions') {
+            await openQuestionManager(mockId, target);
+          }
         });
       });
     }
+
+    // =========================================================
+    // QUESTION MANAGER — Mock Preview upgrade. New functions only;
+    // reuses COLLECTIONS.questions (mockQuestions) exactly as-is,
+    // no schema changes, no new collections. Opened from the
+    // "📝 Manage Questions" button added to each mock card above.
+    // =========================================================
+
+    async function openQuestionManager(mockId, mock) {
+      qmMockId = mockId;
+      qmMock = mock;
+      qmSelected.clear();
+      qmEditingQuestionId = null;
+      const title = mock.title || mock.name || 'Untitled test';
+      document.getElementById('qmMockTitle').textContent = title;
+      document.getElementById('qmSearchInput').value = '';
+      document.getElementById('qmFilterSelect').value = 'all';
+      const errorsBox = document.getElementById('qmErrors');
+      errorsBox.classList.remove('show');
+      errorsBox.innerHTML = '';
+      document.getElementById('qmOverlay').classList.add('open');
+      await qmLoadQuestions();
+    }
+
+    function closeQuestionManager() {
+      document.getElementById('qmOverlay').classList.remove('open');
+      qmMockId = null;
+      qmMock = null;
+      qmQuestions = [];
+      qmSelected.clear();
+    }
+
+    async function qmLoadQuestions() {
+      const listEl = document.getElementById('qmList');
+      listEl.innerHTML = '<div class="empty-state">Loading questions…</div>';
+      try {
+        const snapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', qmMockId)));
+        qmQuestions = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        qmQuestions.sort((a, b) => (Number(a.questionNo) || 0) - (Number(b.questionNo) || 0));
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        listEl.innerHTML = `<div class="empty-state">Failed to load questions: ${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function qmComputeStats(list) {
+      const total = list.length;
+      const withImages = list.filter(q => !!String(q.image || '').trim()).length;
+      const withoutImages = total - withImages;
+      const missingCorrect = list.filter(q => !String(q.correctAnswer || '').trim()).length;
+      const missingExplanation = list.filter(q => (
+        !String(q.explanation || '').trim() &&
+        !String(q.explanationHindi || '').trim() &&
+        !String(q.explanationEnglish || '').trim()
+      )).length;
+
+      const seenText = {};
+      list.forEach(q => {
+        const key = String(q.question || q.questionHindi || q.questionEnglish || '').trim().toLowerCase();
+        if (!key) return;
+        seenText[key] = (seenText[key] || 0) + 1;
+      });
+      const duplicateCount = Object.values(seenText).filter(count => count > 1).reduce((sum, count) => sum + count, 0);
+
+      const totalMarks = list.reduce((sum, q) => sum + (Number(q.marks) || 0), 0);
+      const totalNegative = list.reduce((sum, q) => sum + (Number(q.negativeMarks) || 0), 0);
+
+      return { total, withImages, withoutImages, missingCorrect, missingExplanation, duplicateCount, totalMarks, totalNegative };
+    }
+
+    function qmRenderStats() {
+      const s = qmComputeStats(qmQuestions);
+      document.getElementById('qmStats').innerHTML = `
+        <div class="qm-stat"><span>Total Questions</span><strong>${s.total}</strong></div>
+        <div class="qm-stat"><span>With Images</span><strong>${s.withImages}</strong></div>
+        <div class="qm-stat"><span>Without Images</span><strong>${s.withoutImages}</strong></div>
+        <div class="qm-stat"><span>Missing Correct Answer</span><strong>${s.missingCorrect}</strong></div>
+        <div class="qm-stat"><span>Missing Explanation</span><strong>${s.missingExplanation}</strong></div>
+        <div class="qm-stat"><span>Duplicate Questions</span><strong>${s.duplicateCount}</strong></div>
+        <div class="qm-stat"><span>Total Marks</span><strong>${s.totalMarks}</strong></div>
+        <div class="qm-stat"><span>Negative Marks</span><strong>${s.totalNegative}</strong></div>
+      `;
+    }
+
+    function qmGetFilteredQuestions() {
+      const searchRaw = (document.getElementById('qmSearchInput').value || '').trim();
+      const filterVal = document.getElementById('qmFilterSelect').value;
+      let list = qmQuestions.slice();
+
+      if (searchRaw) {
+        if (/^\d+$/.test(searchRaw)) {
+          const num = Number(searchRaw);
+          list = list.filter(q => Number(q.questionNo) === num);
+        } else {
+          const keyword = searchRaw.toLowerCase();
+          list = list.filter(q => {
+            const haystack = [
+              q.question, q.questionHindi, q.questionEnglish,
+              q.optionA, q.optionB, q.optionC, q.optionD, q.optionE,
+              q.explanation, q.explanationHindi, q.explanationEnglish
+            ].map(v => String(v || '').toLowerCase()).join(' ');
+            return haystack.includes(keyword);
+          });
+        }
+      }
+
+      switch (filterVal) {
+        case 'withImage':
+          list = list.filter(q => !!String(q.image || '').trim());
+          break;
+        case 'withoutImage':
+          list = list.filter(q => !String(q.image || '').trim());
+          break;
+        case 'missingExplanation':
+          list = list.filter(q => (
+            !String(q.explanation || '').trim() &&
+            !String(q.explanationHindi || '').trim() &&
+            !String(q.explanationEnglish || '').trim()
+          ));
+          break;
+        case 'missingCorrect':
+          list = list.filter(q => !String(q.correctAnswer || '').trim());
+          break;
+        case 'hindiOnly':
+          list = list.filter(q => String(q.questionHindi || '').trim() && !String(q.questionEnglish || '').trim());
+          break;
+        case 'englishOnly':
+          list = list.filter(q => String(q.questionEnglish || '').trim() && !String(q.questionHindi || '').trim());
+          break;
+        default:
+          break;
+      }
+
+      return list;
+    }
+
+    function qmFormatQuestionCard(q) {
+      const options = [['A', q.optionA], ['B', q.optionB], ['C', q.optionC], ['D', q.optionD]];
+      if (String(q.optionE || '').trim()) options.push(['E', q.optionE]);
+
+      const correctRaw = String(q.correctAnswer || '').trim();
+      const optionsHtml = options.map(([label, val]) => {
+        const isCorrect = correctRaw && (correctRaw.toUpperCase() === label || correctRaw === String(val || '').trim());
+        return `<div class="${isCorrect ? 'correct' : ''}">${escapeHtml(label)}. ${escapeHtml(String(val || '—'))}</div>`;
+      }).join('');
+
+      const explanation = q.explanation || q.explanationEnglish || q.explanationHindi || '';
+      const imageHtml = q.image ? `<img class="qm-qimg" src="${escapeHtml(q.image)}" alt="Question image">` : '';
+      const plainQuestion = q.question || q.questionEnglish || q.questionHindi || '';
+      const checked = qmSelected.has(q.id) ? 'checked' : '';
+
+      return `
+        <article class="qm-qcard" data-qid="${q.id}">
+          <div class="qm-qcard-top">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" class="qm-select-box" data-qid="${q.id}" ${checked}>
+              <span class="qm-qno">Q${q.questionNo ?? '—'}</span>
+            </label>
+            <div class="qm-qactions">
+              <button type="button" data-qaction="edit" data-qid="${q.id}">✏️ Edit</button>
+              <button type="button" class="qm-danger" data-qaction="delete" data-qid="${q.id}">🗑 Delete</button>
+              <button type="button" data-qaction="duplicate" data-qid="${q.id}">📄 Duplicate</button>
+              <button type="button" data-qaction="up" data-qid="${q.id}">⬆ Move Up</button>
+              <button type="button" data-qaction="down" data-qid="${q.id}">⬇ Move Down</button>
+            </div>
+          </div>
+          ${q.questionHindi ? `<div class="qm-qtext"><strong>HI:</strong> ${escapeHtml(q.questionHindi)}</div>` : ''}
+          ${q.questionEnglish ? `<div class="qm-qtext"><strong>EN:</strong> ${escapeHtml(q.questionEnglish)}</div>` : ''}
+          ${(!q.questionHindi && !q.questionEnglish) ? `<div class="qm-qtext">${escapeHtml(plainQuestion)}</div>` : ''}
+          <div class="qm-options">${optionsHtml}</div>
+          ${explanation ? `<div class="qm-explain"><strong>Explanation:</strong> ${escapeHtml(explanation)}</div>` : ''}
+          ${imageHtml}
+        </article>`;
+    }
+
+    function qmRenderList() {
+      qmRenderStats();
+      const filtered = qmGetFilteredQuestions();
+      const listEl = document.getElementById('qmList');
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="empty-state">No questions match this search or filter.</div>';
+      } else {
+        listEl.innerHTML = filtered.map(qmFormatQuestionCard).join('');
+      }
+      qmAttachQuestionActions();
+      qmUpdateBulkBar();
+    }
+
+    function qmAttachQuestionActions() {
+      document.querySelectorAll('.qm-select-box').forEach(box => {
+        box.addEventListener('change', () => {
+          const qid = box.dataset.qid;
+          if (box.checked) {
+            qmSelected.add(qid);
+          } else {
+            qmSelected.delete(qid);
+          }
+          qmUpdateBulkBar();
+        });
+      });
+
+      document.querySelectorAll('[data-qaction]').forEach(button => {
+        button.addEventListener('click', async () => {
+          const qid = button.dataset.qid;
+          const action = button.dataset.qaction;
+          if (action === 'edit') qmOpenEditModal(qid);
+          if (action === 'delete') await qmDeleteQuestion(qid);
+          if (action === 'duplicate') await qmDuplicateQuestion(qid);
+          if (action === 'up') await qmMoveQuestion(qid, -1);
+          if (action === 'down') await qmMoveQuestion(qid, 1);
+        });
+      });
+    }
+
+    function qmUpdateBulkBar() {
+      const bar = document.getElementById('qmBulkBar');
+      const count = qmSelected.size;
+      document.getElementById('qmSelectedCount').textContent = `${count} selected`;
+      bar.classList.toggle('active', count > 0);
+    }
+
+    // Keeps Firestore questionNo in sync with the in-memory order shown in
+    // the panel. Only writes docs whose questionNo actually changed, so a
+    // single Move Up/Down only ever touches the two affected questions.
+    async function qmPersistFullRenumber() {
+      const batch = writeBatch(db);
+      let changed = false;
+      qmQuestions.forEach((q, index) => {
+        const newNo = index + 1;
+        if (Number(q.questionNo) !== newNo) {
+          batch.update(doc(db, COLLECTIONS.questions, q.id), { questionNo: newNo });
+          q.questionNo = newNo;
+          changed = true;
+        }
+      });
+      if (changed) {
+        await batch.commit();
+      }
+      // Keep the panel's own "Total Questions" stat in sync. This does NOT
+      // touch the mockTests document / totalQuestions field — mock
+      // publishing and its schema are left untouched per requirements.
+      qmRenderStats();
+    }
+
+    async function qmDeleteQuestion(id) {
+      if (!confirm('Delete this question? This cannot be undone.')) return;
+      try {
+        await deleteDoc(doc(db, COLLECTIONS.questions, id));
+        qmQuestions = qmQuestions.filter(q => q.id !== id);
+        qmSelected.delete(id);
+        await qmPersistFullRenumber();
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to delete question: ${error.message}`);
+      }
+    }
+
+    async function qmDuplicateQuestion(id) {
+      const index = qmQuestions.findIndex(q => q.id === id);
+      if (index === -1) return;
+      try {
+        const { id: _drop, ...rest } = qmQuestions[index];
+        const payload = { ...rest, mockId: qmMockId, createdAt: serverTimestamp() };
+        const docRef = await addDoc(collection(db, COLLECTIONS.questions), payload);
+        qmQuestions.splice(index + 1, 0, { id: docRef.id, ...payload });
+        await qmPersistFullRenumber();
+        qmRenderList();
+        qmOpenEditModal(docRef.id);
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to duplicate question: ${error.message}`);
+      }
+    }
+
+    async function qmMoveQuestion(id, direction) {
+      const index = qmQuestions.findIndex(q => q.id === id);
+      if (index === -1) return;
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= qmQuestions.length) return;
+      const temp = qmQuestions[index];
+      qmQuestions[index] = qmQuestions[targetIndex];
+      qmQuestions[targetIndex] = temp;
+      try {
+        await qmPersistFullRenumber();
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to reorder questions: ${error.message}`);
+      }
+    }
+
+    function qmOpenEditModal(id) {
+      const q = qmQuestions.find(item => item.id === id);
+      if (!q) return;
+      qmEditingQuestionId = id;
+      document.getElementById('qmEditQHindi').value = q.questionHindi || '';
+      document.getElementById('qmEditQEnglish').value = q.questionEnglish || '';
+      document.getElementById('qmEditOptA').value = q.optionA || '';
+      document.getElementById('qmEditOptB').value = q.optionB || '';
+      document.getElementById('qmEditOptC').value = q.optionC || '';
+      document.getElementById('qmEditOptD').value = q.optionD || '';
+      document.getElementById('qmEditOptE').value = q.optionE || '';
+      document.getElementById('qmEditCorrect').value = q.correctAnswer || '';
+      document.getElementById('qmEditExplHindi').value = q.explanationHindi || '';
+      document.getElementById('qmEditExplEnglish').value = q.explanationEnglish || '';
+      document.getElementById('qmEditImage').value = q.image || '';
+      document.getElementById('qmEditMarks').value = q.marks ?? 1;
+      document.getElementById('qmEditNegative').value = q.negativeMarks ?? 0;
+      document.getElementById('qmEditOverlay').classList.add('open');
+    }
+
+    function qmCloseEditModal() {
+      document.getElementById('qmEditOverlay').classList.remove('open');
+      qmEditingQuestionId = null;
+    }
+
+    async function qmSaveEditedQuestion() {
+      if (!qmEditingQuestionId) return;
+      const q = qmQuestions.find(item => item.id === qmEditingQuestionId);
+      if (!q) return;
+
+      const updated = {
+        questionHindi: document.getElementById('qmEditQHindi').value.trim(),
+        questionEnglish: document.getElementById('qmEditQEnglish').value.trim(),
+        optionA: document.getElementById('qmEditOptA').value.trim(),
+        optionB: document.getElementById('qmEditOptB').value.trim(),
+        optionC: document.getElementById('qmEditOptC').value.trim(),
+        optionD: document.getElementById('qmEditOptD').value.trim(),
+        optionE: document.getElementById('qmEditOptE').value.trim(),
+        correctAnswer: document.getElementById('qmEditCorrect').value.trim(),
+        explanationHindi: document.getElementById('qmEditExplHindi').value.trim(),
+        explanationEnglish: document.getElementById('qmEditExplEnglish').value.trim(),
+        image: document.getElementById('qmEditImage').value.trim() || null,
+        marks: Number(document.getElementById('qmEditMarks').value) || 0,
+        negativeMarks: Number(document.getElementById('qmEditNegative').value) || 0
+      };
+      // Keep the plain question/explanation fields (used elsewhere in the
+      // app) in sync with whichever language variant is filled in.
+      updated.question = updated.questionEnglish || updated.questionHindi || q.question || '';
+      updated.explanation = updated.explanationEnglish || updated.explanationHindi || q.explanation || null;
+
+      try {
+        await updateDoc(doc(db, COLLECTIONS.questions, qmEditingQuestionId), updated);
+        Object.assign(q, updated);
+        qmCloseEditModal();
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to save question: ${error.message}`);
+      }
+    }
+
+    async function qmBulkDelete() {
+      if (!qmSelected.size) return;
+      if (!confirm(`Delete ${qmSelected.size} selected question(s)? This cannot be undone.`)) return;
+      try {
+        const batch = writeBatch(db);
+        qmSelected.forEach(id => batch.delete(doc(db, COLLECTIONS.questions, id)));
+        await batch.commit();
+        qmQuestions = qmQuestions.filter(q => !qmSelected.has(q.id));
+        qmSelected.clear();
+        await qmPersistFullRenumber();
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to delete selected questions: ${error.message}`);
+      }
+    }
+
+    async function qmBulkDuplicate() {
+      if (!qmSelected.size) return;
+      try {
+        const sources = qmQuestions.filter(q => qmSelected.has(q.id));
+        for (const source of sources) {
+          const { id: _drop, ...rest } = source;
+          const payload = { ...rest, mockId: qmMockId, createdAt: serverTimestamp() };
+          const docRef = await addDoc(collection(db, COLLECTIONS.questions), payload);
+          const index = qmQuestions.findIndex(q => q.id === source.id);
+          qmQuestions.splice(index + 1, 0, { id: docRef.id, ...payload });
+        }
+        qmSelected.clear();
+        await qmPersistFullRenumber();
+        qmRenderList();
+      } catch (error) {
+        console.error(error);
+        alert(`Failed to duplicate selected questions: ${error.message}`);
+      }
+    }
+
+    function qmBulkExport() {
+      if (!qmSelected.size) return;
+      const rows = qmQuestions.filter(q => qmSelected.has(q.id));
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `questions-${qmMockId}-selected.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // Auto Validation — runs on demand from the "✅ Validate" button.
+    // Does not touch the actual Publish flow (left untouched per
+    // requirements); surfaces issues inline in the panel instead.
+    function qmValidate() {
+      const errors = [];
+      const noSeen = {};
+      const idSeen = {};
+
+      qmQuestions.forEach(q => {
+        const qtext = q.question || q.questionHindi || q.questionEnglish || '';
+        if (!String(qtext).trim()) errors.push(`Q${q.questionNo ?? '?'}: question text is empty.`);
+        ['optionA', 'optionB', 'optionC', 'optionD'].forEach(key => {
+          if (!String(q[key] || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: ${key} is empty.`);
+        });
+        if (!String(q.correctAnswer || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: correct answer is missing.`);
+        noSeen[q.questionNo] = (noSeen[q.questionNo] || 0) + 1;
+        idSeen[q.id] = (idSeen[q.id] || 0) + 1;
+      });
+
+      Object.entries(noSeen).forEach(([no, count]) => {
+        if (count > 1) errors.push(`Question number ${no} is used ${count} times.`);
+      });
+      Object.entries(idSeen).forEach(([id, count]) => {
+        if (count > 1) errors.push(`Duplicate Firestore document ID detected: ${id}.`);
+      });
+
+      const box = document.getElementById('qmErrors');
+      if (!errors.length) {
+        box.classList.remove('show');
+        box.innerHTML = '';
+        setMockStatus('All questions passed validation.', 'success');
+      } else {
+        box.classList.add('show');
+        box.innerHTML = `<strong>${errors.length} issue(s) found:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`;
+      }
+    }
+
+    function attachQuestionManagerListeners() {
+      document.getElementById('qmCloseBtn').addEventListener('click', closeQuestionManager);
+      document.getElementById('qmSearchInput').addEventListener('input', qmRenderList);
+      document.getElementById('qmFilterSelect').addEventListener('change', qmRenderList);
+      document.getElementById('qmValidateBtn').addEventListener('click', qmValidate);
+      document.getElementById('qmRefreshBtn').addEventListener('click', qmLoadQuestions);
+      document.getElementById('qmBulkDeleteBtn').addEventListener('click', qmBulkDelete);
+      document.getElementById('qmBulkDuplicateBtn').addEventListener('click', qmBulkDuplicate);
+      document.getElementById('qmBulkExportBtn').addEventListener('click', qmBulkExport);
+      document.getElementById('qmEditCancelBtn').addEventListener('click', qmCloseEditModal);
+      document.getElementById('qmEditSaveBtn').addEventListener('click', qmSaveEditedQuestion);
+    }
+
+    // =========================================================
+    // END QUESTION MANAGER
+    // =========================================================
 
     // =========================================================
     // COUPON MANAGER — new functions only, nothing existing changed
@@ -3415,6 +4263,7 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
     attachListeners();
     attachCouponListeners();
+    attachQuestionManagerListeners();
 
     console.log("STEP 3: setting price field visibility");
 
