@@ -98,7 +98,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
-
+    match /news/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     // Government exam result PDFs/metadata (result-admin.html).
     match /results/{docId} {
       allow read: if true;
