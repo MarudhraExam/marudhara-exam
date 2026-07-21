@@ -481,6 +481,83 @@ style="background:red;color:white;margin-left:10px;">
 <button onclick="saveNote()">
 🚀 Upload Notes
 </button>
+
+<hr>
+
+<h2>📂 Uploaded Notes</h2>
+
+<label>Filter: Category</label>
+<select id="noteFilterCategory">
+<option value="">Select Category</option>
+</select>
+
+<label>Filter: Subject</label>
+<select id="noteFilterSubject">
+<option value="">Select Subject</option>
+</select>
+
+<label>Filter: Topic</label>
+<select id="noteFilterTopic">
+<option value="">Select Topic</option>
+</select>
+
+<div id="uploadedNotesList" style="margin-top:15px;">
+</div>
+
+<!-- Edit Note Modal -->
+<div id="editNoteModalOverlay" style="
+display:none;
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.5);
+z-index:999;
+align-items:center;
+justify-content:center;
+">
+<div style="
+background:white;
+padding:20px;
+border-radius:15px;
+max-width:500px;
+width:90%;
+max-height:90vh;
+overflow-y:auto;
+">
+
+<h2>✏️ Edit Note</h2>
+
+<label>Select Category</label>
+<select id="editNoteCategorySelect">
+<option value="">Select Category</option>
+</select>
+
+<label>Select Subject</label>
+<select id="editNoteSubjectSelect">
+<option value="">Select Subject</option>
+</select>
+
+<label>Select Topic</label>
+<select id="editNoteTopicSelect">
+<option value="">Select Topic</option>
+</select>
+
+<label>PDF Title</label>
+<input type="text" id="editNoteTitle">
+
+<label>PDF Link</label>
+<input type="text" id="editNotePdfLink">
+
+<button onclick="saveEditedNote()">
+💾 Save Changes
+</button>
+
+<button onclick="closeEditNoteModal()"
+style="background:#888;margin-left:10px;">
+✖ Cancel
+</button>
+
+</div>
+</div>
 </div>
 <div id="offerSection" class="section">
 
@@ -1917,6 +1994,9 @@ document.getElementById("noteTitle").value="";
 document.getElementById("notePdfLink").value="";
 if(notesNotif) notesNotif.reset();
 
+// Refresh only the Uploaded Notes list - no full page reload.
+loadUploadedNotesList();
+
 }
 catch(error){
 
@@ -1925,6 +2005,585 @@ alert(error.message);
 }
 
 };
+
+// ================================
+// Uploaded Notes Filter + Edit/Delete System START
+// ================================
+// Extends the existing Notes Upload system. Reuses the existing
+// notesCategories / notesSubjects / notesTopics / notesPdfs collections
+// as-is. No existing collection, document ID, function, or variable is
+// renamed - this only adds cascading filters + edit/delete for the
+// Uploaded Notes list, and refreshes just this list (no page reload).
+
+let uploadedNotesCache = []; // latest notesPdfs docs, used for client-side filtering
+
+// ---- Filter dropdowns: Category -> Subject -> Topic ----
+
+async function loadNoteFilterCategories(){
+
+const select =
+document.getElementById("noteFilterCategory");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((cat)=>{
+
+const data = cat.data();
+
+select.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+});
+
+}
+
+window.loadNoteFilterSubjects =
+async function(categoryId){
+
+const subjectSelect =
+document.getElementById("noteFilterSubject");
+
+if(!subjectSelect) return;
+
+subjectSelect.innerHTML =
+'<option value="">Select Subject</option>';
+
+if(!categoryId) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.categoryId === categoryId){
+
+subjectSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+}
+
+});
+
+};
+
+window.loadNoteFilterTopics =
+async function(subjectId){
+
+const topicSelect =
+document.getElementById("noteFilterTopic");
+
+if(!topicSelect) return;
+
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+
+if(!subjectId) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+topicSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
+
+});
+
+};
+
+document
+.getElementById("noteFilterCategory")
+.addEventListener("change", function(){
+
+document.getElementById("noteFilterSubject").innerHTML =
+'<option value="">Select Subject</option>';
+document.getElementById("noteFilterTopic").innerHTML =
+'<option value="">Select Topic</option>';
+
+loadNoteFilterSubjects(this.value);
+renderFilteredNotes();
+
+});
+
+document
+.getElementById("noteFilterSubject")
+.addEventListener("change", function(){
+
+document.getElementById("noteFilterTopic").innerHTML =
+'<option value="">Select Topic</option>';
+
+loadNoteFilterTopics(this.value);
+renderFilteredNotes();
+
+});
+
+document
+.getElementById("noteFilterTopic")
+.addEventListener("change", function(){
+
+renderFilteredNotes();
+
+});
+
+loadNoteFilterCategories();
+
+// ---- Load + Render Uploaded Notes list (with filtering) ----
+
+window.loadUploadedNotesList = async function(){
+
+const snapshot =
+await getDocs(
+collection(db,"notesPdfs")
+);
+
+uploadedNotesCache = [];
+
+snapshot.forEach((docItem)=>{
+
+uploadedNotesCache.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+renderFilteredNotes();
+
+};
+
+window.renderFilteredNotes = function(){
+
+const list =
+document.getElementById("uploadedNotesList");
+
+if(!list) return;
+
+const categorySelect =
+document.getElementById("noteFilterCategory");
+const subjectSelect =
+document.getElementById("noteFilterSubject");
+const topicSelect =
+document.getElementById("noteFilterTopic");
+
+const categoryId = categorySelect ? categorySelect.value : "";
+const subjectId = subjectSelect ? subjectSelect.value : "";
+const topicId = topicSelect ? topicSelect.value : "";
+
+const categoryName =
+(categoryId && categorySelect.selectedIndex > 0)
+? categorySelect.options[categorySelect.selectedIndex].text.trim()
+: "";
+
+const subjectName =
+(subjectId && subjectSelect.selectedIndex > 0)
+? subjectSelect.options[subjectSelect.selectedIndex].text.trim()
+: "";
+
+let filtered = uploadedNotesCache;
+
+if(topicId){
+
+// Topic selected - show only notes belonging to that Topic.
+filtered = filtered.filter((n)=> n.topicId === topicId);
+
+}else if(subjectId && subjectName){
+
+filtered = filtered.filter((n)=>
+n.categoryName === categoryName &&
+n.subjectName === subjectName
+);
+
+}else if(categoryId && categoryName){
+
+filtered = filtered.filter((n)=>
+n.categoryName === categoryName
+);
+
+}
+
+filtered = [...filtered].sort((a,b)=>
+new Date(b.createdAt || 0) -
+new Date(a.createdAt || 0)
+);
+
+list.innerHTML = "";
+
+if(!filtered.length){
+
+list.innerHTML =
+"<p>कोई Note नहीं मिला</p>";
+
+return;
+
+}
+
+filtered.forEach((n)=>{
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${n.noteTitle || "-"}</b>
+
+<br>
+
+📂 ${n.categoryName || "-"} &nbsp;|&nbsp;
+📘 ${n.subjectName || "-"} &nbsp;|&nbsp;
+📄 ${n.topicName || "-"}
+
+${n.pdfLink ? `<br><br><a href="${n.pdfLink}" target="_blank">🔗 Open PDF</a>` : ""}
+
+<br><br>
+
+<button onclick="openEditNoteModal('${n.id}')">
+✏️ Edit
+</button>
+
+<button
+onclick="deleteNote('${n.id}')"
+style="background:red;margin-left:8px;">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+};
+
+loadUploadedNotesList();
+
+// ---- Edit Note ----
+
+let currentEditNoteId = null;
+
+window.closeEditNoteModal = function(){
+
+document.getElementById("editNoteModalOverlay").style.display = "none";
+currentEditNoteId = null;
+
+};
+
+async function loadEditNoteCategories(selectedCategoryId){
+
+const select =
+document.getElementById("editNoteCategorySelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((cat)=>{
+
+const data = cat.data();
+
+select.innerHTML +=
+`<option value="${cat.id}">
+${data.name}
+</option>`;
+
+});
+
+if(selectedCategoryId){
+select.value = selectedCategoryId;
+}
+
+}
+
+window.loadEditNoteSubjects =
+async function(categoryId, selectedSubjectId){
+
+const subjectSelect =
+document.getElementById("editNoteSubjectSelect");
+
+if(!subjectSelect) return;
+
+subjectSelect.innerHTML =
+'<option value="">Select Subject</option>';
+
+if(!categoryId) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.categoryId === categoryId){
+
+subjectSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+}
+
+});
+
+if(selectedSubjectId){
+subjectSelect.value = selectedSubjectId;
+}
+
+};
+
+window.loadEditNoteTopics =
+async function(subjectId, selectedTopicId){
+
+const topicSelect =
+document.getElementById("editNoteTopicSelect");
+
+if(!topicSelect) return;
+
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+
+if(!subjectId) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+topicSelect.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
+
+});
+
+if(selectedTopicId){
+topicSelect.value = selectedTopicId;
+}
+
+};
+
+document
+.getElementById("editNoteCategorySelect")
+.addEventListener("change", function(){
+loadEditNoteSubjects(this.value);
+});
+
+document
+.getElementById("editNoteSubjectSelect")
+.addEventListener("change", function(){
+loadEditNoteTopics(this.value);
+});
+
+window.openEditNoteModal = async function(noteId){
+
+try{
+
+const note =
+uploadedNotesCache.find((n)=> n.id === noteId);
+
+if(!note){
+alert("Note not found");
+return;
+}
+
+currentEditNoteId = noteId;
+
+document.getElementById("editNoteTitle").value =
+note.noteTitle || "";
+
+document.getElementById("editNotePdfLink").value =
+note.pdfLink || "";
+
+let categoryId = "";
+let subjectId = "";
+
+// Look up the topic's parent Category/Subject IDs so the cascading
+// dropdowns in the edit modal can be pre-selected correctly, since
+// notesPdfs itself only stores the display names + topicId.
+if(note.topicId){
+
+const topicSnap =
+await getDoc(
+doc(db,"notesTopics",note.topicId)
+);
+
+if(topicSnap.exists()){
+const topicData = topicSnap.data();
+categoryId = topicData.categoryId || "";
+subjectId = topicData.subjectId || "";
+}
+
+}
+
+await loadEditNoteCategories(categoryId);
+await loadEditNoteSubjects(categoryId, subjectId);
+await loadEditNoteTopics(subjectId, note.topicId || "");
+
+document.getElementById("editNoteModalOverlay").style.display = "flex";
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+window.saveEditedNote = async function(){
+
+try{
+
+if(!currentEditNoteId){
+alert("No note selected");
+return;
+}
+
+const categorySelect =
+document.getElementById("editNoteCategorySelect");
+const subjectSelect =
+document.getElementById("editNoteSubjectSelect");
+const topicSelect =
+document.getElementById("editNoteTopicSelect");
+
+const topicId = topicSelect.value;
+
+if(topicId === ""){
+alert("Topic Select करें");
+return;
+}
+
+const topicName =
+topicSelect.options[topicSelect.selectedIndex].text.trim();
+
+const subjectName =
+subjectSelect.options[subjectSelect.selectedIndex].text.trim();
+
+const categoryName =
+categorySelect.options[categorySelect.selectedIndex].text.trim();
+
+const noteTitle =
+document.getElementById("editNoteTitle").value;
+
+const pdfLink =
+document.getElementById("editNotePdfLink").value;
+
+if(noteTitle === ""){
+alert("PDF Title भरें");
+return;
+}
+
+// Edit mode - updates the existing document only (same document ID),
+// so no duplicate note is created even if the PDF link/file changes.
+await updateDoc(
+doc(db,"notesPdfs",currentEditNoteId),
+{
+categoryName,
+subjectName,
+topicName,
+topicId,
+noteTitle,
+pdfLink
+}
+);
+
+alert("Note Updated Successfully ✅");
+
+closeEditNoteModal();
+
+// Refresh only the Uploaded Notes list - no full page reload.
+loadUploadedNotesList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// ---- Delete Note ----
+
+window.deleteNote = async function(noteId){
+
+if(!confirm("Are you sure you want to delete this note?")){
+return;
+}
+
+try{
+
+await deleteDoc(
+doc(db,"notesPdfs",noteId)
+);
+
+alert("Note Deleted ✅");
+
+// Refresh only the Uploaded Notes list - no full page reload.
+loadUploadedNotesList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// ================================
+// Uploaded Notes Filter + Edit/Delete System END
+// ================================
+
 window.saveQuiz = async function(){
 
 try{
