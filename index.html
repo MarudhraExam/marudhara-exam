@@ -160,6 +160,30 @@ transition:0.3s;
 
 </section>
 
+<!-- ================================
+     Latest News Section START
+     ================================ -->
+<section class="news-section" aria-labelledby="newsSectionHeading">
+
+<h2 id="newsSectionHeading" class="news-section-title">
+📰 Latest News
+</h2>
+
+<div class="news-box" id="newsBox">
+<div class="news-scroll-track" id="newsScrollTrack">
+Loading...
+</div>
+</div>
+
+<a href="news.html" class="news-view-all">
+View All &gt;&gt;
+</a>
+
+</section>
+<!-- ================================
+     Latest News Section END
+     ================================ -->
+
 <footer>
 
 <h2>📘 मरुधरा एग्जाम</h2>
@@ -600,6 +624,101 @@ attachAnnouncementListener();
 
 // ================================
 // Announcement Ticker System END
+// ================================
+
+// ================================
+// Latest News Section START
+// ================================
+// Reuses the same `db` Firestore instance already initialized above -
+// no second app/config is created. Only "Active" news is shown, newest
+// date first. The list is duplicated once so the continuous upward
+// scroll (translateY -50%) loops without any visible seam.
+
+function newsItemHTML(item){
+
+return `
+
+<div class="news-item">
+
+${item.isNew ? '<span class="news-badge-new">🔴 NEW</span>' : ""}
+
+<span class="news-date">${item.date || ""}</span>
+
+<span class="news-title">${item.title || ""}</span>
+
+<a href="${item.link}" target="_blank" rel="noopener" class="news-click-btn">
+Click Here
+</a>
+
+</div>
+
+`;
+
+}
+
+function renderHomeNews(items){
+
+const track = document.getElementById("newsScrollTrack");
+const box = document.getElementById("newsBox");
+
+if(!track || !box) return;
+
+if(!items.length){
+
+track.style.animation = "none";
+track.innerHTML = '<div class="news-item">फिलहाल कोई News उपलब्ध नहीं है</div>';
+return;
+
+}
+
+const html = items.map(newsItemHTML).join("") + items.map(newsItemHTML).join("");
+
+track.innerHTML = html;
+
+// Roughly 3 seconds per item - keeps longer lists scrolling at a
+// steady, readable pace instead of speeding up or crawling.
+const duration = Math.max(items.length * 3, 10);
+
+track.style.animation = "newsScrollUp " + duration + "s linear infinite";
+
+}
+
+function attachHomeNewsListener(){
+
+onSnapshot(collection(db,"news"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.status === "Active"){
+items.push(data);
+}
+
+});
+
+items.sort((a,b)=>{
+
+const dateCompare = (b.date || "").localeCompare(a.date || "");
+
+if(dateCompare !== 0) return dateCompare;
+
+return (a.priority || 0) - (b.priority || 0);
+
+});
+
+renderHomeNews(items);
+
+});
+
+}
+
+attachHomeNewsListener();
+
+// ================================
+// Latest News Section END
 // ================================
 </script>
 </body>
