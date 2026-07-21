@@ -17,7 +17,10 @@
 <img src="https://marudharaexam.in/images/web%20logo_11zon.png" alt="Marudhara Exam">
 </div>
 
-<nav>
+<button type="button" class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav">☰</button>
+
+<nav id="mainNav">
+<button type="button" class="nav-close-btn" id="navCloseBtn" aria-label="Close menu">✕</button>
 <a href="#">Home</a>
 <a href="omr.html">OMR Check</a>
 <a href="mock-tests/index.html">Mock Tests</a>
@@ -28,6 +31,7 @@
 <a href="#contact">Contact</a>
 </nav>
 
+<div class="nav-overlay" id="navOverlay"></div>
 
 </header>
 
@@ -258,6 +262,73 @@ Today Visitors :
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<!-- ================================
+     Mobile Hamburger Navigation START
+     (Only toggles classes; does not touch
+     any existing routing/functionality)
+     ================================ -->
+<script>
+
+(function(){
+
+const hamburgerBtn = document.getElementById("hamburgerBtn");
+const navCloseBtn = document.getElementById("navCloseBtn");
+const mainNav = document.getElementById("mainNav");
+const navOverlay = document.getElementById("navOverlay");
+
+if(!hamburgerBtn || !mainNav || !navOverlay) return;
+
+function openMenu(){
+
+mainNav.classList.add("nav-open");
+navOverlay.classList.add("active");
+hamburgerBtn.setAttribute("aria-expanded","true");
+document.body.style.overflow = "hidden";
+
+}
+
+function closeMenu(){
+
+mainNav.classList.remove("nav-open");
+navOverlay.classList.remove("active");
+hamburgerBtn.setAttribute("aria-expanded","false");
+document.body.style.overflow = "";
+
+}
+
+hamburgerBtn.addEventListener("click", openMenu);
+
+if(navCloseBtn){
+navCloseBtn.addEventListener("click", closeMenu);
+}
+
+// Close on outside click (tapping the dark overlay)
+navOverlay.addEventListener("click", closeMenu);
+
+// Close automatically after tapping a nav link (existing links/hrefs untouched)
+mainNav.querySelectorAll("a").forEach(function(link){
+
+link.addEventListener("click", closeMenu);
+
+});
+
+// Safety: if window is resized back to desktop/tablet width, reset state
+window.addEventListener("resize", function(){
+
+if(window.innerWidth > 767){
+closeMenu();
+}
+
+});
+
+})();
+
+</script>
+<!-- ================================
+     Mobile Hamburger Navigation END
+     ================================ -->
+
 <script type="module">
 
 import { initializeApp }
