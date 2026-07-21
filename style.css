@@ -467,3 +467,215 @@ padding:12px 20px;
 /* ================================
    Official Android App Download Card END
    ================================ */
+
+/* ================================
+   Latest News System START
+   (Home page scroller + news.html cards)
+   ================================ */
+
+.news-section{
+max-width:1200px;
+margin:30px auto;
+padding:0 15px;
+}
+
+.news-section-title{
+text-align:center;
+font-size:32px;
+color:#002B5B;
+margin-bottom:20px;
+}
+
+.news-box{
+background:white;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
+overflow:hidden;
+height:340px;
+position:relative;
+}
+
+.news-scroll-track{
+/* animation-duration is set inline by JS based on item count */
+animation-name:newsScrollUp;
+animation-timing-function:linear;
+animation-iteration-count:infinite;
+}
+
+/* Hover pauses, mouse leave resumes - CSS handles both automatically */
+.news-box:hover .news-scroll-track{
+animation-play-state:paused;
+}
+
+@keyframes newsScrollUp{
+
+from{
+transform:translateY(0);
+}
+
+to{
+transform:translateY(-50%);
+}
+
+}
+
+.news-item{
+display:flex;
+align-items:center;
+gap:12px;
+padding:14px 20px;
+border-bottom:1px solid #eee;
+flex-wrap:wrap;
+}
+
+.news-badge-new{
+background:#ff0000;
+color:white;
+font-size:11px;
+font-weight:bold;
+padding:3px 10px;
+border-radius:20px;
+flex-shrink:0;
+animation:newOffer 1s infinite;
+}
+
+.news-date{
+font-size:13px;
+color:#888;
+flex-shrink:0;
+}
+
+.news-title{
+flex:1 1 auto;
+font-weight:bold;
+color:#002B5B;
+min-width:150px;
+}
+
+.news-click-btn{
+background:#002B5B;
+color:white;
+font-size:13px;
+font-weight:bold;
+padding:6px 14px;
+border-radius:8px;
+text-decoration:none;
+flex-shrink:0;
+}
+
+.news-click-btn:hover{
+background:#FFB347;
+color:#002B5B;
+}
+
+.news-view-all{
+display:block;
+text-align:center;
+margin-top:18px;
+font-weight:bold;
+color:#002B5B;
+text-decoration:none;
+font-size:16px;
+}
+
+.news-view-all:hover{
+color:#0d6efd;
+}
+
+@media(max-width:600px){
+
+.news-box{
+height:300px;
+}
+
+.news-item{
+padding:12px 15px;
+}
+
+.news-title{
+font-size:14px;
+}
+
+}
+
+/* ---- news.html full listing page ---- */
+
+.news-page-wrap{
+max-width:1100px;
+margin:30px auto;
+padding:0 15px;
+}
+
+.news-search-box{
+width:100%;
+padding:14px 18px;
+border:1px solid #ccc;
+border-radius:12px;
+font-size:16px;
+margin-bottom:25px;
+box-sizing:border-box;
+}
+
+.news-cards-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
+}
+
+.news-card{
+background:white;
+border-radius:15px;
+padding:20px;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
+transition:.3s;
+}
+
+.news-card:hover{
+transform:translateY(-4px);
+}
+
+.news-card-date{
+font-size:13px;
+color:#888;
+margin-bottom:8px;
+}
+
+.news-card-title{
+font-size:18px;
+font-weight:bold;
+color:#002B5B;
+margin-bottom:8px;
+}
+
+.news-card-desc{
+font-size:14px;
+color:#555;
+line-height:1.6;
+margin-bottom:14px;
+}
+
+.news-card-btn{
+display:inline-block;
+background:#0d6efd;
+color:white;
+font-weight:bold;
+font-size:14px;
+padding:10px 20px;
+border-radius:10px;
+text-decoration:none;
+}
+
+.news-card-btn:hover{
+background:#0b5ed7;
+}
+
+.news-empty-msg{
+text-align:center;
+padding:40px;
+color:#888;
+font-size:16px;
+}
+
+/* ================================
+   Latest News System END
+   ================================ */
