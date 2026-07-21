@@ -2149,7 +2149,23 @@ document
 .getElementById("noteFilterTopic")
 .addEventListener("change", function(){
 
+const categoryId =
+document.getElementById("noteFilterCategory").value;
+const subjectId =
+document.getElementById("noteFilterSubject").value;
+const topicId = this.value;
+
+if(categoryId && subjectId && topicId){
+
+// All three selected - now (and only now) fetch notes
+// from Firestore and display matching records.
+loadUploadedNotesList();
+
+}else{
+
 renderFilteredNotes();
+
+}
 
 });
 
@@ -2197,37 +2213,21 @@ const categoryId = categorySelect ? categorySelect.value : "";
 const subjectId = subjectSelect ? subjectSelect.value : "";
 const topicId = topicSelect ? topicSelect.value : "";
 
-const categoryName =
-(categoryId && categorySelect.selectedIndex > 0)
-? categorySelect.options[categorySelect.selectedIndex].text.trim()
-: "";
+// Do not show/load any notes until Category, Subject and Topic
+// are all selected.
+if(!categoryId || !subjectId || !topicId){
 
-const subjectName =
-(subjectId && subjectSelect.selectedIndex > 0)
-? subjectSelect.options[subjectSelect.selectedIndex].text.trim()
-: "";
+list.innerHTML =
+"<p>Please select Category, Subject and Topic to view uploaded notes.</p>";
 
-let filtered = uploadedNotesCache;
-
-if(topicId){
-
-// Topic selected - show only notes belonging to that Topic.
-filtered = filtered.filter((n)=> n.topicId === topicId);
-
-}else if(subjectId && subjectName){
-
-filtered = filtered.filter((n)=>
-n.categoryName === categoryName &&
-n.subjectName === subjectName
-);
-
-}else if(categoryId && categoryName){
-
-filtered = filtered.filter((n)=>
-n.categoryName === categoryName
-);
+return;
 
 }
+
+// Topic selected (along with Category + Subject) - show only
+// notes belonging to that Topic.
+let filtered =
+uploadedNotesCache.filter((n)=> n.topicId === topicId);
 
 filtered = [...filtered].sort((a,b)=>
 new Date(b.createdAt || 0) -
@@ -2239,7 +2239,7 @@ list.innerHTML = "";
 if(!filtered.length){
 
 list.innerHTML =
-"<p>कोई Note नहीं मिला</p>";
+"<p>No notes found.</p>";
 
 return;
 
@@ -2286,7 +2286,10 @@ style="background:red;margin-left:8px;">
 
 };
 
-loadUploadedNotesList();
+// Do NOT auto-load all notes on startup. Just show the
+// "please select filters" placeholder until Category, Subject
+// and Topic are all selected.
+renderFilteredNotes();
 
 // ---- Edit Note ----
 
