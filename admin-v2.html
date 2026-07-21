@@ -410,6 +410,10 @@ placeholder="https://example.com/icon.png">
 ➕ Create Category
 </button>
 
+<h3>📂 Category Manager</h3>
+<div id="categoryManagerList" style="margin-top:10px;">
+</div>
+
 <hr>
 
 <label>Select Category</label>
@@ -426,6 +430,10 @@ placeholder="https://example.com/icon.png">
 <button onclick="saveSubject()">
 ➕ Create Subject
 </button>
+
+<h3>📘 Subject Manager</h3>
+<div id="subjectManagerList" style="margin-top:10px;">
+</div>
 
 <hr>
 
@@ -453,6 +461,11 @@ placeholder="https://example.com/icon.png">
 style="background:red;color:white;margin-left:10px;">
 🗑 Delete Topic
 </button>
+
+<h3>📄 Topic Manager</h3>
+<div id="topicManagerList" style="margin-top:10px;">
+</div>
+
 <hr>
 
 <label>PDF Title</label>
@@ -558,6 +571,126 @@ style="background:#888;margin-left:10px;">
 
 </div>
 </div>
+
+<!-- Edit Category Modal -->
+<div id="editCategoryModalOverlay" style="
+display:none;
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.5);
+z-index:999;
+align-items:center;
+justify-content:center;
+">
+<div style="
+background:white;
+padding:20px;
+border-radius:15px;
+max-width:500px;
+width:90%;
+max-height:90vh;
+overflow-y:auto;
+">
+
+<h2>✏️ Edit Category</h2>
+
+<label>Category Name</label>
+<input type="text" id="editCategoryName">
+
+<label>Category Icon URL</label>
+<input type="text" id="editCategoryIcon"
+placeholder="https://example.com/icon.png">
+
+<button onclick="saveEditedCategory()">
+💾 Save Changes
+</button>
+
+<button onclick="closeEditCategoryModal()"
+style="background:#888;margin-left:10px;">
+✖ Cancel
+</button>
+
+</div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div id="editSubjectModalOverlay" style="
+display:none;
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.5);
+z-index:999;
+align-items:center;
+justify-content:center;
+">
+<div style="
+background:white;
+padding:20px;
+border-radius:15px;
+max-width:500px;
+width:90%;
+max-height:90vh;
+overflow-y:auto;
+">
+
+<h2>✏️ Edit Subject</h2>
+
+<label>Subject Name</label>
+<input type="text" id="editSubjectName">
+
+<label>Subject Icon URL</label>
+<input type="text" id="editSubjectIcon"
+placeholder="https://example.com/icon.png">
+
+<button onclick="saveEditedSubject()">
+💾 Save Changes
+</button>
+
+<button onclick="closeEditSubjectModal()"
+style="background:#888;margin-left:10px;">
+✖ Cancel
+</button>
+
+</div>
+</div>
+
+<!-- Edit Topic Modal -->
+<div id="editTopicModalOverlay" style="
+display:none;
+position:fixed;
+top:0;left:0;right:0;bottom:0;
+background:rgba(0,0,0,0.5);
+z-index:999;
+align-items:center;
+justify-content:center;
+">
+<div style="
+background:white;
+padding:20px;
+border-radius:15px;
+max-width:500px;
+width:90%;
+max-height:90vh;
+overflow-y:auto;
+">
+
+<h2>✏️ Edit Topic</h2>
+
+<label>Topic Name</label>
+<input type="text" id="editTopicName">
+
+<button onclick="saveEditedTopic()">
+💾 Save Changes
+</button>
+
+<button onclick="closeEditTopicModal()"
+style="background:#888;margin-left:10px;">
+✖ Cancel
+</button>
+
+</div>
+</div>
+
 </div>
 <div id="offerSection" class="section">
 
@@ -1619,6 +1752,626 @@ alert(
 
 console.log("Before Exam Load");
 loadExams();
+
+// ================================
+// Category / Subject / Topic Manager - Edit & Delete System START
+// ================================
+// Adds Edit & Delete functionality for Categories, Subjects and Topics
+// in their own management sections (NOT inside the Uploaded Notes dialog).
+// Reuses the existing notesCategories / notesSubjects / notesTopics
+// collections as-is. No existing collection, document ID, function, or
+// variable is renamed or removed. Only the affected list is refreshed
+// after an Edit/Delete action - no page reload.
+
+let categoryManagerCache = [];
+let subjectManagerCache = [];
+let topicManagerCache = [];
+
+let currentEditCategoryId = null;
+let currentEditSubjectId = null;
+let currentEditTopicId = null;
+
+// ---- Category Manager ----
+
+window.loadCategoryManagerList = async function(){
+
+const list = document.getElementById("categoryManagerList");
+
+if(!list) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+categoryManagerCache = [];
+
+snapshot.forEach((docItem)=>{
+
+categoryManagerCache.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+renderCategoryManagerList();
+
+};
+
+window.renderCategoryManagerList = function(){
+
+const list = document.getElementById("categoryManagerList");
+
+if(!list) return;
+
+if(!categoryManagerCache.length){
+
+list.innerHTML = "<p>No categories found.</p>";
+return;
+
+}
+
+list.innerHTML = "";
+
+categoryManagerCache.forEach((c)=>{
+
+list.innerHTML += `
+
+<div style="border:1px solid #ddd;padding:12px;margin-bottom:10px;border-radius:8px;">
+
+${c.icon ? `<img src="${c.icon}" style="height:30px;vertical-align:middle;margin-right:8px;">` : ""}
+<b>${c.name || "-"}</b>
+
+<br><br>
+
+<button onclick="openEditCategoryModal('${c.id}')">
+✏️ Edit
+</button>
+
+<button
+onclick="deleteCategory('${c.id}')"
+style="background:red;color:white;margin-left:8px;">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+};
+
+window.closeEditCategoryModal = function(){
+
+document.getElementById("editCategoryModalOverlay").style.display = "none";
+currentEditCategoryId = null;
+
+};
+
+window.openEditCategoryModal = function(categoryId){
+
+const cat =
+categoryManagerCache.find((c)=> c.id === categoryId);
+
+if(!cat){
+alert("Category not found");
+return;
+}
+
+currentEditCategoryId = categoryId;
+
+document.getElementById("editCategoryName").value =
+cat.name || "";
+
+document.getElementById("editCategoryIcon").value =
+cat.icon || "";
+
+document.getElementById("editCategoryModalOverlay").style.display = "flex";
+
+};
+
+window.saveEditedCategory = async function(){
+
+try{
+
+if(!currentEditCategoryId){
+alert("No category selected");
+return;
+}
+
+const name =
+document.getElementById("editCategoryName").value;
+
+const icon =
+document.getElementById("editCategoryIcon").value;
+
+if(name === ""){
+alert("Category Name भरें");
+return;
+}
+
+// Update the existing document only (same document ID) - no
+// new Category document is created.
+await updateDoc(
+doc(db,"notesCategories",currentEditCategoryId),
+{
+name,
+icon
+}
+);
+
+alert("Category Updated ✅");
+
+closeEditCategoryModal();
+
+// Refresh the Category Manager list, plus the existing dropdowns
+// that display Category names, since the name may have changed.
+loadCategoryManagerList();
+loadCategories();
+if(typeof loadNoteFilterCategories === "function"){
+loadNoteFilterCategories();
+}
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+window.deleteCategory = async function(categoryId){
+
+if(!confirm("Are you sure you want to delete this Category?")){
+return;
+}
+
+try{
+
+// Check whether any Subjects are linked to this Category. Notes
+// always belong to a Subject (via its Topic), so this also covers
+// Notes linked to this Category.
+const subjectsSnapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+let hasLinkedSubject = false;
+
+subjectsSnapshot.forEach((docItem)=>{
+
+if(docItem.data().categoryId === categoryId){
+hasLinkedSubject = true;
+}
+
+});
+
+if(hasLinkedSubject){
+
+alert("This Category cannot be deleted because it contains Subjects or Notes.");
+return;
+
+}
+
+await deleteDoc(
+doc(db,"notesCategories",categoryId)
+);
+
+alert("Category Deleted ✅");
+
+loadCategoryManagerList();
+loadCategories();
+if(typeof loadNoteFilterCategories === "function"){
+loadNoteFilterCategories();
+}
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// ---- Subject Manager ----
+
+window.loadSubjectManagerList = async function(){
+
+const list = document.getElementById("subjectManagerList");
+
+if(!list) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+subjectManagerCache = [];
+
+snapshot.forEach((docItem)=>{
+
+subjectManagerCache.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+renderSubjectManagerList();
+
+};
+
+window.renderSubjectManagerList = function(){
+
+const list = document.getElementById("subjectManagerList");
+
+if(!list) return;
+
+if(!subjectManagerCache.length){
+
+list.innerHTML = "<p>No subjects found.</p>";
+return;
+
+}
+
+list.innerHTML = "";
+
+subjectManagerCache.forEach((s)=>{
+
+list.innerHTML += `
+
+<div style="border:1px solid #ddd;padding:12px;margin-bottom:10px;border-radius:8px;">
+
+${s.icon ? `<img src="${s.icon}" style="height:30px;vertical-align:middle;margin-right:8px;">` : ""}
+<b>${s.subjectName || "-"}</b>
+
+<br><br>
+
+<button onclick="openEditSubjectModal('${s.id}')">
+✏️ Edit
+</button>
+
+<button
+onclick="deleteSubject('${s.id}')"
+style="background:red;color:white;margin-left:8px;">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+};
+
+window.closeEditSubjectModal = function(){
+
+document.getElementById("editSubjectModalOverlay").style.display = "none";
+currentEditSubjectId = null;
+
+};
+
+window.openEditSubjectModal = function(subjectId){
+
+const subj =
+subjectManagerCache.find((s)=> s.id === subjectId);
+
+if(!subj){
+alert("Subject not found");
+return;
+}
+
+currentEditSubjectId = subjectId;
+
+document.getElementById("editSubjectName").value =
+subj.subjectName || "";
+
+document.getElementById("editSubjectIcon").value =
+subj.icon || "";
+
+document.getElementById("editSubjectModalOverlay").style.display = "flex";
+
+};
+
+window.saveEditedSubject = async function(){
+
+try{
+
+if(!currentEditSubjectId){
+alert("No subject selected");
+return;
+}
+
+const subjectName =
+document.getElementById("editSubjectName").value;
+
+const icon =
+document.getElementById("editSubjectIcon").value;
+
+if(subjectName === ""){
+alert("Subject Name भरें");
+return;
+}
+
+// Update the existing document only (same document ID) - no
+// duplicate Subject document is created.
+await updateDoc(
+doc(db,"notesSubjects",currentEditSubjectId),
+{
+subjectName,
+icon
+}
+);
+
+alert("Subject Updated ✅");
+
+closeEditSubjectModal();
+
+// Refresh only the Subject Manager list.
+loadSubjectManagerList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+window.deleteSubject = async function(subjectId){
+
+if(!confirm("Are you sure you want to delete this Subject?")){
+return;
+}
+
+try{
+
+// Check whether any Topics are linked to this Subject. Notes always
+// belong to a Topic, so this also covers Notes linked to this Subject.
+const topicsSnapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+let hasLinkedTopic = false;
+
+topicsSnapshot.forEach((docItem)=>{
+
+if(docItem.data().subjectId === subjectId){
+hasLinkedTopic = true;
+}
+
+});
+
+if(hasLinkedTopic){
+
+alert("This Subject cannot be deleted because it contains Topics or Notes.");
+return;
+
+}
+
+await deleteDoc(
+doc(db,"notesSubjects",subjectId)
+);
+
+alert("Subject Deleted ✅");
+
+loadSubjectManagerList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// ---- Topic Manager ----
+
+window.loadTopicManagerList = async function(){
+
+const list = document.getElementById("topicManagerList");
+
+if(!list) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesTopics")
+);
+
+topicManagerCache = [];
+
+snapshot.forEach((docItem)=>{
+
+topicManagerCache.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+renderTopicManagerList();
+
+};
+
+window.renderTopicManagerList = function(){
+
+const list = document.getElementById("topicManagerList");
+
+if(!list) return;
+
+if(!topicManagerCache.length){
+
+list.innerHTML = "<p>No topics found.</p>";
+return;
+
+}
+
+list.innerHTML = "";
+
+topicManagerCache.forEach((t)=>{
+
+list.innerHTML += `
+
+<div style="border:1px solid #ddd;padding:12px;margin-bottom:10px;border-radius:8px;">
+
+<b>${t.topicName || "-"}</b>
+
+<br><br>
+
+<button onclick="openEditTopicModal('${t.id}')">
+✏️ Edit
+</button>
+
+<button
+onclick="deleteTopicManaged('${t.id}')"
+style="background:red;color:white;margin-left:8px;">
+🗑 Delete
+</button>
+
+</div>
+
+`;
+
+});
+
+};
+
+window.closeEditTopicModal = function(){
+
+document.getElementById("editTopicModalOverlay").style.display = "none";
+currentEditTopicId = null;
+
+};
+
+window.openEditTopicModal = function(topicId){
+
+const t =
+topicManagerCache.find((x)=> x.id === topicId);
+
+if(!t){
+alert("Topic not found");
+return;
+}
+
+currentEditTopicId = topicId;
+
+document.getElementById("editTopicName").value =
+t.topicName || "";
+
+document.getElementById("editTopicModalOverlay").style.display = "flex";
+
+};
+
+window.saveEditedTopic = async function(){
+
+try{
+
+if(!currentEditTopicId){
+alert("No topic selected");
+return;
+}
+
+const topicName =
+document.getElementById("editTopicName").value;
+
+if(topicName === ""){
+alert("Topic Name भरें");
+return;
+}
+
+// Update the existing document only (same document ID) - no
+// duplicate Topic document is created.
+await updateDoc(
+doc(db,"notesTopics",currentEditTopicId),
+{
+topicName
+}
+);
+
+alert("Topic Updated ✅");
+
+closeEditTopicModal();
+
+// Refresh only the Topic Manager list.
+loadTopicManagerList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// Named "deleteTopicManaged" (rather than "deleteTopic") so the existing
+// dropdown-based deleteTopic() button in the Create Topic section keeps
+// working exactly as before.
+window.deleteTopicManaged = async function(topicId){
+
+if(!confirm("Are you sure you want to delete this Topic?")){
+return;
+}
+
+try{
+
+// Check whether any Notes exist under this Topic.
+const notesSnapshot =
+await getDocs(
+collection(db,"notesPdfs")
+);
+
+let hasLinkedNote = false;
+
+notesSnapshot.forEach((docItem)=>{
+
+if(docItem.data().topicId === topicId){
+hasLinkedNote = true;
+}
+
+});
+
+if(hasLinkedNote){
+
+alert("This Topic cannot be deleted because it contains Notes.");
+return;
+
+}
+
+await deleteDoc(
+doc(db,"notesTopics",topicId)
+);
+
+alert("Topic Deleted ✅");
+
+loadTopicManagerList();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+// Initial load of the three manager lists.
+loadCategoryManagerList();
+loadSubjectManagerList();
+loadTopicManagerList();
+
+// ================================
+// Category / Subject / Topic Manager - Edit & Delete System END
+// ================================
+
 async function loadCategories(){
 
 const select1 =
@@ -1688,6 +2441,9 @@ document.getElementById("categoryName").value="";
 document.getElementById("categoryIcon").value="";
 
 loadCategories();
+if(typeof loadCategoryManagerList === "function"){
+loadCategoryManagerList();
+}
 
 }
 catch(error){
@@ -1732,6 +2488,10 @@ alert("Subject Created ✅");
 
 document.getElementById("subjectName").value="";
 document.getElementById("subjectIcon").value="";
+
+if(typeof loadSubjectManagerList === "function"){
+loadSubjectManagerList();
+}
 }
 catch(error){
 alert(error.message);
@@ -1779,6 +2539,10 @@ alert("Topic Created ✅");
 
 document.getElementById("topicName").value="";
 
+if(typeof loadTopicManagerList === "function"){
+loadTopicManagerList();
+}
+
 }
 catch(error){
 
@@ -1809,7 +2573,7 @@ doc(db,"notesTopics",topicId)
 
 alert("Topic Deleted ✅");
 
-location.reload();
+location.reload(); // existing behavior kept as-is
 
 }
 catch(error){
