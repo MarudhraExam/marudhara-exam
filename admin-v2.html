@@ -411,7 +411,15 @@ placeholder="https://example.com/icon.png">
 </button>
 
 <h3>📂 Category Manager</h3>
+<label>Select Category</label>
+<select id="categoryManagerSelect">
+<option value="">Select Category</option>
+</select>
+<button onclick="searchCategoryManager()">
+🔍 Search
+</button>
 <div id="categoryManagerList" style="margin-top:10px;">
+<p>Please select a Category and click Search.</p>
 </div>
 
 <hr>
@@ -432,7 +440,19 @@ placeholder="https://example.com/icon.png">
 </button>
 
 <h3>📘 Subject Manager</h3>
+<label>Select Category</label>
+<select id="subjectManagerCategorySelect">
+<option value="">Select Category</option>
+</select>
+<label>Select Subject</label>
+<select id="subjectManagerSubjectSelect">
+<option value="">Select Subject</option>
+</select>
+<button onclick="searchSubjectManager()">
+🔍 Search
+</button>
 <div id="subjectManagerList" style="margin-top:10px;">
+<p>Please select a Category, a Subject and click Search.</p>
 </div>
 
 <hr>
@@ -463,7 +483,23 @@ style="background:red;color:white;margin-left:10px;">
 </button>
 
 <h3>📄 Topic Manager</h3>
+<label>Select Category</label>
+<select id="topicManagerCategorySelect">
+<option value="">Select Category</option>
+</select>
+<label>Select Subject</label>
+<select id="topicManagerSubjectSelect">
+<option value="">Select Subject</option>
+</select>
+<label>Select Topic</label>
+<select id="topicManagerTopicSelect">
+<option value="">Select Topic</option>
+</select>
+<button onclick="searchTopicManager()">
+🔍 Search
+</button>
 <div id="topicManagerList" style="margin-top:10px;">
+<p>Please select a Category, a Subject, a Topic and click Search.</p>
 </div>
 
 <hr>
@@ -1771,31 +1807,109 @@ let currentEditCategoryId = null;
 let currentEditSubjectId = null;
 let currentEditTopicId = null;
 
-// ---- Category Manager ----
+// ---- Category Manager (search-based) ----
 
-window.loadCategoryManagerList = async function(){
+// Tracks the Category currently searched/displayed in the Category
+// Manager, so Edit/Delete actions can refresh the same result instead
+// of loading the full Category list.
+let categoryManagerSearchedId = null;
 
-const list = document.getElementById("categoryManagerList");
+// Populates the "Select Category" dropdown only (does not display any
+// Category list). This is a lightweight read of the Categories
+// collection only, required so the dropdown has options to pick from.
+window.loadCategoryManagerDropdown = async function(){
 
-if(!list) return;
+const select = document.getElementById("categoryManagerSelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Category</option>';
 
 const snapshot =
 await getDocs(
 collection(db,"notesCategories")
 );
 
-categoryManagerCache = [];
-
 snapshot.forEach((docItem)=>{
 
-categoryManagerCache.push({
-id:docItem.id,
-...docItem.data()
-});
+const data = docItem.data();
+
+select.innerHTML +=
+`<option value="${docItem.id}">
+${data.name}
+</option>`;
 
 });
+
+};
+
+// Called when the admin clicks the Category Manager "Search" button.
+// Fetches only the single selected Category document - no full list
+// of Categories is read from Firestore.
+window.searchCategoryManager = async function(){
+
+const select = document.getElementById("categoryManagerSelect");
+const list = document.getElementById("categoryManagerList");
+
+if(!select || !list) return;
+
+const categoryId = select.value;
+
+categoryManagerSearchedId = categoryId || null;
+
+if(!categoryId){
+
+categoryManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category and click Search.</p>";
+return;
+
+}
+
+const docSnap =
+await getDoc(
+doc(db,"notesCategories",categoryId)
+);
+
+categoryManagerCache = [];
+
+if(docSnap.exists()){
+
+categoryManagerCache.push({
+id:docSnap.id,
+...docSnap.data()
+});
+
+}
 
 renderCategoryManagerList();
+
+};
+
+// Kept so existing calls (saveEditedCategory / deleteCategory) that
+// refresh the Category Manager after an Edit/Delete keep working -
+// it simply re-runs the last search instead of loading every Category.
+window.loadCategoryManagerList = async function(){
+
+const list = document.getElementById("categoryManagerList");
+
+if(!list) return;
+
+if(categoryManagerSearchedId){
+
+const select = document.getElementById("categoryManagerSelect");
+if(select) select.value = categoryManagerSearchedId;
+
+await searchCategoryManager();
+
+}else{
+
+categoryManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category and click Search.</p>";
+
+}
 
 };
 
@@ -1906,8 +2020,9 @@ alert("Category Updated ✅");
 
 closeEditCategoryModal();
 
-// Refresh the Category Manager list, plus the existing dropdowns
-// that display Category names, since the name may have changed.
+// Refresh the Category Manager list, its dropdown (label may have
+// changed), plus the existing dropdowns that display Category names.
+loadCategoryManagerDropdown();
 loadCategoryManagerList();
 loadCategories();
 if(typeof loadNoteFilterCategories === "function"){
@@ -1962,6 +2077,14 @@ doc(db,"notesCategories",categoryId)
 
 alert("Category Deleted ✅");
 
+// The searched Category no longer exists - reset the search state
+// so the manager goes back to the "please search" prompt.
+categoryManagerSearchedId = null;
+const categoryManagerSelectEl =
+document.getElementById("categoryManagerSelect");
+if(categoryManagerSelectEl) categoryManagerSelectEl.value = "";
+
+loadCategoryManagerDropdown();
 loadCategoryManagerList();
 loadCategories();
 if(typeof loadNoteFilterCategories === "function"){
@@ -1977,31 +2100,168 @@ alert(error.message);
 
 };
 
-// ---- Subject Manager ----
+// ---- Subject Manager (search-based) ----
 
-window.loadSubjectManagerList = async function(){
+// Tracks the Category/Subject currently searched/displayed, so
+// Edit/Delete actions can refresh the same result instead of loading
+// every Subject.
+let subjectManagerSearchedCategoryId = null;
+let subjectManagerSearchedSubjectId = null;
 
-const list = document.getElementById("subjectManagerList");
+// Populates only the "Select Category" dropdown (lightweight read of
+// the Categories collection). No Subjects are loaded here.
+window.loadSubjectManagerCategoryDropdown = async function(){
 
-if(!list) return;
+const select =
+document.getElementById("subjectManagerCategorySelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+select.innerHTML +=
+`<option value="${docItem.id}">
+${data.name}
+</option>`;
+
+});
+
+};
+
+// Called when the Subject Manager Category dropdown changes. Loads
+// only the Subjects belonging to that Category - not the full
+// Subjects collection - into the Subject dropdown.
+window.loadSubjectManagerSubjectDropdown = async function(categoryId){
+
+const select =
+document.getElementById("subjectManagerSubjectSelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Subject</option>';
+
+if(!categoryId) return;
 
 const snapshot =
 await getDocs(
 collection(db,"notesSubjects")
 );
 
-subjectManagerCache = [];
-
 snapshot.forEach((docItem)=>{
 
-subjectManagerCache.push({
-id:docItem.id,
-...docItem.data()
-});
+const data = docItem.data();
+
+if(data.categoryId === categoryId){
+
+select.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+}
 
 });
+
+};
+
+// Called when the admin clicks the Subject Manager "Search" button.
+// Fetches only the single selected Subject document.
+window.searchSubjectManager = async function(){
+
+const categorySelect =
+document.getElementById("subjectManagerCategorySelect");
+const subjectSelect =
+document.getElementById("subjectManagerSubjectSelect");
+const list = document.getElementById("subjectManagerList");
+
+if(!categorySelect || !subjectSelect || !list) return;
+
+const categoryId = categorySelect.value;
+const subjectId = subjectSelect.value;
+
+subjectManagerSearchedCategoryId = categoryId || null;
+subjectManagerSearchedSubjectId = subjectId || null;
+
+if(!categoryId || !subjectId){
+
+subjectManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category, a Subject and click Search.</p>";
+return;
+
+}
+
+const docSnap =
+await getDoc(
+doc(db,"notesSubjects",subjectId)
+);
+
+subjectManagerCache = [];
+
+if(docSnap.exists()){
+
+subjectManagerCache.push({
+id:docSnap.id,
+...docSnap.data()
+});
+
+}
 
 renderSubjectManagerList();
+
+};
+
+// Kept so existing calls (saveEditedSubject / deleteSubject) that
+// refresh the Subject Manager after an Edit/Delete keep working - it
+// simply re-runs the last search instead of loading every Subject.
+window.loadSubjectManagerList = async function(){
+
+const list = document.getElementById("subjectManagerList");
+
+if(!list) return;
+
+if(subjectManagerSearchedCategoryId && subjectManagerSearchedSubjectId){
+
+const categorySelect =
+document.getElementById("subjectManagerCategorySelect");
+const subjectSelect =
+document.getElementById("subjectManagerSubjectSelect");
+
+if(categorySelect){
+categorySelect.value = subjectManagerSearchedCategoryId;
+}
+
+if(subjectSelect){
+
+await loadSubjectManagerSubjectDropdown(
+subjectManagerSearchedCategoryId
+);
+
+subjectSelect.value = subjectManagerSearchedSubjectId;
+
+}
+
+await searchSubjectManager();
+
+}else{
+
+subjectManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category, a Subject and click Search.</p>";
+
+}
 
 };
 
@@ -2162,6 +2422,15 @@ doc(db,"notesSubjects",subjectId)
 
 alert("Subject Deleted ✅");
 
+// The searched Subject no longer exists - reset the search state
+// so the manager goes back to the "please search" prompt.
+subjectManagerSearchedSubjectId = null;
+const subjectManagerSubjectSelectEl =
+document.getElementById("subjectManagerSubjectSelect");
+if(subjectManagerSubjectSelectEl){
+subjectManagerSubjectSelectEl.value = "";
+}
+
 loadSubjectManagerList();
 
 }
@@ -2173,31 +2442,232 @@ alert(error.message);
 
 };
 
-// ---- Topic Manager ----
+// ---- Topic Manager (search-based) ----
 
-window.loadTopicManagerList = async function(){
+// Tracks the Category/Subject/Topic currently searched/displayed, so
+// Edit/Delete actions can refresh the same result instead of loading
+// every Topic.
+let topicManagerSearchedCategoryId = null;
+let topicManagerSearchedSubjectId = null;
+let topicManagerSearchedTopicId = null;
 
-const list = document.getElementById("topicManagerList");
+// Populates only the "Select Category" dropdown (lightweight read of
+// the Categories collection). No Topics are loaded here.
+window.loadTopicManagerCategoryDropdown = async function(){
 
-if(!list) return;
+const select =
+document.getElementById("topicManagerCategorySelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Category</option>';
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+select.innerHTML +=
+`<option value="${docItem.id}">
+${data.name}
+</option>`;
+
+});
+
+};
+
+// Called when the Topic Manager Category dropdown changes. Loads only
+// the Subjects belonging to that Category into the Subject dropdown.
+window.loadTopicManagerSubjectDropdown = async function(categoryId){
+
+const select =
+document.getElementById("topicManagerSubjectSelect");
+const topicSelect =
+document.getElementById("topicManagerTopicSelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Subject</option>';
+
+if(topicSelect){
+topicSelect.innerHTML =
+'<option value="">Select Topic</option>';
+}
+
+if(!categoryId) return;
+
+const snapshot =
+await getDocs(
+collection(db,"notesSubjects")
+);
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.categoryId === categoryId){
+
+select.innerHTML += `
+<option value="${docItem.id}">
+${data.subjectName}
+</option>
+`;
+
+}
+
+});
+
+};
+
+// Called when the Topic Manager Subject dropdown changes. Loads only
+// the Topics belonging to that Subject into the Topic dropdown.
+window.loadTopicManagerTopicDropdown = async function(subjectId){
+
+const select =
+document.getElementById("topicManagerTopicSelect");
+
+if(!select) return;
+
+select.innerHTML =
+'<option value="">Select Topic</option>';
+
+if(!subjectId) return;
 
 const snapshot =
 await getDocs(
 collection(db,"notesTopics")
 );
 
-topicManagerCache = [];
-
 snapshot.forEach((docItem)=>{
 
-topicManagerCache.push({
-id:docItem.id,
-...docItem.data()
-});
+const data = docItem.data();
+
+if(data.subjectId === subjectId){
+
+select.innerHTML += `
+<option value="${docItem.id}">
+${data.topicName}
+</option>
+`;
+
+}
 
 });
+
+};
+
+// Called when the admin clicks the Topic Manager "Search" button.
+// Fetches only the single selected Topic document.
+window.searchTopicManager = async function(){
+
+const categorySelect =
+document.getElementById("topicManagerCategorySelect");
+const subjectSelect =
+document.getElementById("topicManagerSubjectSelect");
+const topicSelect =
+document.getElementById("topicManagerTopicSelect");
+const list = document.getElementById("topicManagerList");
+
+if(!categorySelect || !subjectSelect || !topicSelect || !list) return;
+
+const categoryId = categorySelect.value;
+const subjectId = subjectSelect.value;
+const topicId = topicSelect.value;
+
+topicManagerSearchedCategoryId = categoryId || null;
+topicManagerSearchedSubjectId = subjectId || null;
+topicManagerSearchedTopicId = topicId || null;
+
+if(!categoryId || !subjectId || !topicId){
+
+topicManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category, a Subject, a Topic and click Search.</p>";
+return;
+
+}
+
+const docSnap =
+await getDoc(
+doc(db,"notesTopics",topicId)
+);
+
+topicManagerCache = [];
+
+if(docSnap.exists()){
+
+topicManagerCache.push({
+id:docSnap.id,
+...docSnap.data()
+});
+
+}
 
 renderTopicManagerList();
+
+};
+
+// Kept so existing calls (saveEditedTopic / deleteTopicManaged) that
+// refresh the Topic Manager after an Edit/Delete keep working - it
+// simply re-runs the last search instead of loading every Topic.
+window.loadTopicManagerList = async function(){
+
+const list = document.getElementById("topicManagerList");
+
+if(!list) return;
+
+if(
+topicManagerSearchedCategoryId &&
+topicManagerSearchedSubjectId &&
+topicManagerSearchedTopicId
+){
+
+const categorySelect =
+document.getElementById("topicManagerCategorySelect");
+const subjectSelect =
+document.getElementById("topicManagerSubjectSelect");
+const topicSelect =
+document.getElementById("topicManagerTopicSelect");
+
+if(categorySelect){
+categorySelect.value = topicManagerSearchedCategoryId;
+}
+
+if(subjectSelect){
+
+await loadTopicManagerSubjectDropdown(
+topicManagerSearchedCategoryId
+);
+
+subjectSelect.value = topicManagerSearchedSubjectId;
+
+}
+
+if(topicSelect){
+
+await loadTopicManagerTopicDropdown(
+topicManagerSearchedSubjectId
+);
+
+topicSelect.value = topicManagerSearchedTopicId;
+
+}
+
+await searchTopicManager();
+
+}else{
+
+topicManagerCache = [];
+list.innerHTML =
+"<p>Please select a Category, a Subject, a Topic and click Search.</p>";
+
+}
 
 };
 
@@ -2352,6 +2822,13 @@ doc(db,"notesTopics",topicId)
 
 alert("Topic Deleted ✅");
 
+// The searched Topic no longer exists - reset the search state so
+// the manager goes back to the "please search" prompt.
+topicManagerSearchedTopicId = null;
+const topicManagerTopicSelectEl =
+document.getElementById("topicManagerTopicSelect");
+if(topicManagerTopicSelectEl) topicManagerTopicSelectEl.value = "";
+
 loadTopicManagerList();
 
 }
@@ -2363,10 +2840,45 @@ alert(error.message);
 
 };
 
-// Initial load of the three manager lists.
-loadCategoryManagerList();
-loadSubjectManagerList();
-loadTopicManagerList();
+// Cascading dropdown change listeners for the three Manager sections.
+// Selecting a Category/Subject only loads the next dropdown's options
+// (a lightweight, filtered read) - it never displays a list on its
+// own. Lists only appear after the admin clicks each section's
+// "Search" button.
+
+document
+.getElementById("subjectManagerCategorySelect")
+.addEventListener("change", function(){
+
+document.getElementById("subjectManagerSubjectSelect").innerHTML =
+'<option value="">Select Subject</option>';
+
+loadSubjectManagerSubjectDropdown(this.value);
+
+});
+
+document
+.getElementById("topicManagerCategorySelect")
+.addEventListener("change", function(){
+
+loadTopicManagerSubjectDropdown(this.value);
+
+});
+
+document
+.getElementById("topicManagerSubjectSelect")
+.addEventListener("change", function(){
+
+loadTopicManagerTopicDropdown(this.value);
+
+});
+
+// Initial setup: only populate the "Select Category" dropdowns and
+// show the "please search" prompts. No Category/Subject/Topic list
+// is fetched or displayed until the admin clicks Search.
+loadCategoryManagerDropdown();
+loadSubjectManagerCategoryDropdown();
+loadTopicManagerCategoryDropdown();
 
 // ================================
 // Category / Subject / Topic Manager - Edit & Delete System END
@@ -2441,6 +2953,9 @@ document.getElementById("categoryName").value="";
 document.getElementById("categoryIcon").value="";
 
 loadCategories();
+if(typeof loadCategoryManagerDropdown === "function"){
+loadCategoryManagerDropdown();
+}
 if(typeof loadCategoryManagerList === "function"){
 loadCategoryManagerList();
 }
