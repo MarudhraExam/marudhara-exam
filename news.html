@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latest News - मरुधरा एग्जाम</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+<img src="https://marudharaexam.in/images/web%20logo_11zon.png" alt="Marudhara Exam">
+</div>
+
+<nav>
+<a href="index.html">Home</a>
+<a href="omr.html">OMR Check</a>
+<a href="mock-tests/index.html">Mock Tests</a>
+<a href="results.html">Result</a>
+<a href="vacancy.html">Vacancy Updates</a>
+<a href="student-corner.html">Student Corner</a>
+<a href="vacancy-result.html">Vacancy Result</a>
+</nav>
+
+</header>
+
+<div class="news-page-wrap">
+
+<h2 class="news-section-title">
+📰 All Latest News
+</h2>
+
+<input
+type="text"
+id="newsSearchInput"
+class="news-search-box"
+placeholder="🔍 News खोजें (Title या Description से)...">
+
+<div class="news-cards-grid" id="newsCardsGrid">
+<p class="news-empty-msg">Loading...</p>
+</div>
+
+</div>
+
+<footer>
+
+<h2>📘 मरुधरा एग्जाम</h2>
+
+<p>आपकी सफलता का साथी</p>
+
+<p>🌐 marudharaexam.in</p>
+
+<p>© 2026 Marudhara Exam | All Rights Reserved</p>
+
+</footer>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+// Same Firebase project/config used across the site (index.html,
+// admin-v2.html) - reused as-is, no new project or collection setup.
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGy2Kxh7RI8t51qOGgppVd_YA",
+authDomain:"marudhara-exam.firebaseapp.com",
+projectId:"marudhara-exam",
+storageBucket:"marudhara-exam.firebasestorage.app",
+messagingSenderId:"680152404373",
+appId:"1:680152404373:web:32f4dcb9e16c525d33669c",
+measurementId: "G-8PVKGVQ74F"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ================================
+// Latest News - Full List Page
+// ================================
+
+let allActiveNews = [];
+
+const grid = document.getElementById("newsCardsGrid");
+const searchInput = document.getElementById("newsSearchInput");
+
+function newsCardHTML(item){
+
+return `
+
+<div class="news-card">
+
+${item.isNew ? '<span class="news-badge-new" style="margin-bottom:8px;display:inline-block;">🔴 NEW</span>' : ""}
+
+<div class="news-card-date">${item.date || ""}</div>
+
+<div class="news-card-title">${item.title || ""}</div>
+
+${item.description ? `<div class="news-card-desc">${item.description}</div>` : ""}
+
+<a href="${item.link}" target="_blank" rel="noopener" class="news-card-btn">
+Click Here
+</a>
+
+</div>
+
+`;
+
+}
+
+function renderNewsCards(items){
+
+if(!grid) return;
+
+if(!items.length){
+grid.innerHTML = '<p class="news-empty-msg">कोई News नहीं मिली</p>';
+return;
+}
+
+grid.innerHTML = items.map(newsCardHTML).join("");
+
+}
+
+function applySearchFilter(){
+
+const query = (searchInput.value || "").trim().toLowerCase();
+
+if(query === ""){
+renderNewsCards(allActiveNews);
+return;
+}
+
+const filtered = allActiveNews.filter((item)=>{
+
+const title = (item.title || "").toLowerCase();
+const description = (item.description || "").toLowerCase();
+
+return title.includes(query) || description.includes(query);
+
+});
+
+renderNewsCards(filtered);
+
+}
+
+if(searchInput){
+searchInput.addEventListener("input", applySearchFilter);
+}
+
+// Single realtime listener - list stays live-updated (new/edited/
+// deleted/status-toggled news reflects immediately, no page reload).
+onSnapshot(collection(db,"news"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+const data = docItem.data();
+
+if(data.status === "Active"){
+items.push(data);
+}
+
+});
+
+// Newest date first; priority as tie-breaker for same-date items.
+items.sort((a,b)=>{
+
+const dateCompare = (b.date || "").localeCompare(a.date || "");
+
+if(dateCompare !== 0) return dateCompare;
+
+return (a.priority || 0) - (b.priority || 0);
+
+});
+
+allActiveNews = items;
+
+applySearchFilter();
+
+});
+
+</script>
+
+</body>
+</html>
