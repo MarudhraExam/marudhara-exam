@@ -1546,6 +1546,7 @@ No Sub Categories
       collection,
       addDoc,
       getDocs,
+      getDoc,
       deleteDoc,
       doc,
       orderBy,
@@ -3845,8 +3846,37 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
       updated.question = updated.questionEnglish || updated.questionHindi || q.question || '';
       updated.explanation = updated.explanationEnglish || updated.explanationHindi || q.explanation || null;
 
+      // The Question Manager only exposes a single input per option
+      // (optionA-optionE), but older documents (and the Student Mock's
+      // renderer, getLocalizedField) also carry/prefer per-language
+      // fields: optionAHindi/optionAEnglish, optionBHindi/optionBEnglish,
+      // etc. If those legacy fields are left untouched, the Student Mock
+      // keeps showing the pre-edit option text even though optionA-E and
+      // the Preview were updated correctly. Sync both legacy variants to
+      // the single value entered here so every reader stays consistent.
+      ['A', 'B', 'C', 'D', 'E'].forEach(letter => {
+        updated[`option${letter}Hindi`] = updated[`option${letter}`];
+        updated[`option${letter}English`] = updated[`option${letter}`];
+      });
+
       try {
-        await updateDoc(doc(db, COLLECTIONS.questions, qmEditingQuestionId), updated);
+        const questionDocRef = doc(db, COLLECTIONS.questions, qmEditingQuestionId);
+        await updateDoc(questionDocRef, updated);
+
+        // Verify the write actually landed in Firestore (not just that the
+        // updateDoc() promise resolved) by reading the document back and
+        // diffing it against what we sent.
+        const verifySnap = await getDoc(questionDocRef);
+        if (verifySnap.exists()) {
+          const stored = verifySnap.data();
+          const mismatched = Object.keys(updated).filter(key => stored[key] !== updated[key]);
+          if (mismatched.length) {
+            console.warn('qmSaveEditedQuestion: fields did not persist as expected:', mismatched, { sent: updated, stored });
+          }
+        } else {
+          console.warn('qmSaveEditedQuestion: document missing after update, id=', qmEditingQuestionId);
+        }
+
         Object.assign(q, updated);
         qmCloseEditModal();
         qmRenderList();
