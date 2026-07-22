@@ -969,6 +969,36 @@ console.table(items.map(q => ({
         });
 
         initializeExam();
+
+        // ─────────────────────────────────────────────────────────────────
+        // SYNC FIX: Question Manager edits were not showing up in the
+        // Student Mock Test in one specific situation — when this exam page
+        // was reached via the browser's back/forward cache (bfcache)
+        // instead of a fresh navigation.
+        //
+        // Root cause: fetchQuestions() already reads live from the same
+        // "mockQuestions" Firestore collection that Question Manager writes
+        // to (single source of truth, no duplicate collections, no
+        // localStorage/sessionStorage caching of question data). On a
+        // normal fresh page load this always returns up-to-date data.
+        // However, when a student (or an admin testing the flow) navigates
+        // away from this page and then back to it with the browser's
+        // Back/Forward buttons, some browsers restore the entire page —
+        // including the in-memory `questions` array from the previous
+        // load — WITHOUT re-running this script, so no new Firestore read
+        // happens and the old question data is what's shown. The admin's
+        // "Review"/Preview button never hit this because it opens a brand
+        // new tab every time (always a fresh load).
+        //
+        // Fix: when the page is restored from bfcache (event.persisted),
+        // re-run initializeExam() to pull fresh mock + question data from
+        // Firestore and re-render, without a full page reload.
+        // ─────────────────────────────────────────────────────────────────
+        window.addEventListener("pageshow", (event) => {
+            if (event.persisted) {
+                initializeExam();
+            }
+        });
     </script>
 </body>
 </html>
