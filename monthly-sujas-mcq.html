@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Sujas MCQ | मरुधरा एग्जाम</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f7fa;
+    margin:0;
+}
+
+header{
+    background:#002B5B;
+    color:white;
+    text-align:center;
+    padding:25px;
+}
+
+header h1{
+    margin:0;
+    font-size:32px;
+}
+
+header p{
+    margin-top:8px;
+    color:#ddd;
+}
+
+.container{
+    max-width:1000px;
+    margin:30px auto;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+    border-left:6px solid #002B5B;
+}
+
+.card h3{
+    margin-top:10px;
+    color:#002B5B;
+}
+
+.date{
+    color:#777;
+    font-size:14px;
+    margin-bottom:10px;
+}
+
+.badge{
+    display:inline-block;
+    background:#ff9800;
+    color:white;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.buttons{
+    margin-top:20px;
+}
+
+.buttons a{
+    text-decoration:none;
+    padding:10px 15px;
+    border-radius:8px;
+    margin-right:10px;
+    display:inline-block;
+    font-weight:bold;
+}
+
+.view-btn{
+    background:#002B5B;
+    color:white;
+}
+
+.download-btn{
+    background:#28a745;
+    color:white;
+}
+
+.view-btn:hover,
+.download-btn:hover{
+    opacity:0.9;
+}
+</style>
+</head>
+<body>
+<header>
+    <h1>📗 मरुधरा एग्जाम</h1>
+    <p>Monthly Sujas MCQ PDF Library</p>
+</header>
+
+<div class="container">
+<div id="monthlyMcqContainer">
+Loading PDFs...
+</div>
+
+
+</div>
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs,
+query,
+orderBy
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+const firebaseConfig = {
+
+apiKey:"AIzaSyDHe87UG-QGy2Kxh7RI8t51qOGgppVd_YA",
+
+authDomain:"marudhara-exam.firebaseapp.com",
+
+projectId:"marudhara-exam",
+
+storageBucket:"marudhara-exam.firebasestorage.app",
+
+messagingSenderId:"680152404373",
+
+appId:"1:680152404373:web:32f4dcb9e16c525d33669c",
+measurementId: "G-8PVKGVQ74F"
+
+};
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+async function loadMonthlyMcqPdfs(){
+
+const container =
+document.getElementById(
+"monthlyMcqContainer"
+);
+
+container.innerHTML = "";
+
+const q = query(
+collection(db,"monthlySujasMcq"),
+orderBy("createdAt","desc")
+);
+
+const snapshot = await getDocs(q);
+
+let hasVisible = false;
+
+snapshot.forEach((pdf)=>{
+
+const data = pdf.data();
+
+if(data.visible === false) return;
+
+hasVisible = true;
+
+container.innerHTML += `
+
+<div class="card">
+
+<span class="badge">
+📗 ${data.month || ""} ${data.year || ""}
+</span>
+
+<h3>${data.title || ((data.month || "") + " " + (data.year || ""))}</h3>
+
+<div class="buttons">
+
+<a href="${data.pdfUrl}"
+target="_blank"
+class="view-btn">
+
+👁️ Open PDF
+
+</a>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+if(!hasVisible){
+
+container.innerHTML =
+"<p style='text-align:center;color:#777;'>अभी तक कोई PDF Upload नहीं हुई</p>";
+
+}
+
+}
+
+loadMonthlyMcqPdfs();
+
+</script>
+</body>
+</html>
