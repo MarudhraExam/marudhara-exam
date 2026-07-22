@@ -3728,12 +3728,22 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
           changed = true;
         }
       });
+      // SYNC FIX: after Delete / Duplicate (and, defensively, Move) the
+      // actual number of question documents in the same mockQuestions
+      // collection can differ from the mockTests document's cached
+      // totalQuestions field. That field is what the student-facing
+      // listing pages (category.html / confirm.html) display, so keep it
+      // pointed at the same source of truth instead of letting it go
+      // stale. Same collection/document IDs/schema — only the existing
+      // totalQuestions value is updated, and only when it actually changed.
+      if (qmMockId && qmMock && Number(qmMock.totalQuestions ?? qmMock.questions ?? -1) !== qmQuestions.length) {
+        batch.update(doc(db, COLLECTIONS.tests, qmMockId), { totalQuestions: qmQuestions.length });
+        qmMock.totalQuestions = qmQuestions.length;
+        changed = true;
+      }
       if (changed) {
         await batch.commit();
       }
-      // Keep the panel's own "Total Questions" stat in sync. This does NOT
-      // touch the mockTests document / totalQuestions field — mock
-      // publishing and its schema are left untouched per requirements.
       qmRenderStats();
     }
 
