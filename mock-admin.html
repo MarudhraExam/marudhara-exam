@@ -707,6 +707,11 @@
       display: block;
     }
 
+    .qm-errors.success {
+      background: #e3f8ec;
+      color: #146c3b;
+    }
+
     .qm-errors ul {
       margin: 6px 0 0;
       padding-left: 20px;
@@ -3940,37 +3945,84 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
     // Auto Validation — runs on demand from the "✅ Validate" button.
     // Does not touch the actual Publish flow (left untouched per
     // requirements); surfaces issues inline in the panel instead.
-    function qmValidate() {
-      const errors = [];
-      const noSeen = {};
-      const idSeen = {};
-
-      qmQuestions.forEach(q => {
-        const qtext = q.question || q.questionHindi || q.questionEnglish || '';
-        if (!String(qtext).trim()) errors.push(`Q${q.questionNo ?? '?'}: question text is empty.`);
-        ['optionA', 'optionB', 'optionC', 'optionD'].forEach(key => {
-          if (!String(q[key] || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: ${key} is empty.`);
-        });
-        if (!String(q.correctAnswer || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: correct answer is missing.`);
-        noSeen[q.questionNo] = (noSeen[q.questionNo] || 0) + 1;
-        idSeen[q.id] = (idSeen[q.id] || 0) + 1;
-      });
-
-      Object.entries(noSeen).forEach(([no, count]) => {
-        if (count > 1) errors.push(`Question number ${no} is used ${count} times.`);
-      });
-      Object.entries(idSeen).forEach(([id, count]) => {
-        if (count > 1) errors.push(`Duplicate Firestore document ID detected: ${id}.`);
-      });
-
+    //
+    // Flow: Validate Button -> qmValidate() -> fresh Firestore read (getDocs,
+    // never the cached qmQuestions array) -> checks -> on failure: show
+    // detailed errors and stop -> on success: green success message, then
+    // reload qmQuestions from Firestore again and re-render the Preview list
+    // from that fresh data. The Student Mock Test already reads mockQuestions
+    // directly from Firestore each time a student starts a test
+    // (fetchQuestions() in exam.html), so once this reload confirms the
+    // stored documents are correct, the Student Mock is guaranteed to use
+    // the same data - no separate write-back is needed here.
+    async function qmValidate() {
+      const validateBtn = document.getElementById('qmValidateBtn');
       const box = document.getElementById('qmErrors');
-      if (!errors.length) {
-        box.classList.remove('show');
-        box.innerHTML = '';
-        setMockStatus('All questions passed validation.', 'success');
-      } else {
-        box.classList.add('show');
-        box.innerHTML = `<strong>${errors.length} issue(s) found:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`;
+      if (validateBtn) validateBtn.disabled = true;
+      box.classList.remove('success');
+      try {
+        let latestQuestions;
+        try {
+          const snapshot = await getDocs(query(collection(db, COLLECTIONS.questions), where('mockId', '==', qmMockId)));
+          latestQuestions = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        } catch (error) {
+          console.error(error);
+          box.classList.add('show');
+          box.innerHTML = `<strong>Validation failed:</strong><ul><li>${escapeHtml(`Could not read questions from Firestore: ${error.message}`)}</li></ul>`;
+          setMockStatus(`Validation failed: could not read questions from Firestore (${error.message}).`, 'error');
+          return;
+        }
+
+        const errors = [];
+        const noSeen = {};
+        const idSeen = {};
+        const requireExplanations = !!(qmMock && qmMock.requireExplanations);
+
+        latestQuestions.forEach(q => {
+          const qtext = q.question || q.questionHindi || q.questionEnglish || '';
+          if (!String(qtext).trim()) errors.push(`Q${q.questionNo ?? '?'}: question text is empty.`);
+          ['optionA', 'optionB', 'optionC', 'optionD'].forEach(key => {
+            if (!String(q[key] || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: ${key} is empty.`);
+          });
+          if (!String(q.correctAnswer || '').trim()) errors.push(`Q${q.questionNo ?? '?'}: correct answer is missing.`);
+          if (requireExplanations) {
+            const explanationText = q.explanation || q.explanationHindi || q.explanationEnglish || '';
+            if (!String(explanationText).trim()) errors.push(`Q${q.questionNo ?? '?'}: explanation is missing.`);
+          }
+          noSeen[q.questionNo] = (noSeen[q.questionNo] || 0) + 1;
+          idSeen[q.id] = (idSeen[q.id] || 0) + 1;
+        });
+
+        Object.entries(noSeen).forEach(([no, count]) => {
+          if (count > 1) errors.push(`Question number ${no} is used ${count} times.`);
+        });
+        Object.entries(idSeen).forEach(([id, count]) => {
+          if (count > 1) errors.push(`Duplicate Firestore document ID detected: ${id}.`);
+        });
+
+        if (errors.length) {
+          // Step 1 failure: show detailed errors and do NOT continue -
+          // no reload, no preview refresh.
+          box.classList.add('show');
+          box.classList.remove('success');
+          box.innerHTML = `<strong>${errors.length} issue(s) found:</strong><ul>${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`;
+          setMockStatus(`Validation failed: ${errors.length} issue(s) found.`, 'error');
+          return;
+        }
+
+        // Step 2: validation passed.
+        box.classList.add('show', 'success');
+        box.innerHTML = '✅ Questions validated successfully.';
+        setMockStatus('✅ Questions validated successfully.', 'success');
+
+        // Steps 3 & 4: reload the latest documents straight from Firestore
+        // (never the cached qmQuestions array) and refresh the Preview
+        // list from that fresh data. qmLoadQuestions() performs its own
+        // brand-new getDocs() read, replaces qmQuestions, and re-renders
+        // the list - exactly what's required here.
+        await qmLoadQuestions();
+      } finally {
+        if (validateBtn) validateBtn.disabled = false;
       }
     }
 
