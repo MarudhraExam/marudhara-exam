@@ -3884,7 +3884,14 @@ console.log(JSON.stringify(rawRows[0].questionHindi || rawRows[0].question));
 
         Object.assign(q, updated);
         qmCloseEditModal();
-        qmRenderList();
+
+        // The Preview must never be driven by a stale local object merge.
+        // Re-read the questions for this mock straight from mockQuestions
+        // in Firestore and re-render the Preview from that fresh data, so
+        // Question Manager, Preview, and Student Mock Test (which also
+        // reads mockQuestions directly, with no caching layer) are all
+        // driven by the exact same Firestore documents.
+        await qmLoadQuestions();
       } catch (error) {
         console.error(error);
         alert(`Failed to save question: ${error.message}`);
