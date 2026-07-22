@@ -139,6 +139,9 @@ color:white;
 <div class="card" onclick="showSection('notesSection')">
 📚 Important Notes
 </div>
+<div class="card" onclick="showSection('monthlyMcqSection')">
+📗 Monthly Sujas MCQ
+</div>
 <div class="card" onclick="location.href='mock-admin.html'">
 🎯 Mock Test Manager
 </div>
@@ -725,6 +728,59 @@ style="background:#888;margin-left:10px;">
 </button>
 
 </div>
+</div>
+
+</div>
+
+<div id="monthlyMcqSection" class="section">
+
+<h2>📗 Monthly Sujas MCQ Manager</h2>
+
+<label>Month</label>
+<select id="monthlyMcqMonth">
+<option value="January">January</option>
+<option value="February">February</option>
+<option value="March">March</option>
+<option value="April">April</option>
+<option value="May">May</option>
+<option value="June">June</option>
+<option value="July">July</option>
+<option value="August">August</option>
+<option value="September">September</option>
+<option value="October">October</option>
+<option value="November">November</option>
+<option value="December">December</option>
+</select>
+
+<label>Year</label>
+<input type="number" id="monthlyMcqYear" placeholder="2026">
+
+<label>PDF Link</label>
+<input type="text" id="monthlyMcqPdfLink" placeholder="https://raw.githubusercontent.com/...">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="monthlyMcqVisible" checked style="width:auto;margin:0;">
+👁️ Visible To Students
+</label>
+</div>
+
+<button id="monthlyMcqSaveBtn" onclick="saveMonthlyMcq()">
+➕ Add PDF
+</button>
+
+<button id="monthlyMcqCancelBtn"
+onclick="cancelMonthlyMcqEdit()"
+style="background:#888;margin-left:10px;display:none;">
+✖ Cancel
+</button>
+
+<hr>
+
+<h3>📚 Monthly Sujas MCQ List</h3>
+
+<div id="monthlyMcqList">
+Loading...
 </div>
 
 </div>
@@ -4735,6 +4791,259 @@ attachNewsAdminListener();
 
 // ================================
 // Latest News System END
+// ================================
+
+// ================================
+// Monthly Sujas MCQ System START
+// ================================
+// Reuses the same db/firestore imports already loaded above - no
+// second Firebase initialization. Mirrors the Daily Sujas Sar upload
+// mechanism (a pasted PDF link, same as dailyPdfLink) and follows the
+// Announcement Manager's add/edit/delete/toggle/realtime pattern for
+// consistency across the admin panel.
+
+let monthlyMcqLiveList = [];
+let monthlyMcqEditingId = null;
+
+function resetMonthlyMcqForm(){
+
+document.getElementById("monthlyMcqMonth").value = "January";
+document.getElementById("monthlyMcqYear").value = "";
+document.getElementById("monthlyMcqPdfLink").value = "";
+document.getElementById("monthlyMcqVisible").checked = true;
+
+monthlyMcqEditingId = null;
+
+document.getElementById("monthlyMcqSaveBtn").textContent = "➕ Add PDF";
+document.getElementById("monthlyMcqCancelBtn").style.display = "none";
+
+}
+
+window.cancelMonthlyMcqEdit = function(){
+
+resetMonthlyMcqForm();
+
+};
+
+window.saveMonthlyMcq = async function(){
+
+try{
+
+const month =
+document.getElementById("monthlyMcqMonth").value;
+
+const year =
+document.getElementById("monthlyMcqYear").value.trim();
+
+const pdfUrl =
+document.getElementById("monthlyMcqPdfLink").value.trim();
+
+const visible =
+document.getElementById("monthlyMcqVisible").checked;
+
+if(month === "" || year === "" || pdfUrl === ""){
+
+alert("Month, Year और PDF Link भरें");
+return;
+
+}
+
+const title = month + " " + year;
+
+if(monthlyMcqEditingId){
+
+// Edit mode - update the existing document only
+await updateDoc(
+doc(db,"monthlySujasMcq",monthlyMcqEditingId),
+{
+month,
+year,
+title,
+pdfUrl,
+visible
+}
+);
+
+alert("Monthly Sujas MCQ Updated Successfully ✅");
+
+}else{
+
+// Add mode - create a new document
+await addDoc(
+collection(db,"monthlySujasMcq"),
+{
+month,
+year,
+title,
+pdfUrl,
+visible,
+createdAt:serverTimestamp()
+}
+);
+
+alert("Monthly Sujas MCQ Added Successfully ✅");
+
+}
+
+resetMonthlyMcqForm();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+window.editMonthlyMcq = function(id){
+
+const item = monthlyMcqLiveList.find((m)=>m.id === id);
+
+if(!item) return;
+
+monthlyMcqEditingId = id;
+
+document.getElementById("monthlyMcqMonth").value = item.month || "January";
+document.getElementById("monthlyMcqYear").value = item.year || "";
+document.getElementById("monthlyMcqPdfLink").value = item.pdfUrl || "";
+document.getElementById("monthlyMcqVisible").checked = item.visible !== false;
+
+document.getElementById("monthlyMcqSaveBtn").textContent = "💾 Update PDF";
+document.getElementById("monthlyMcqCancelBtn").style.display = "inline-block";
+
+document.getElementById("monthlyMcqMonth").scrollIntoView({behavior:"smooth",block:"center"});
+
+};
+
+window.deleteMonthlyMcq = async function(id){
+
+if(!confirm("PDF Delete करनी है?"))
+return;
+
+await deleteDoc(
+doc(db,"monthlySujasMcq",id)
+);
+
+if(monthlyMcqEditingId === id){
+resetMonthlyMcqForm();
+}
+
+alert("PDF Deleted ✅");
+
+};
+
+window.toggleMonthlyMcqVisible = async function(id,currentVisible){
+
+await updateDoc(
+doc(db,"monthlySujasMcq",id),
+{
+visible: !currentVisible
+}
+);
+
+};
+
+function renderMonthlyMcqList(){
+
+const list =
+document.getElementById("monthlyMcqList");
+
+if(!list) return;
+
+if(!monthlyMcqLiveList.length){
+list.innerHTML = "कोई PDF नहीं मिली";
+return;
+}
+
+list.innerHTML = "";
+
+monthlyMcqLiveList.forEach((item)=>{
+
+list.innerHTML += `
+
+<div style="
+border:1px solid #ddd;
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+">
+
+<b>${item.month} ${item.year}</b> &nbsp;|&nbsp;
+<b>Status :</b> ${item.visible !== false ? "🟢 Visible" : "🔴 Hidden"}
+
+<br><br>
+
+<a href="${item.pdfUrl}" target="_blank">
+👁️ View PDF
+</a>
+
+<br><br>
+
+<button onclick="editMonthlyMcq('${item.id}')">
+✏️ Edit
+</button>
+
+<button
+onclick="deleteMonthlyMcq('${item.id}')"
+style="background:red;margin-left:8px;">
+🗑 Delete
+</button>
+
+<button
+onclick="toggleMonthlyMcqVisible('${item.id}',${item.visible !== false})"
+style="background:${item.visible !== false ? "#888" : "#28a745"};margin-left:8px;">
+${item.visible !== false ? "🙈 Hide" : "👁️ Show"}
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+function attachMonthlyMcqAdminListener(){
+
+// Single realtime listener for the admin list - Firestore pushes
+// updates automatically (add/edit/delete/hide/show), no manual
+// reloads and no duplicate listeners.
+onSnapshot(collection(db,"monthlySujasMcq"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+items.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+items.sort((a,b)=>{
+
+const yearCompare = (b.year || "").localeCompare(a.year || "");
+
+if(yearCompare !== 0) return yearCompare;
+
+return (b.month || "").localeCompare(a.month || "");
+
+});
+
+monthlyMcqLiveList = items;
+
+renderMonthlyMcqList();
+
+});
+
+}
+
+attachMonthlyMcqAdminListener();
+
+// ================================
+// Monthly Sujas MCQ System END
 // ================================
 
 </script>
