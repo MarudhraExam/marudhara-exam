@@ -4805,6 +4805,28 @@ attachNewsAdminListener();
 let monthlyMcqLiveList = [];
 let monthlyMcqEditingId = null;
 
+// Calendar order map (NOT alphabetical) - used to sort Monthly Sujas
+// MCQ entries by year DESC, then month DESC (newest month first).
+const MONTHLY_MCQ_MONTH_ORDER = {
+January:1, February:2, March:3, April:4,
+May:5, June:6, July:7, August:8,
+September:9, October:10, November:11, December:12
+};
+
+function monthlyMcqSortCompare(a,b){
+
+const yearDiff = (Number(b.year) || 0) - (Number(a.year) || 0);
+
+if(yearDiff !== 0) return yearDiff;
+
+const monthDiff =
+(MONTHLY_MCQ_MONTH_ORDER[b.month] || 0) -
+(MONTHLY_MCQ_MONTH_ORDER[a.month] || 0);
+
+return monthDiff;
+
+}
+
 function resetMonthlyMcqForm(){
 
 document.getElementById("monthlyMcqMonth").value = "January";
@@ -5022,15 +5044,7 @@ id:docItem.id,
 
 });
 
-items.sort((a,b)=>{
-
-const yearCompare = (b.year || "").localeCompare(a.year || "");
-
-if(yearCompare !== 0) return yearCompare;
-
-return (b.month || "").localeCompare(a.month || "");
-
-});
+items.sort(monthlyMcqSortCompare);
 
 monthlyMcqLiveList = items;
 
