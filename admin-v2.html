@@ -765,6 +765,23 @@ style="background:#888;margin-left:10px;">
 </label>
 </div>
 
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="monthlyMcqNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="monthlyMcqNotifTitle" placeholder="Auto-filled from Month/Year">
+<label>Notification Message</label>
+<input type="text" id="monthlyMcqNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="monthlyMcqNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
+
 <button id="monthlyMcqSaveBtn" onclick="saveMonthlyMcq()">
 ➕ Add PDF
 </button>
@@ -914,6 +931,23 @@ Show NEW Badge
 
 <label>Priority</label>
 <input type="number" id="newsPriority" value="1">
+
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin-top:15px;">
+<label style="display:flex;align-items:center;gap:8px;margin-top:0;">
+<input type="checkbox" id="newsNotifEnabled" checked style="width:auto;margin:0;">
+🔔 Send Push Notification
+</label>
+<label>Notification Title</label>
+<input type="text" id="newsNotifTitle" placeholder="Auto-filled from News Title">
+<label>Notification Message</label>
+<input type="text" id="newsNotifMessage" placeholder="Auto-filled">
+<label>Priority</label>
+<select id="newsNotifPriority">
+<option value="High">High</option>
+<option value="Normal" selected>Normal</option>
+<option value="Silent">Silent</option>
+</select>
+</div>
 
 <button id="newsSaveBtn" onclick="saveNews()">
 ➕ Add News
@@ -1174,6 +1208,31 @@ const announcementNotif = setupNotificationConfig(
   () => "New Announcement",
   () => document.getElementById("annMessage").value,
   ["annMessage"]
+);
+
+const monthlyMcqNotif = setupNotificationConfig(
+  { enabled:"monthlyMcqNotifEnabled", title:"monthlyMcqNotifTitle", message:"monthlyMcqNotifMessage", priority:"monthlyMcqNotifPriority" },
+  () => {
+    const month = document.getElementById("monthlyMcqMonth").value;
+    const year = document.getElementById("monthlyMcqYear").value;
+    return (month && year) ? (month + " " + year) : "";
+  },
+  () => {
+    const month = document.getElementById("monthlyMcqMonth").value;
+    const year = document.getElementById("monthlyMcqYear").value;
+    return (month && year) ? ("New Monthly Sujas MCQ Available: " + month + " " + year) : "";
+  },
+  ["monthlyMcqMonth","monthlyMcqYear"]
+);
+
+const newsNotif = setupNotificationConfig(
+  { enabled:"newsNotifEnabled", title:"newsNotifTitle", message:"newsNotifMessage", priority:"newsNotifPriority" },
+  () => document.getElementById("newsTitle").value,
+  () => {
+    const title = document.getElementById("newsTitle").value;
+    return title ? ("New Latest News: " + title) : "";
+  },
+  ["newsTitle"]
 );
 
 async function loadExams(){
@@ -4570,6 +4629,9 @@ alert("News Link भरें");
 return;
 }
 
+const newsNotifData =
+newsNotif ? newsNotif.getData() : {};
+
 if(newsEditingId){
 
 await updateDoc(
@@ -4582,11 +4644,14 @@ link,
 isNew,
 status,
 priority,
-updatedAt:new Date().toISOString()
+updatedAt:new Date().toISOString(),
+...newsNotifData
 }
 );
 
 alert("News Updated ✅");
+
+sendPushNotification(newsNotifData);
 
 }else{
 
@@ -4601,11 +4666,14 @@ isNew,
 status,
 priority,
 createdAt:new Date().toISOString(),
-updatedAt:new Date().toISOString()
+updatedAt:new Date().toISOString(),
+...newsNotifData
 }
 );
 
 alert("News Added ✅");
+
+sendPushNotification(newsNotifData);
 
 }
 
@@ -4635,6 +4703,8 @@ document.getElementById("newsPriority").value = 1;
 document.getElementById("newsSaveBtn").textContent = "➕ Add News";
 document.getElementById("newsCancelBtn").style.display = "none";
 
+if(newsNotif) newsNotif.reset();
+
 renderNewsPreview();
 
 }
@@ -4660,6 +4730,15 @@ document.getElementById("newsLink").value = item.link || "";
 document.getElementById("newsIsNew").checked = item.isNew !== false;
 document.getElementById("newsStatus").value = item.status || "Active";
 document.getElementById("newsPriority").value = item.priority || 1;
+
+if(newsNotif){
+newsNotif.populate({
+notificationEnabled: item.notificationEnabled,
+notificationTitle: item.notificationTitle,
+notificationMessage: item.notificationMessage,
+notificationPriority: item.notificationPriority
+});
+}
 
 document.getElementById("newsSaveBtn").textContent = "💾 Update News";
 document.getElementById("newsCancelBtn").style.display = "inline-block";
@@ -4839,6 +4918,8 @@ monthlyMcqEditingId = null;
 document.getElementById("monthlyMcqSaveBtn").textContent = "➕ Add PDF";
 document.getElementById("monthlyMcqCancelBtn").style.display = "none";
 
+if(monthlyMcqNotif) monthlyMcqNotif.reset();
+
 }
 
 window.cancelMonthlyMcqEdit = function(){
@@ -4872,6 +4953,9 @@ return;
 
 const title = month + " " + year;
 
+const monthlyMcqNotifData =
+monthlyMcqNotif ? monthlyMcqNotif.getData() : {};
+
 if(monthlyMcqEditingId){
 
 // Edit mode - update the existing document only
@@ -4882,11 +4966,14 @@ month,
 year,
 title,
 pdfUrl,
-visible
+visible,
+...monthlyMcqNotifData
 }
 );
 
 alert("Monthly Sujas MCQ Updated Successfully ✅");
+
+sendPushNotification(monthlyMcqNotifData);
 
 }else{
 
@@ -4899,11 +4986,14 @@ year,
 title,
 pdfUrl,
 visible,
-createdAt:serverTimestamp()
+createdAt:serverTimestamp(),
+...monthlyMcqNotifData
 }
 );
 
 alert("Monthly Sujas MCQ Added Successfully ✅");
+
+sendPushNotification(monthlyMcqNotifData);
 
 }
 
@@ -4930,6 +5020,15 @@ document.getElementById("monthlyMcqMonth").value = item.month || "January";
 document.getElementById("monthlyMcqYear").value = item.year || "";
 document.getElementById("monthlyMcqPdfLink").value = item.pdfUrl || "";
 document.getElementById("monthlyMcqVisible").checked = item.visible !== false;
+
+if(monthlyMcqNotif){
+monthlyMcqNotif.populate({
+notificationEnabled: item.notificationEnabled,
+notificationTitle: item.notificationTitle,
+notificationMessage: item.notificationMessage,
+notificationPriority: item.notificationPriority
+});
+}
 
 document.getElementById("monthlyMcqSaveBtn").textContent = "💾 Update PDF";
 document.getElementById("monthlyMcqCancelBtn").style.display = "inline-block";
