@@ -178,17 +178,26 @@ if(topic.subjectId !== subjectId) return;
 
 html += `<div class="pdf-box"><h3>${topic.topicName}</h3>`;
 
-pdfsSnap.forEach(pdfDoc=>{
+const pdfs = pdfsSnap.docs
+.filter(doc => doc.data().topicId === topicDoc.id)
+.sort((a, b) => {
+    const getNumber = (title) => {
+        const match = (title || "").match(/\d+/);
+        return match ? parseInt(match[0], 10) : Infinity;
+    };
 
-const pdf = pdfDoc.data();
+    return getNumber(a.data().noteTitle) - getNumber(b.data().noteTitle);
+});
 
-if(pdf.topicId !== topicDoc.id) return;
+pdfs.forEach(pdfDoc => {
 
-html += `
-<p><b>${pdf.noteTitle}</b></p>
-<a href="${pdf.pdfLink}" target="_blank" class="open-btn">Open PDF</a>
-<hr>
-`;
+    const pdf = pdfDoc.data();
+
+    html += `
+    <p><b>${pdf.noteTitle}</b></p>
+    <a href="${pdf.pdfLink}" target="_blank" class="open-btn">Open PDF</a>
+    <hr>
+    `;
 
 });
 
