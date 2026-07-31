@@ -47,60 +47,57 @@ margin-bottom:20px;
 cursor:pointer;
 }
 
-.pdf-box{
-background:white;
-padding:0;
-margin:12px 0;
-border-radius:10px;
-box-shadow:0 2px 5px rgba(0,0,0,.1);
-overflow:hidden;
+.folder-list{
+display:flex;
+flex-direction:column;
+gap:12px;
+max-width:500px;
+margin:0 auto;
 }
 
-.folder-header{
+.folder-item{
 display:flex;
 align-items:center;
-gap:10px;
-padding:15px;
+gap:12px;
+padding:16px;
+background:white;
+border-radius:10px;
+box-shadow:0 2px 5px rgba(0,0,0,.1);
 cursor:pointer;
-background:linear-gradient(180deg,#fff8dc 0%,#ffe9a8 100%);
-border-bottom:3px solid #f0c14b;
 user-select:none;
 }
 
-.folder-header:hover{
-background:linear-gradient(180deg,#fff3c4 0%,#ffdd85 100%);
+.folder-item:hover{
+background:#fff8e6;
 }
 
-.folder-icon{
-font-size:26px;
+.folder-item .folder-icon{
+font-size:28px;
 line-height:1;
 flex-shrink:0;
 }
 
-.folder-header h3{
+.folder-item h3{
 margin:0;
 font-size:18px;
 color:#333;
-flex:1;
 }
 
-.folder-arrow{
-font-size:14px;
-transition:transform .2s ease;
-color:#555;
-}
-
-.folder-header.open .folder-arrow{
-transform:rotate(90deg);
-}
-
-.folder-content{
+.pdf-box{
+background:white;
 padding:15px;
-display:none;
+margin:10px 0;
+border-radius:10px;
+box-shadow:0 2px 5px rgba(0,0,0,.1);
+max-width:500px;
+margin-left:auto;
+margin-right:auto;
 }
 
-.folder-content.open{
-display:block;
+.pdf-box p{
+display:flex;
+align-items:center;
+gap:8px;
 }
 
 .open-btn{
@@ -202,14 +199,23 @@ html += '</div>';
 document.getElementById("notesContainer").innerHTML = html;
 }
 
+let currentTopicsSnap = null;
+let currentPdfsSnap = null;
+let currentSubjectId = null;
+
 window.showPdfs = async function(subjectId){
 
 const topicsSnap = await getDocs(collection(db,"notesTopics"));
 const pdfsSnap = await getDocs(collection(db,"notesPdfs"));
 
+currentTopicsSnap = topicsSnap;
+currentPdfsSnap = pdfsSnap;
+currentSubjectId = subjectId;
+
 let html = `
 <button class="back-btn" onclick="loadNotes()">🏠 Home</button>
 <h2>PDF Notes</h2>
+<div class="folder-list">
 `;
 
 const topics = topicsSnap.docs.sort((a,b)=>{
@@ -224,20 +230,41 @@ const topic = topicDoc.data();
 
 if(topic.subjectId !== subjectId) return;
 
-const folderId = `folder-${topicDoc.id}`;
-
 html += `
-<div class="pdf-box">
-<div class="folder-header" onclick="toggleFolder('${folderId}')">
+<div class="folder-item" onclick="showTopicPdfs('${topicDoc.id}')">
 <span class="folder-icon">📁</span>
 <h3>${topic.topicName}</h3>
-<span class="folder-arrow">▶</span>
 </div>
-<div class="folder-content" id="${folderId}">
+`;
+
+});
+
+html += '</div>';
+
+document.getElementById("notesContainer").innerHTML = html;
+}
+
+window.showTopicPdfs = async function(topicId){
+
+let topicsSnap = currentTopicsSnap;
+let pdfsSnap = currentPdfsSnap;
+
+if(!topicsSnap || !pdfsSnap){
+topicsSnap = await getDocs(collection(db,"notesTopics"));
+pdfsSnap = await getDocs(collection(db,"notesPdfs"));
+}
+
+const topicDoc = topicsSnap.docs.find(doc => doc.id === topicId);
+const topic = topicDoc ? topicDoc.data() : {};
+
+let html = `
+<button class="back-btn" onclick="showPdfs('${currentSubjectId}')">⬅ Back</button>
+<h2>${topic.topicName || ''}</h2>
+<div class="pdf-box">
 `;
 
 const pdfs = pdfsSnap.docs
-.filter(doc => doc.data().topicId === topicDoc.id)
+.filter(doc => doc.data().topicId === topicId)
 .sort((a, b) => {
     const getNumber = (title) => {
         const match = (title || "").match(/\d+/);
@@ -252,26 +279,16 @@ pdfs.forEach(pdfDoc => {
     const pdf = pdfDoc.data();
 
     html += `
-    <p><b>${pdf.noteTitle}</b></p>
+    <p>📄 <b>${pdf.noteTitle}</b></p>
     <a href="${pdf.pdfLink}" target="_blank" class="open-btn">Open PDF</a>
     <hr>
     `;
 
 });
 
-html += `</div></div>`;
-
-});
+html += `</div>`;
 
 document.getElementById("notesContainer").innerHTML = html;
-}
-
-window.toggleFolder = function(folderId){
-const content = document.getElementById(folderId);
-if(!content) return;
-const header = content.previousElementSibling;
-content.classList.toggle("open");
-if(header) header.classList.toggle("open");
 }
 
 loadNotes();
