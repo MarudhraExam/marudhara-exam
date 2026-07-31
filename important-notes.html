@@ -49,10 +49,58 @@ cursor:pointer;
 
 .pdf-box{
 background:white;
-padding:15px;
-margin:10px 0;
+padding:0;
+margin:12px 0;
 border-radius:10px;
 box-shadow:0 2px 5px rgba(0,0,0,.1);
+overflow:hidden;
+}
+
+.folder-header{
+display:flex;
+align-items:center;
+gap:10px;
+padding:15px;
+cursor:pointer;
+background:linear-gradient(180deg,#fff8dc 0%,#ffe9a8 100%);
+border-bottom:3px solid #f0c14b;
+user-select:none;
+}
+
+.folder-header:hover{
+background:linear-gradient(180deg,#fff3c4 0%,#ffdd85 100%);
+}
+
+.folder-icon{
+font-size:26px;
+line-height:1;
+flex-shrink:0;
+}
+
+.folder-header h3{
+margin:0;
+font-size:18px;
+color:#333;
+flex:1;
+}
+
+.folder-arrow{
+font-size:14px;
+transition:transform .2s ease;
+color:#555;
+}
+
+.folder-header.open .folder-arrow{
+transform:rotate(90deg);
+}
+
+.folder-content{
+padding:15px;
+display:none;
+}
+
+.folder-content.open{
+display:block;
 }
 
 .open-btn{
@@ -176,7 +224,17 @@ const topic = topicDoc.data();
 
 if(topic.subjectId !== subjectId) return;
 
-html += `<div class="pdf-box"><h3>${topic.topicName}</h3>`;
+const folderId = `folder-${topicDoc.id}`;
+
+html += `
+<div class="pdf-box">
+<div class="folder-header" onclick="toggleFolder('${folderId}')">
+<span class="folder-icon">📁</span>
+<h3>${topic.topicName}</h3>
+<span class="folder-arrow">▶</span>
+</div>
+<div class="folder-content" id="${folderId}">
+`;
 
 const pdfs = pdfsSnap.docs
 .filter(doc => doc.data().topicId === topicDoc.id)
@@ -201,11 +259,19 @@ pdfs.forEach(pdfDoc => {
 
 });
 
-html += `</div>`;
+html += `</div></div>`;
 
 });
 
 document.getElementById("notesContainer").innerHTML = html;
+}
+
+window.toggleFolder = function(folderId){
+const content = document.getElementById(folderId);
+if(!content) return;
+const header = content.previousElementSibling;
+content.classList.toggle("open");
+if(header) header.classList.toggle("open");
 }
 
 loadNotes();
