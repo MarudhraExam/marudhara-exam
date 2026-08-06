@@ -27,37 +27,70 @@ margin-bottom:30px;
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-gap:20px;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
 }
 
 .card{
 background:white;
-padding:25px;
+padding:20px 12px;
 border-radius:12px;
 box-shadow:0 2px 8px rgba(0,0,0,0.1);
 text-align:center;
 cursor:pointer;
 transition:.3s;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
 }
 
 .card:hover{
 transform:translateY(-5px);
+box-shadow:0 6px 16px rgba(0,0,0,0.15);
 }
 .card h2{
-font-size:32px;
-margin-bottom:15px;
+font-size:26px;
+margin-bottom:12px;
 color:#002B5B;
 font-weight:700;
 }
 
 .card p{
-font-size:18px;
+font-size:15px;
 color:#555;
 margin:0;
 }
 .card h2{
 color:#002B5B;
+}
+
+@media (min-width:600px){
+.grid{
+grid-template-columns:repeat(3,1fr);
+gap:20px;
+}
+.card{
+padding:25px;
+}
+.card h2{
+font-size:30px;
+}
+.card p{
+font-size:17px;
+}
+}
+
+@media (min-width:900px){
+.grid{
+grid-template-columns:repeat(4,1fr);
+}
+.card h2{
+font-size:32px;
+}
+.card p{
+font-size:18px;
+}
 }
 
 </style>
