@@ -6,7 +6,7 @@
 <title>Student Corner</title>
 
 <style>
-  
+
 body{
 font-family:Arial,sans-serif;
 background:#f5f7fa;
@@ -33,36 +33,51 @@ gap:15px;
 
 .card{
 background:white;
-padding:20px 12px;
-border-radius:12px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
+padding:22px 12px;
+border-radius:18px;
+box-shadow:0 4px 14px rgba(0,0,0,0.08);
 text-align:center;
 cursor:pointer;
 transition:.3s;
 display:flex;
 flex-direction:column;
 align-items:center;
-justify-content:center;
+justify-content:flex-start;
+height:170px;
 }
 
 .card:hover{
 transform:translateY(-5px);
-box-shadow:0 6px 16px rgba(0,0,0,0.15);
+box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
+
+.card .icon{
+font-size:60px;
+line-height:1;
+margin-bottom:10px;
+}
+
 .card h2{
-font-size:26px;
-margin-bottom:12px;
+font-size:18px;
+line-height:1.25;
+margin:0 0 8px 0;
 color:#002B5B;
 font-weight:700;
+display:flex;
+align-items:center;
+justify-content:center;
+min-height:2.3em;
+max-width:95%;
+word-break:normal;
+overflow-wrap:break-word;
 }
 
 .card p{
-font-size:15px;
+font-size:13px;
 color:#555;
 margin:0;
-}
-.card h2{
-color:#002B5B;
+line-height:1.4;
+max-width:90%;
 }
 
 @media (min-width:600px){
@@ -71,13 +86,18 @@ grid-template-columns:repeat(3,1fr);
 gap:20px;
 }
 .card{
-padding:25px;
+padding:28px 20px;
+height:200px;
+}
+.card .icon{
+font-size:68px;
+margin-bottom:12px;
 }
 .card h2{
-font-size:30px;
+font-size:22px;
 }
 .card p{
-font-size:17px;
+font-size:15px;
 }
 }
 
@@ -85,11 +105,17 @@ font-size:17px;
 .grid{
 grid-template-columns:repeat(4,1fr);
 }
+.card{
+height:210px;
+}
+.card .icon{
+font-size:72px;
+}
 .card h2{
-font-size:32px;
+font-size:24px;
 }
 .card p{
-font-size:18px;
+font-size:16px;
 }
 }
 
@@ -107,7 +133,8 @@ font-size:18px;
 <div class="card"
 onclick="location.href='daily-suja-sar.html'">
 
-<h2>📘 Daily Sujas Sar</h2>
+<div class="icon">📘</div>
+<h2>Daily Sujas</h2>
 <p>Daily Current Affairs PDF</p>
 
 </div>
@@ -115,7 +142,8 @@ onclick="location.href='daily-suja-sar.html'">
 <div class="card"
 onclick="location.href='downloads.html'">
 
-<h2>📥 Downloads</h2>
+<div class="icon">📥</div>
+<h2>Downloads</h2>
 <p>All Study Material</p>
 
 </div>
@@ -123,21 +151,24 @@ onclick="location.href='downloads.html'">
 <div class="card"
 onclick="location.href='quiz-section.html'">
 
-<h2>📝 Daily Quiz</h2>
+<div class="icon">📝</div>
+<h2>Daily Quiz</h2>
 <p>Daily Sujas Quiz Practice</p>
 
 </div>
 <div class="card"
 onclick="location.href='important-notes.html'">
 
-<h2>📚 Important Notes</h2>
+<div class="icon">📚</div>
+<h2>Notes Shala</h2>
 <p>Exam Oriented PDF Notes</p>
 
 </div>
 <div class="card"
 onclick="location.href='monthly-sujas-mcq.html'">
 
-<h2>📗 Monthly Sujas MCQ</h2>
+<div class="icon">📗</div>
+<h2>Monthly Sujas MCQ</h2>
 <p>Month Wise MCQ PDF</p>
 
 </div>
