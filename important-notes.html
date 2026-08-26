@@ -283,7 +283,7 @@ currentSubjectId = subjectId;
 let html = `
 <div style="display:flex;gap:10px;">
 <button class="back-btn" onclick="loadNotes()">🏠 Home</button>
-<button class="back-btn" onclick="history.back()">⬅ Back</button>
+<button class="back-btn" onclick="showSubjects(subjects[currentSubjectId] && subjects[currentSubjectId].categoryId)">⬅ Back</button>
 </div>
 <h2>PDF Notes</h2>
 <div class="folder-list">
