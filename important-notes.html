@@ -202,7 +202,27 @@ subjectsSnap.forEach(doc=>{
 
 let html = '<div class="card-grid">';
 
-for(const categoryId in categories){
+// Sort categories by the optional "order" field:
+// - Categories with a numeric order come first, ascending (1,2,3...).
+// - Categories with missing/empty order come after, keeping their
+//   existing relative order (no orderBy() query used, so old
+//   documents without "order" are never excluded from the results).
+const sortedCategoryIds = Object.keys(categories).sort((idA, idB)=>{
+
+const orderA = categories[idA].order;
+const orderB = categories[idB].order;
+
+const hasA = typeof orderA === "number" && !isNaN(orderA);
+const hasB = typeof orderB === "number" && !isNaN(orderB);
+
+if(hasA && hasB) return orderA - orderB;
+if(hasA && !hasB) return -1;
+if(!hasA && hasB) return 1;
+return 0;
+
+});
+
+for(const categoryId of sortedCategoryIds){
 
 const category = categories[categoryId];
 
