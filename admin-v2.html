@@ -409,6 +409,10 @@ Coming Soon...
 <input type="text" id="categoryIcon"
 placeholder="https://example.com/icon.png">
 
+<label>Display Order / क्रम</label>
+<input type="number" id="categoryOrder"
+placeholder="जैसे 1, 2, 3">
+
 <button onclick="saveCategory()">
 ➕ Create Category
 </button>
@@ -639,6 +643,10 @@ overflow-y:auto;
 <label>Category Icon URL</label>
 <input type="text" id="editCategoryIcon"
 placeholder="https://example.com/icon.png">
+
+<label>Display Order / क्रम</label>
+<input type="number" id="editCategoryOrder"
+placeholder="जैसे 1, 2, 3">
 
 <button onclick="saveEditedCategory()">
 💾 Save Changes
@@ -2052,6 +2060,9 @@ list.innerHTML += `
 ${c.icon ? `<img src="${c.icon}" style="height:30px;vertical-align:middle;margin-right:8px;">` : ""}
 <b>${c.name || "-"}</b>
 
+<br>
+<small>Order: ${(c.order === undefined || c.order === null || c.order === "") ? "-" : c.order}</small>
+
 <br><br>
 
 <button onclick="openEditCategoryModal('${c.id}')">
@@ -2097,6 +2108,9 @@ cat.name || "";
 document.getElementById("editCategoryIcon").value =
 cat.icon || "";
 
+document.getElementById("editCategoryOrder").value =
+(cat.order === undefined || cat.order === null) ? "" : cat.order;
+
 document.getElementById("editCategoryModalOverlay").style.display = "flex";
 
 };
@@ -2116,6 +2130,12 @@ document.getElementById("editCategoryName").value;
 const icon =
 document.getElementById("editCategoryIcon").value;
 
+const orderRaw =
+document.getElementById("editCategoryOrder").value;
+
+const order =
+orderRaw === "" ? null : Number(orderRaw);
+
 if(name === ""){
 alert("Category Name भरें");
 return;
@@ -2127,7 +2147,8 @@ await updateDoc(
 doc(db,"notesCategories",currentEditCategoryId),
 {
 name,
-icon
+icon,
+order
 }
 );
 
@@ -3048,6 +3069,12 @@ document.getElementById("categoryName").value;
 const categoryIcon =
 document.getElementById("categoryIcon").value;
 
+const categoryOrderRaw =
+document.getElementById("categoryOrder").value;
+
+const categoryOrder =
+categoryOrderRaw === "" ? null : Number(categoryOrderRaw);
+
 if(categoryName === ""){
 alert("Category Name भरें");
 return;
@@ -3058,6 +3085,7 @@ collection(db,"notesCategories"),
 {
 name:categoryName,
 icon:categoryIcon,
+order:categoryOrder,
 createdAt:new Date().toISOString()
 }
 );
@@ -3066,6 +3094,7 @@ alert("Category Created ✅");
 
 document.getElementById("categoryName").value="";
 document.getElementById("categoryIcon").value="";
+document.getElementById("categoryOrder").value="";
 
 loadCategories();
 if(typeof loadCategoryManagerDropdown === "function"){
