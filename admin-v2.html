@@ -442,6 +442,10 @@ placeholder="जैसे 1, 2, 3">
 id="subjectIcon"
 placeholder="https://example.com/icon.png">
 
+<label>Display Order / क्रम</label>
+<input type="number" id="subjectOrder"
+placeholder="जैसे 1, 2, 3">
+
 <button onclick="saveSubject()">
 ➕ Create Subject
 </button>
@@ -688,6 +692,10 @@ overflow-y:auto;
 <label>Subject Icon URL</label>
 <input type="text" id="editSubjectIcon"
 placeholder="https://example.com/icon.png">
+
+<label>Display Order / क्रम</label>
+<input type="number" id="editSubjectOrder"
+placeholder="जैसे 1, 2, 3">
 
 <button onclick="saveEditedSubject()">
 💾 Save Changes
@@ -2470,6 +2478,9 @@ subj.subjectName || "";
 document.getElementById("editSubjectIcon").value =
 subj.icon || "";
 
+document.getElementById("editSubjectOrder").value =
+(subj.order === undefined || subj.order === null) ? "" : subj.order;
+
 document.getElementById("editSubjectModalOverlay").style.display = "flex";
 
 };
@@ -2489,6 +2500,12 @@ document.getElementById("editSubjectName").value;
 const icon =
 document.getElementById("editSubjectIcon").value;
 
+const orderRaw =
+document.getElementById("editSubjectOrder").value;
+
+const order =
+orderRaw === "" ? null : Number(orderRaw);
+
 if(subjectName === ""){
 alert("Subject Name भरें");
 return;
@@ -2500,7 +2517,8 @@ await updateDoc(
 doc(db,"notesSubjects",currentEditSubjectId),
 {
 subjectName,
-icon
+icon,
+order
 }
 );
 
@@ -3124,6 +3142,13 @@ const subjectName =
 document.getElementById("subjectName").value;
 const subjectIcon =
 document.getElementById("subjectIcon").value;
+
+const subjectOrderRaw =
+document.getElementById("subjectOrder").value;
+
+const subjectOrder =
+subjectOrderRaw === "" ? null : Number(subjectOrderRaw);
+
 if(categoryId === ""){
 alert("Category Select करें");
 return;
@@ -3140,6 +3165,7 @@ collection(db,"notesSubjects"),
 categoryId,
 subjectName,
 icon:subjectIcon,
+order:subjectOrder,
 createdAt:new Date().toISOString()
 }
 );
@@ -3147,6 +3173,7 @@ alert("Subject Created ✅");
 
 document.getElementById("subjectName").value="";
 document.getElementById("subjectIcon").value="";
+document.getElementById("subjectOrder").value="";
 
 if(typeof loadSubjectManagerList === "function"){
 loadSubjectManagerList();
