@@ -746,6 +746,58 @@ style="background:#888;margin-left:10px;">
 </div>
 </div>
 
+<hr>
+
+<!-- ================================
+     Master Delete (new, standalone feature)
+     Does NOT modify/replace Category Delete, Subject Delete,
+     Topic Delete or Uploaded Notes Delete above. Uses only the
+     existing notesCategories / notesSubjects / notesTopics /
+     notesPdfs collections and their existing relationship fields.
+     ================================ -->
+
+<h3>🗑️ Master Delete</h3>
+
+<p style="color:#b00020;font-weight:bold;">
+⚠️ यह एक destructive feature है। Selected Categories और उनकी पूरी hierarchy
+(Subjects, Topics, Notes/PDFs) permanently delete हो जाएगी। यह action undo नहीं हो सकता।
+</p>
+
+<label>Search Category</label>
+<input type="text" id="masterDeleteSearchInput"
+placeholder="Search Category..."
+oninput="filterMasterDeleteCategoryList()">
+
+<div id="masterDeleteCategoryListBox" style="
+border:1px solid #ccc;
+border-radius:8px;
+max-height:220px;
+overflow-y:auto;
+padding:10px;
+margin-top:5px;
+">
+<p>Loading categories...</p>
+</div>
+
+<div style="margin-top:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+<b id="masterDeleteSelectedCount">Selected: 0</b>
+<button type="button" onclick="clearMasterDeleteSelection()"
+style="background:#888;margin-top:0;">
+Clear Selection
+</button>
+</div>
+
+<div id="masterDeleteCategoryDetails" style="margin-top:15px;"></div>
+
+<div id="masterDeleteStatus" style="margin-top:10px;font-weight:bold;"></div>
+
+<button type="button" id="masterDeleteBtn"
+onclick="masterDeleteSelectedCategories()"
+disabled
+style="background:#b00020;">
+🗑️ DELETE SELECTED CATEGORIES
+</button>
+
 </div>
 
 <div id="monthlyMcqSection" class="section">
@@ -1027,7 +1079,9 @@ setDoc,
 getDoc,
 updateDoc,
 onSnapshot,
-serverTimestamp
+serverTimestamp,
+query,
+where
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -4035,6 +4089,508 @@ alert(error.message);
 
 // ================================
 // Uploaded Notes Filter + Edit/Delete System END
+// ================================
+
+// ================================
+// Master Delete System START
+// ================================
+// New, standalone feature added at the bottom of the Notes Upload
+// section. Reuses the existing notesCategories / notesSubjects /
+// notesTopics / notesPdfs collections and their existing relationship
+// fields (categoryId / subjectId / topicId) exactly as-is.
+//
+// This does NOT modify, replace, or call into the existing
+// deleteCategory() / deleteSubject() / deleteTopic() / deleteNote()
+// functions above - it only reads/deletes documents directly via
+// their own Firestore document IDs, using new function names so
+// there is no collision with the existing Notes Upload system.
+
+let masterDeleteCategoriesCache = []; // {id, name, icon, order, ...}
+let masterDeleteSelectedIds = new Set();
+let masterDeleteHierarchyCache = {}; // categoryId -> {subjects, topics, notes}
+
+// Loads (or reloads) just the Category list for the Master Delete
+// picker. Lightweight read of notesCategories only - Subjects/Topics/
+// Notes are fetched later, only for the Categories that get selected.
+window.loadMasterDeleteCategories = async function(){
+
+const box = document.getElementById("masterDeleteCategoryListBox");
+if(!box) return;
+
+try{
+
+const snapshot =
+await getDocs(
+collection(db,"notesCategories")
+);
+
+masterDeleteCategoriesCache = [];
+
+snapshot.forEach((docItem)=>{
+masterDeleteCategoriesCache.push({
+id:docItem.id,
+...docItem.data()
+});
+});
+
+// Drop selections for Categories that no longer exist.
+Array.from(masterDeleteSelectedIds).forEach((id)=>{
+if(!masterDeleteCategoriesCache.find((cat)=>cat.id === id)){
+masterDeleteSelectedIds.delete(id);
+}
+});
+
+renderMasterDeleteCategoryList();
+renderMasterDeleteSelectedCount();
+renderMasterDeletePreview();
+
+}
+catch(error){
+
+box.innerHTML =
+"<p>Categories load करने में समस्या आई: " + error.message + "</p>";
+
+}
+
+};
+
+// Renders the searchable checkbox list from the cached Category list
+// (no Firestore read here - just filtering + DOM render).
+function renderMasterDeleteCategoryList(){
+
+const box = document.getElementById("masterDeleteCategoryListBox");
+if(!box) return;
+
+const searchInput =
+document.getElementById("masterDeleteSearchInput");
+
+const searchText =
+searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+const filtered =
+masterDeleteCategoriesCache.filter((cat)=>{
+const name = (cat.name || "").toLowerCase();
+return name.includes(searchText);
+});
+
+if(!masterDeleteCategoriesCache.length){
+box.innerHTML = "<p>कोई Category नहीं मिली.</p>";
+return;
+}
+
+if(!filtered.length){
+box.innerHTML = "<p>Search से कोई Category match नहीं हुई.</p>";
+return;
+}
+
+box.innerHTML = "";
+
+filtered.forEach((cat)=>{
+
+const isChecked =
+masterDeleteSelectedIds.has(cat.id) ? "checked" : "";
+
+box.innerHTML +=
+`<label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin-top:8px;">
+<input type="checkbox" style="width:auto;margin:0;" ${isChecked}
+onchange="toggleMasterDeleteCategorySelection('${cat.id}', this.checked)">
+📚 ${cat.name || "(Unnamed Category)"}
+</label>`;
+
+});
+
+}
+
+// Called on every keystroke in the search box - just re-renders from
+// the already-loaded cache, no extra Firestore reads.
+window.filterMasterDeleteCategoryList = function(){
+renderMasterDeleteCategoryList();
+};
+
+window.toggleMasterDeleteCategorySelection = function(categoryId,isChecked){
+
+if(isChecked){
+masterDeleteSelectedIds.add(categoryId);
+}
+else{
+masterDeleteSelectedIds.delete(categoryId);
+}
+
+renderMasterDeleteSelectedCount();
+renderMasterDeletePreview();
+
+};
+
+window.clearMasterDeleteSelection = function(){
+
+masterDeleteSelectedIds.clear();
+masterDeleteHierarchyCache = {};
+
+renderMasterDeleteCategoryList();
+renderMasterDeleteSelectedCount();
+renderMasterDeletePreview();
+
+};
+
+function renderMasterDeleteSelectedCount(){
+
+const countEl =
+document.getElementById("masterDeleteSelectedCount");
+
+if(countEl){
+countEl.innerText = "Selected: " + masterDeleteSelectedIds.size;
+}
+
+const btn = document.getElementById("masterDeleteBtn");
+if(btn){
+btn.disabled = masterDeleteSelectedIds.size === 0;
+}
+
+}
+
+// Fetches only the Subjects/Topics/Notes that belong to one
+// Category, using targeted queries (categoryId / subjectId /
+// topicId) instead of loading entire collections.
+async function getMasterDeleteHierarchy(categoryId){
+
+const subjectsSnapshot =
+await getDocs(
+query(
+collection(db,"notesSubjects"),
+where("categoryId","==",categoryId)
+)
+);
+
+const subjects = [];
+subjectsSnapshot.forEach((docItem)=>{
+subjects.push({id:docItem.id, ...docItem.data()});
+});
+
+const topicsSnapshots =
+await Promise.all(
+subjects.map((subject)=>
+getDocs(
+query(
+collection(db,"notesTopics"),
+where("subjectId","==",subject.id)
+)
+)
+)
+);
+
+const topics = [];
+topicsSnapshots.forEach((snapshot)=>{
+snapshot.forEach((docItem)=>{
+topics.push({id:docItem.id, ...docItem.data()});
+});
+});
+
+const notesSnapshots =
+await Promise.all(
+topics.map((topic)=>
+getDocs(
+query(
+collection(db,"notesPdfs"),
+where("topicId","==",topic.id)
+)
+)
+)
+);
+
+const notes = [];
+notesSnapshots.forEach((snapshot)=>{
+snapshot.forEach((docItem)=>{
+notes.push({id:docItem.id, ...docItem.data()});
+});
+});
+
+return {subjects, topics, notes};
+
+}
+
+// Shows the details preview for whichever Categories are currently
+// selected (single Category -> full breakdown, multiple -> per-
+// Category summary + totals), as described in the spec.
+window.renderMasterDeletePreview = async function(){
+
+const container =
+document.getElementById("masterDeleteCategoryDetails");
+
+if(!container) return;
+
+if(masterDeleteSelectedIds.size === 0){
+container.innerHTML = "";
+return;
+}
+
+container.innerHTML = "<p>Loading details...</p>";
+
+const selectedCategories =
+masterDeleteCategoriesCache.filter((cat)=>
+masterDeleteSelectedIds.has(cat.id)
+);
+
+// Track the request so a fast second selection change doesn't get
+// overwritten by a slower, stale first request.
+const requestToken = Symbol();
+renderMasterDeletePreview._latestToken = requestToken;
+
+try{
+
+const hierarchies =
+await Promise.all(
+selectedCategories.map((cat)=>getMasterDeleteHierarchy(cat.id))
+);
+
+if(renderMasterDeletePreview._latestToken !== requestToken){
+return; // a newer selection change has since started
+}
+
+masterDeleteHierarchyCache = {};
+
+let totalSubjects = 0;
+let totalTopics = 0;
+let totalNotes = 0;
+
+let html = `<p><b>Selected Categories: ${selectedCategories.length}</b></p>`;
+
+selectedCategories.forEach((cat,index)=>{
+
+const hierarchy = hierarchies[index];
+masterDeleteHierarchyCache[cat.id] = hierarchy;
+
+totalSubjects += hierarchy.subjects.length;
+totalTopics += hierarchy.topics.length;
+totalNotes += hierarchy.notes.length;
+
+if(selectedCategories.length === 1){
+
+html += `
+<div style="border:1px solid #eee;padding:10px;border-radius:8px;margin-top:8px;">
+<b>📚 ${cat.name || "(Unnamed Category)"}</b><br><br>
+<b>Subjects:</b><br>
+${hierarchy.subjects.map((s)=>"- " + (s.name || "(Unnamed Subject)")).join("<br>") || "कोई नहीं"}
+<br><br>
+<b>Topics:</b><br>
+${hierarchy.topics.map((t)=>"- " + (t.name || "(Unnamed Topic)")).join("<br>") || "कोई नहीं"}
+<br><br>
+<b>Uploaded Notes/PDFs:</b><br>
+${hierarchy.notes.map((n)=>"- " + (n.title || "(Untitled)")).join("<br>") || "कोई नहीं"}
+</div>`;
+
+}
+else{
+
+html += `
+<div style="border:1px solid #eee;padding:10px;border-radius:8px;margin-top:8px;">
+<b>${index + 1}. 📚 ${cat.name || "(Unnamed Category)"}</b><br>
+Subjects: ${hierarchy.subjects.length}<br>
+Topics: ${hierarchy.topics.length}<br>
+Notes/PDFs: ${hierarchy.notes.length}
+</div>`;
+
+}
+
+});
+
+if(selectedCategories.length > 1){
+html += `
+<p style="margin-top:10px;">
+<b>Total:</b> ${selectedCategories.length} Categories,
+${totalSubjects} Subjects, ${totalTopics} Topics, ${totalNotes} Notes/PDFs
+</p>`;
+}
+
+container.innerHTML = html;
+
+}
+catch(error){
+
+container.innerHTML =
+"<p>Details load करने में समस्या आई: " + error.message + "</p>";
+
+}
+
+};
+
+// Master Delete button - confirms, then cascades:
+// notesPdfs -> notesTopics -> notesSubjects -> notesCategories,
+// per selected Category, using only Firestore document IDs (never
+// by Category name).
+window.masterDeleteSelectedCategories = async function(){
+
+const selectedCategories =
+masterDeleteCategoriesCache.filter((cat)=>
+masterDeleteSelectedIds.has(cat.id)
+);
+
+if(!selectedCategories.length) return;
+
+const statusEl = document.getElementById("masterDeleteStatus");
+const btn = document.getElementById("masterDeleteBtn");
+
+// Make sure hierarchy info is fresh/complete before confirming -
+// falls back to a direct fetch for any Category missing from cache.
+let hierarchies;
+
+try{
+
+hierarchies = {};
+
+await Promise.all(
+selectedCategories.map(async (cat)=>{
+hierarchies[cat.id] =
+masterDeleteHierarchyCache[cat.id] ||
+await getMasterDeleteHierarchy(cat.id);
+})
+);
+
+}
+catch(error){
+
+alert("Details load करने में समस्या आई: " + error.message);
+return;
+
+}
+
+let totalSubjects = 0;
+let totalTopics = 0;
+let totalNotes = 0;
+
+selectedCategories.forEach((cat)=>{
+const hierarchy = hierarchies[cat.id];
+totalSubjects += hierarchy.subjects.length;
+totalTopics += hierarchy.topics.length;
+totalNotes += hierarchy.notes.length;
+});
+
+const confirmMessage =
+"⚠️ WARNING!\n\n" +
+"You are about to permanently delete:\n\n" +
+selectedCategories.length + " Categories\n" +
+totalSubjects + " Subjects\n" +
+totalTopics + " Topics\n" +
+totalNotes + " Notes/PDFs\n\n" +
+"This action cannot be undone.\n\n" +
+"Are you sure?";
+
+if(!confirm(confirmMessage)){
+return;
+}
+
+if(btn) btn.disabled = true;
+
+const succeeded = [];
+const failed = [];
+
+for(const cat of selectedCategories){
+
+if(statusEl){
+statusEl.innerText =
+"Deleting " + (cat.name || cat.id) + "...";
+}
+
+try{
+
+const hierarchy = hierarchies[cat.id];
+
+// STEP 4: delete all Uploaded Notes/PDFs under this Category.
+await Promise.all(
+hierarchy.notes.map((note)=>
+deleteDoc(doc(db,"notesPdfs",note.id))
+)
+);
+
+// STEP 5: delete all Topics under this Category.
+await Promise.all(
+hierarchy.topics.map((topic)=>
+deleteDoc(doc(db,"notesTopics",topic.id))
+)
+);
+
+// STEP 6: delete all Subjects under this Category.
+await Promise.all(
+hierarchy.subjects.map((subject)=>
+deleteDoc(doc(db,"notesSubjects",subject.id))
+)
+);
+
+// STEP 7: delete the Category document itself.
+await deleteDoc(
+doc(db,"notesCategories",cat.id)
+);
+
+succeeded.push(cat.name || cat.id);
+
+}
+catch(error){
+
+// Do not let one failed Category silently stop/skip the rest -
+// keep going, but make sure the Admin is told about the failure.
+failed.push((cat.name || cat.id) + ": " + error.message);
+
+}
+
+}
+
+if(failed.length){
+
+if(statusEl){
+statusEl.innerText = "⚠️ Master Delete Completed With Errors";
+}
+
+alert(
+"कुछ Categories delete नहीं हो सकीं:\n\n" +
+failed.join("\n") +
+"\n\nSuccessfully Deleted:\n" +
+(succeeded.length ? succeeded.join("\n") : "कोई नहीं")
+);
+
+}
+else{
+
+if(statusEl){
+statusEl.innerText = "✅ Master Delete Completed Successfully";
+}
+
+alert("✅ Master Delete Completed Successfully");
+
+}
+
+// Reset selection + preview.
+masterDeleteSelectedIds.clear();
+masterDeleteHierarchyCache = {};
+
+const searchInput =
+document.getElementById("masterDeleteSearchInput");
+if(searchInput) searchInput.value = "";
+
+const detailsEl =
+document.getElementById("masterDeleteCategoryDetails");
+if(detailsEl) detailsEl.innerHTML = "";
+
+// Refresh Master Delete's own Category list.
+await loadMasterDeleteCategories();
+
+// Reuse existing refresh functions exactly as they already behave -
+// no full page reload, and nothing here modifies those functions.
+if(typeof loadCategories === "function") loadCategories();
+if(typeof loadCategoryManagerDropdown === "function") loadCategoryManagerDropdown();
+if(typeof loadCategoryManagerList === "function") loadCategoryManagerList();
+if(typeof loadSubjectManagerCategoryDropdown === "function") loadSubjectManagerCategoryDropdown();
+if(typeof loadNoteFilterCategories === "function") loadNoteFilterCategories();
+if(typeof loadUploadedNotesList === "function") loadUploadedNotesList();
+
+if(statusEl){
+setTimeout(()=>{ statusEl.innerText = ""; },4000);
+}
+
+};
+
+loadMasterDeleteCategories();
+
+// ================================
+// Master Delete System END
 // ================================
 
 window.saveQuiz = async function(){
