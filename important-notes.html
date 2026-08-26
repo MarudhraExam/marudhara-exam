@@ -247,11 +247,32 @@ let html = `
 <div class="card-grid">
 `;
 
-for(const subjectId in subjects){
+// Sort subjects belonging to this Category by the optional "order"
+// field, same rule as Category sorting:
+// - Numeric order first, ascending (1,2,3...).
+// - Missing/empty order after, keeping existing relative order
+//   (no orderBy() query used, so old Subjects without "order" are
+//   never excluded from the results).
+const sortedSubjectIds = Object.keys(subjects)
+.filter(subjectId => subjects[subjectId].categoryId === categoryId)
+.sort((idA, idB)=>{
+
+const orderA = subjects[idA].order;
+const orderB = subjects[idB].order;
+
+const hasA = typeof orderA === "number" && !isNaN(orderA);
+const hasB = typeof orderB === "number" && !isNaN(orderB);
+
+if(hasA && hasB) return orderA - orderB;
+if(hasA && !hasB) return -1;
+if(!hasA && hasB) return 1;
+return 0;
+
+});
+
+for(const subjectId of sortedSubjectIds){
 
 const subject = subjects[subjectId];
-
-if(subject.categoryId !== categoryId) continue;
 
 html += `
 <div class="card" onclick="showPdfs('${subjectId}')">
