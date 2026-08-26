@@ -271,6 +271,17 @@ let currentTopicsSnap = null;
 let currentPdfsSnap = null;
 let currentSubjectId = null;
 
+// Inline onclick="" handlers run in the global scope, not inside this
+// module, so module-scoped variables like `subjects` and `currentSubjectId`
+// are not directly reachable from them (this caused the
+// "subjects is not defined" error). This helper is exposed on window so
+// it can be called from onclick, and it reads the existing module-scoped
+// state internally, then reuses the existing showSubjects() function.
+window.backToSubjectsFromPdfs = function(){
+const subject = subjects[currentSubjectId];
+showSubjects(subject ? subject.categoryId : undefined);
+}
+
 window.showPdfs = async function(subjectId){
 
 const topicsSnap = await getDocs(collection(db,"notesTopics"));
@@ -283,7 +294,7 @@ currentSubjectId = subjectId;
 let html = `
 <div style="display:flex;gap:10px;">
 <button class="back-btn" onclick="loadNotes()">🏠 Home</button>
-<button class="back-btn" onclick="showSubjects(subjects[currentSubjectId] && subjects[currentSubjectId].categoryId)">⬅ Back</button>
+<button class="back-btn" onclick="backToSubjectsFromPdfs()">⬅ Back</button>
 </div>
 <h2>PDF Notes</h2>
 <div class="folder-list">
