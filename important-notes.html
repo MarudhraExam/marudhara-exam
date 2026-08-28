@@ -184,21 +184,35 @@ const db = getFirestore(app);
 let categories = {};
 let subjects = {};
 
-window.loadNotes = async function(){
+// Generic helper reused by categories/subjects/topics/pdfs so that the same
+// "order" field set from the Admin Panel is respected everywhere:
+// - Items with a numeric "order" come first, ascending (1,2,3...).
+// - Items with missing/empty "order" come after, sorted using the
+//   provided fallbackCompare (old notes without an order field still
+//   render instead of breaking the list).
+// NOTE: this must live at module top level (not inside loadNotes) so that
+// showSubjects()/showPdfs()/showTopicPdfs() can also call it. Previously it
+// was declared inside loadNotes(), which meant those other functions could
+// not see it at all and calling it threw a "sortByOrderField is not
+// defined" ReferenceError as soon as a category/subject/topic was opened.
+function sortByOrderField(items, getOrder, fallbackCompare){
+ return items.slice().sort((a,b)=>{
+  const orderA = getOrder(a);
+  const orderB = getOrder(b);
+  const hasA = typeof orderA === "number" && !isNaN(orderA);
+  const hasB = typeof orderB === "number" && !isNaN(orderB);
+  if(hasA && hasB) return orderA - orderB;
+  if(hasA && !hasB) return -1;
+  if(!hasA && hasB) return 1;
+  return fallbackCompare ? fallbackCompare(a,b) : 0;
+ });
+}
 
-categories = {};
-subjects = {};
-
-const categoriesSnap = await getDocs(collection(db,"notesCategories"));
-const subjectsSnap = await getDocs(collection(db,"notesSubjects"));
-
-categoriesSnap.forEach(doc=>{
- categories[doc.id] = doc.data();
-});
-
-subjectsSnap.forEach(doc=>{
- subjects[doc.id] = doc.data();
-});
+// Renders the Category Tiles view from the already-loaded `categories`
+// cache (no Firestore call). Used both by loadNotes() right after a fresh
+// fetch, and by showCategories() when navigating back from Subject Tiles,
+// so going back doesn't need to hit Firestore again.
+function renderCategoryTiles(){
 
 let html = '<div class="card-grid">';
 
@@ -240,18 +254,46 @@ html += '</div>';
 document.getElementById("notesContainer").innerHTML = html;
 }
 
+window.loadNotes = async function(){
+
+categories = {};
+subjects = {};
+
+const categoriesSnap = await getDocs(collection(db,"notesCategories"));
+const subjectsSnap = await getDocs(collection(db,"notesSubjects"));
+
+categoriesSnap.forEach(doc=>{
+ categories[doc.id] = doc.data();
+});
+
+subjectsSnap.forEach(doc=>{
+ subjects[doc.id] = doc.data();
+});
+
+renderCategoryTiles();
+}
+
+// Used by the Subject Tiles "Back" button. Categories are already cached
+// in memory from loadNotes(), so this just re-renders that cache instead
+// of hitting Firestore again.
+window.showCategories = function(){
+renderCategoryTiles();
+}
+
 window.showSubjects = async function(categoryId){
 
 let html = `
-<button class="back-btn" onclick="loadNotes()">⬅ Back</button>
+<button class="back-btn" onclick="showCategories()">⬅ Back</button>
 <div class="card-grid">
 `;
 
-for(const subjectId in subjects){
+const subjectIds = Object.keys(subjects).filter(subjectId => subjects[subjectId].categoryId === categoryId);
+
+const sortedSubjectIds = sortByOrderField(subjectIds, id => subjects[id].order);
+
+for(const subjectId of sortedSubjectIds){
 
 const subject = subjects[subjectId];
-
-if(subject.categoryId !== categoryId) continue;
 
 html += `
 <div class="card" onclick="showPdfs('${subjectId}')">
@@ -300,11 +342,17 @@ let html = `
 <div class="folder-list">
 `;
 
-const topics = topicsSnap.docs.sort((a,b)=>{
-    const n1 = parseInt(a.data().topicName.match(/\d+/)?.[0] || 0);
-    const n2 = parseInt(b.data().topicName.match(/\d+/)?.[0] || 0);
-    return n1 - n2;
-});
+const topics = sortByOrderField(
+    topicsSnap.docs,
+    doc => doc.data().order,
+    (a,b) => {
+        // Fallback for old topics saved without an "order" field, so
+        // they keep rendering (in a sensible order) instead of breaking.
+        const n1 = parseInt(a.data().topicName.match(/\d+/)?.[0] || 0);
+        const n2 = parseInt(b.data().topicName.match(/\d+/)?.[0] || 0);
+        return n1 - n2;
+    }
+);
 
 topics.forEach(topicDoc=>{
 
@@ -345,16 +393,20 @@ let html = `
 <div class="pdf-box">
 `;
 
-const pdfs = pdfsSnap.docs
-.filter(doc => doc.data().topicId === topicId)
-.sort((a, b) => {
-    const getNumber = (title) => {
-        const match = (title || "").match(/\d+/);
-        return match ? parseInt(match[0], 10) : Infinity;
-    };
+const pdfs = sortByOrderField(
+    pdfsSnap.docs.filter(doc => doc.data().topicId === topicId),
+    doc => doc.data().order,
+    (a, b) => {
+        // Fallback for old PDFs saved without an "order" field, so
+        // they keep rendering (in a sensible order) instead of breaking.
+        const getNumber = (title) => {
+            const match = (title || "").match(/\d+/);
+            return match ? parseInt(match[0], 10) : Infinity;
+        };
 
-    return getNumber(a.data().noteTitle) - getNumber(b.data().noteTitle);
-});
+        return getNumber(a.data().noteTitle) - getNumber(b.data().noteTitle);
+    }
+);
 
 pdfs.forEach(pdfDoc => {
 
