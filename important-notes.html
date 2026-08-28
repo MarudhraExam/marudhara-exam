@@ -222,25 +222,6 @@ return 0;
 
 });
 
-// Generic helper reused below for subjects/topics/pdfs so that the same
-// "order" field set from the Admin Panel is respected everywhere:
-// - Items with a numeric "order" come first, ascending (1,2,3...).
-// - Items with missing/empty "order" come after, sorted using the
-//   provided fallbackCompare (old notes without an order field still
-//   render instead of breaking the list).
-function sortByOrderField(items, getOrder, fallbackCompare){
- return items.slice().sort((a,b)=>{
-  const orderA = getOrder(a);
-  const orderB = getOrder(b);
-  const hasA = typeof orderA === "number" && !isNaN(orderA);
-  const hasB = typeof orderB === "number" && !isNaN(orderB);
-  if(hasA && hasB) return orderA - orderB;
-  if(hasA && !hasB) return -1;
-  if(!hasA && hasB) return 1;
-  return fallbackCompare ? fallbackCompare(a,b) : 0;
- });
-}
-
 for(const categoryId of sortedCategoryIds){
 
 const category = categories[categoryId];
@@ -266,13 +247,11 @@ let html = `
 <div class="card-grid">
 `;
 
-const subjectIds = Object.keys(subjects).filter(subjectId => subjects[subjectId].categoryId === categoryId);
-
-const sortedSubjectIds = sortByOrderField(subjectIds, id => subjects[id].order);
-
-for(const subjectId of sortedSubjectIds){
+for(const subjectId in subjects){
 
 const subject = subjects[subjectId];
+
+if(subject.categoryId !== categoryId) continue;
 
 html += `
 <div class="card" onclick="showPdfs('${subjectId}')">
@@ -321,17 +300,11 @@ let html = `
 <div class="folder-list">
 `;
 
-const topics = sortByOrderField(
-    topicsSnap.docs,
-    doc => doc.data().order,
-    (a,b) => {
-        // Fallback for old topics saved without an "order" field, so
-        // they keep rendering (in a sensible order) instead of breaking.
-        const n1 = parseInt(a.data().topicName.match(/\d+/)?.[0] || 0);
-        const n2 = parseInt(b.data().topicName.match(/\d+/)?.[0] || 0);
-        return n1 - n2;
-    }
-);
+const topics = topicsSnap.docs.sort((a,b)=>{
+    const n1 = parseInt(a.data().topicName.match(/\d+/)?.[0] || 0);
+    const n2 = parseInt(b.data().topicName.match(/\d+/)?.[0] || 0);
+    return n1 - n2;
+});
 
 topics.forEach(topicDoc=>{
 
@@ -372,20 +345,16 @@ let html = `
 <div class="pdf-box">
 `;
 
-const pdfs = sortByOrderField(
-    pdfsSnap.docs.filter(doc => doc.data().topicId === topicId),
-    doc => doc.data().order,
-    (a, b) => {
-        // Fallback for old PDFs saved without an "order" field, so
-        // they keep rendering (in a sensible order) instead of breaking.
-        const getNumber = (title) => {
-            const match = (title || "").match(/\d+/);
-            return match ? parseInt(match[0], 10) : Infinity;
-        };
+const pdfs = pdfsSnap.docs
+.filter(doc => doc.data().topicId === topicId)
+.sort((a, b) => {
+    const getNumber = (title) => {
+        const match = (title || "").match(/\d+/);
+        return match ? parseInt(match[0], 10) : Infinity;
+    };
 
-        return getNumber(a.data().noteTitle) - getNumber(b.data().noteTitle);
-    }
-);
+    return getNumber(a.data().noteTitle) - getNumber(b.data().noteTitle);
+});
 
 pdfs.forEach(pdfDoc => {
 
