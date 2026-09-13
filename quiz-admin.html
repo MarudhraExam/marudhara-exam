@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Manager - Admin | मरुधरा एग्जाम</title>
+
+<style>
+
+*{box-sizing:border-box;}
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:0;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:20px;
+}
+
+h1{
+color:#002B5B;
+margin-bottom:20px;
+}
+
+.breadcrumb{
+display:flex;
+gap:8px;
+align-items:center;
+margin-bottom:20px;
+font-size:14px;
+color:#555;
+flex-wrap:wrap;
+}
+
+.breadcrumb span.crumb{
+cursor:pointer;
+color:#002B5B;
+font-weight:bold;
+}
+
+.breadcrumb span.crumb:hover{ text-decoration:underline; }
+
+.panel{
+background:white;
+border-radius:14px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+padding:22px;
+margin-bottom:22px;
+}
+
+.panel h2{
+color:#002B5B;
+font-size:18px;
+margin-bottom:16px;
+}
+
+.form-row{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:14px;
+}
+
+.form-row input[type=text], .form-row input[type=file]{
+flex:1;
+min-width:200px;
+padding:10px 12px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:14px;
+}
+
+.form-row button{
+background:#002B5B;
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+font-weight:bold;
+}
+
+.form-row button.orange{ background:#FF8C00; }
+.form-row button:hover{ opacity:.9; }
+
+table{
+width:100%;
+border-collapse:collapse;
+font-size:14px;
+}
+
+th, td{
+text-align:left;
+padding:10px;
+border-bottom:1px solid #eee;
+vertical-align:top;
+}
+
+th{ color:#002B5B; }
+
+.list-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px 10px;
+border-bottom:1px solid #eee;
+}
+
+.list-item .name{
+cursor:pointer;
+font-weight:bold;
+color:#002B5B;
+}
+
+.list-item .meta{
+font-size:12px;
+color:#888;
+margin-top:2px;
+}
+
+.list-item .actions button{
+margin-left:6px;
+padding:6px 10px;
+font-size:12px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.btn-del{ background:#d93025; color:white; }
+.btn-edit{ background:#1a73e8; color:white; }
+.btn-toggle{ background:#9e9e9e; color:white; }
+.btn-toggle.published{ background:#1e8e3e; }
+
+.pill{
+display:inline-block;
+font-size:11px;
+padding:3px 8px;
+border-radius:10px;
+background:#e2e6ee;
+color:#333;
+margin-left:8px;
+}
+
+.pill.published{ background:#e6f4ea; color:#1e8e3e; }
+.pill.unpublished{ background:#fce8e6; color:#d93025; }
+
+.error-box{
+background:#fce8e6;
+color:#a30000;
+border-radius:8px;
+padding:12px 14px;
+font-size:13px;
+margin-bottom:14px;
+max-height:220px;
+overflow:auto;
+white-space:pre-wrap;
+}
+
+.success-box{
+background:#e6f4ea;
+color:#1e8e3e;
+border-radius:8px;
+padding:12px 14px;
+font-size:13px;
+margin-bottom:14px;
+}
+
+.hint{
+font-size:12px;
+color:#888;
+margin-bottom:10px;
+}
+
+.empty-msg{
+color:#888;
+font-size:14px;
+padding:10px 0;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🛠️ Quiz Manager (Subject / Topic / Questions)</h1>
+
+<div class="breadcrumb" id="breadcrumb"></div>
+
+<div id="app"></div>
+
+</div>
+
+<script type="module">
+import { app, db } from "./firebase.js";
+import { guardAdmin } from "./admin-auth.js";
+import {
+  collection, query, where, orderBy, getDocs, addDoc, updateDoc, deleteDoc,
+  doc, writeBatch, serverTimestamp, getCountFromServer
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+await guardAdmin(app);
+
+const appEl = document.getElementById("app");
+const breadcrumbEl = document.getElementById("breadcrumb");
+
+// view state: { level: 'subjects' } | { level:'topics', subjectId, subjectName } | { level:'questions', subjectId, subjectName, topicId, topicName }
+let state = { level: "subjects" };
+
+function renderBreadcrumb() {
+  let html = `<span class="crumb" id="crumbSubjects">📚 Subjects</span>`;
+  if (state.level === "topics" || state.level === "questions") {
+    html += ` / <span class="crumb" id="crumbTopics">📁 ${escapeHtml(state.subjectName)}</span>`;
+  }
+  if (state.level === "questions") {
+    html += ` / <span>📄 ${escapeHtml(state.topicName)}</span>`;
+  }
+  breadcrumbEl.innerHTML = html;
+
+  const cs = document.getElementById("crumbSubjects");
+  if (cs) cs.addEventListener("click", () => { state = { level: "subjects" }; render(); });
+
+  const ct = document.getElementById("crumbTopics");
+  if (ct) ct.addEventListener("click", () => {
+    state = { level: "topics", subjectId: state.subjectId, subjectName: state.subjectName };
+    render();
+  });
+}
+
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+async function render() {
+  renderBreadcrumb();
+  if (state.level === "subjects") return renderSubjects();
+  if (state.level === "topics") return renderTopics();
+  if (state.level === "questions") return renderQuestions();
+}
+
+// ---------------------------------------------------------------- SUBJECTS
+async function renderSubjects() {
+  appEl.innerHTML = `
+    <div class="panel">
+      <h2>➕ Add Subject</h2>
+      <div class="form-row">
+        <input type="text" id="newSubjectName" placeholder="Subject name (e.g. राजस्थान इतिहास)">
+        <button id="addSubjectBtn">Add Subject</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>📚 Subjects</h2>
+      <div id="subjectList"><p class="empty-msg">Loading...</p></div>
+    </div>
+  `;
+
+  document.getElementById("addSubjectBtn").addEventListener("click", async () => {
+    const name = document.getElementById("newSubjectName").value.trim();
+    if (!name) { alert("Subject name भरें"); return; }
+    await addDoc(collection(db, "quizSubjects"), { name, order: Date.now(), createdAt: serverTimestamp() });
+    renderSubjects();
+  });
+
+  const listEl = document.getElementById("subjectList");
+  const snap = await getDocs(query(collection(db, "quizSubjects"), orderBy("order", "asc")));
+  const subjects = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  if (subjects.length === 0) {
+    listEl.innerHTML = '<p class="empty-msg">कोई Subject नहीं है। ऊपर से जोड़ें।</p>';
+    return;
+  }
+
+  const counts = await Promise.all(subjects.map((s) =>
+    getCountFromServer(query(collection(db, "quizTopics"), where("subjectId", "==", s.id)))
+  ));
+
+  listEl.innerHTML = subjects.map((s, i) => `
+    <div class="list-item" data-id="${s.id}">
+      <div>
+        <div class="name" data-open="${s.id}">📁 ${escapeHtml(s.name)}</div>
+        <div class="meta">${counts[i].data().count} Topics</div>
+      </div>
+      <div class="actions">
+        <button class="btn-edit" data-edit="${s.id}">Rename</button>
+        <button class="btn-del" data-del="${s.id}">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  listEl.querySelectorAll("[data-open]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const s = subjects.find((x) => x.id === el.getAttribute("data-open"));
+      state = { level: "topics", subjectId: s.id, subjectName: s.name };
+      render();
+    });
+  });
+
+  listEl.querySelectorAll("[data-edit]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-edit");
+      const s = subjects.find((x) => x.id === id);
+      const newName = prompt("नया Subject नाम:", s.name);
+      if (newName && newName.trim()) {
+        await updateDoc(doc(db, "quizSubjects", id), { name: newName.trim() });
+        renderSubjects();
+      }
+    });
+  });
+
+  listEl.querySelectorAll("[data-del]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-del");
+      if (!confirm("इस Subject को डिलीट करें? (टॉपिक/प्रश्न अलग से डिलीट करें)")) return;
+      await deleteDoc(doc(db, "quizSubjects", id));
+      renderSubjects();
+    });
+  });
+}
+
+// ------------------------------------------------------------------ TOPICS
+async function renderTopics() {
+  appEl.innerHTML = `
+    <div class="panel">
+      <h2>➕ Add Topic in "${escapeHtml(state.subjectName)}"</h2>
+      <div class="form-row">
+        <input type="text" id="newTopicName" placeholder="Topic name">
+        <button id="addTopicBtn">Add Topic</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>📁 Topics</h2>
+      <div id="topicList"><p class="empty-msg">Loading...</p></div>
+    </div>
+  `;
+
+  document.getElementById("addTopicBtn").addEventListener("click", async () => {
+    const name = document.getElementById("newTopicName").value.trim();
+    if (!name) { alert("Topic name भरें"); return; }
+    await addDoc(collection(db, "quizTopics"), {
+      subjectId: state.subjectId, name, order: Date.now(),
+      published: true, createdAt: serverTimestamp()
+    });
+    renderTopics();
+  });
+
+  const listEl = document.getElementById("topicList");
+  const snap = await getDocs(query(
+    collection(db, "quizTopics"),
+    where("subjectId", "==", state.subjectId),
+    orderBy("order", "asc")
+  ));
+  const topics = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  if (topics.length === 0) {
+    listEl.innerHTML = '<p class="empty-msg">कोई Topic नहीं है। ऊपर से जोड़ें।</p>';
+    return;
+  }
+
+  const counts = await Promise.all(topics.map((t) =>
+    getCountFromServer(query(collection(db, "quizQuestions"), where("topicId", "==", t.id)))
+  ));
+
+  listEl.innerHTML = topics.map((t, i) => {
+    const isPublished = t.published !== false;
+    return `
+    <div class="list-item" data-id="${t.id}">
+      <div>
+        <div class="name" data-open="${t.id}">📄 ${escapeHtml(t.name)}
+          <span class="pill ${isPublished ? "published" : "unpublished"}">${isPublished ? "Published" : "Unpublished"}</span>
+        </div>
+        <div class="meta">${counts[i].data().count} Questions</div>
+      </div>
+      <div class="actions">
+        <button class="btn-toggle ${isPublished ? "published" : ""}" data-toggle="${t.id}">${isPublished ? "Unpublish" : "Publish"}</button>
+        <button class="btn-edit" data-edit="${t.id}">Rename</button>
+        <button class="btn-del" data-del="${t.id}">Delete</button>
+      </div>
+    </div>
+  `;
+  }).join("");
+
+  listEl.querySelectorAll("[data-open]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const t = topics.find((x) => x.id === el.getAttribute("data-open"));
+      state = { level: "questions", subjectId: state.subjectId, subjectName: state.subjectName, topicId: t.id, topicName: t.name };
+      render();
+    });
+  });
+
+  listEl.querySelectorAll("[data-toggle]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-toggle");
+      const t = topics.find((x) => x.id === id);
+      const isPublished = t.published !== false;
+      await updateDoc(doc(db, "quizTopics", id), { published: !isPublished });
+      renderTopics();
+    });
+  });
+
+  listEl.querySelectorAll("[data-edit]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-edit");
+      const t = topics.find((x) => x.id === id);
+      const newName = prompt("नया Topic नाम:", t.name);
+      if (newName && newName.trim()) {
+        await updateDoc(doc(db, "quizTopics", id), { name: newName.trim() });
+        renderTopics();
+      }
+    });
+  });
+
+  listEl.querySelectorAll("[data-del]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-del");
+      if (!confirm("इस Topic को डिलीट करें? (प्रश्न अलग से डिलीट करें)")) return;
+      await deleteDoc(doc(db, "quizTopics", id));
+      renderTopics();
+    });
+  });
+}
+
+// -------------------------------------------------------------- QUESTIONS
+const REQUIRED_HEADERS = [
+  "Question No", "Question Hindi", "Question English",
+  "Option A Hindi", "Option A English", "Option B Hindi", "Option B English",
+  "Option C Hindi", "Option C English", "Option D Hindi", "Option D English",
+  "Correct Answer", "Explanation (Hindi)", "Explanation (English)"
+];
+
+async function renderQuestions() {
+  appEl.innerHTML = `
+    <div class="panel">
+      <h2>📥 Import Excel (14 Columns)</h2>
+      <div class="hint">Columns required exactly: ${REQUIRED_HEADERS.join(", ")}</div>
+      <div class="form-row">
+        <input type="file" id="excelFile" accept=".xlsx,.xls">
+        <button class="orange" id="importBtn">Import Excel</button>
+      </div>
+      <div id="importMsg"></div>
+    </div>
+    <div class="panel">
+      <h2>📄 Questions in "${escapeHtml(state.topicName)}"</h2>
+      <div id="questionList"><p class="empty-msg">Loading...</p></div>
+    </div>
+  `;
+
+  document.getElementById("importBtn").addEventListener("click", importExcel);
+
+  const listEl = document.getElementById("questionList");
+  const snap = await getDocs(query(
+    collection(db, "quizQuestions"),
+    where("topicId", "==", state.topicId),
+    orderBy("order", "asc")
+  ));
+  const questions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  if (questions.length === 0) {
+    listEl.innerHTML = '<p class="empty-msg">अभी कोई प्रश्न नहीं है। Excel Import करें।</p>';
+    return;
+  }
+
+  listEl.innerHTML = `
+    <table>
+      <tr><th>#</th><th>Question (Hindi)</th><th>Correct</th><th>Actions</th></tr>
+      ${questions.map((q, i) => `
+        <tr>
+          <td>${q.srNo ?? i + 1}</td>
+          <td>${escapeHtml((q.qHi || q.qEn || "").slice(0, 90))}</td>
+          <td>${escapeHtml(q.correct)}</td>
+          <td>
+            <button class="btn-del" data-del="${q.id}">Delete</button>
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+
+  listEl.querySelectorAll("[data-del]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      if (!confirm("इस प्रश्न को डिलीट करें?")) return;
+      await deleteDoc(doc(db, "quizQuestions", el.getAttribute("data-del")));
+      renderQuestions();
+    });
+  });
+}
+
+function cell(row, key) {
+  return String(row[key] ?? "").trim();
+}
+
+async function importExcel() {
+  const msgEl = document.getElementById("importMsg");
+  msgEl.innerHTML = "";
+
+  const file = document.getElementById("excelFile").files[0];
+  if (!file) { alert("Excel File Select करें"); return; }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      if (rows.length === 0) {
+        msgEl.innerHTML = '<div class="error-box">Excel में कोई डेटा नहीं मिला।</div>';
+        return;
+      }
+
+      // Validate header presence.
+      const firstRowKeys = Object.keys(rows[0]);
+      const missingHeaders = REQUIRED_HEADERS.filter((h) => !firstRowKeys.includes(h));
+      if (missingHeaders.length > 0) {
+        msgEl.innerHTML = `<div class="error-box">यह Column(s) Excel में missing हैं:\n${missingHeaders.join(", ")}</div>`;
+        return;
+      }
+
+      const errors = [];
+      const valid = [];
+
+      rows.forEach((row, idx) => {
+        const rowNum = idx + 2; // account for header row
+        const srNo = cell(row, "Question No");
+        const qHi = cell(row, "Question Hindi");
+        const qEn = cell(row, "Question English");
+        const aHi = cell(row, "Option A Hindi");
+        const aEn = cell(row, "Option A English");
+        const bHi = cell(row, "Option B Hindi");
+        const bEn = cell(row, "Option B English");
+        const cHi = cell(row, "Option C Hindi");
+        const cEn = cell(row, "Option C English");
+        const dHi = cell(row, "Option D Hindi");
+        const dEn = cell(row, "Option D English");
+        const correct = cell(row, "Correct Answer").toUpperCase();
+        const explHi = cell(row, "Explanation (Hindi)");
+        const explEn = cell(row, "Explanation (English)");
+
+        // Skip fully blank trailing rows.
+        if (!srNo && !qHi && !qEn) return;
+
+        if (!qHi && !qEn) errors.push(`Row ${rowNum}: प्रश्न (Hindi/English) खाली है।`);
+        if (!aHi && !aEn) errors.push(`Row ${rowNum}: Option A खाली है।`);
+        if (!bHi && !bEn) errors.push(`Row ${rowNum}: Option B खाली है।`);
+        if (!cHi && !cEn) errors.push(`Row ${rowNum}: Option C खाली है।`);
+        if (!dHi && !dEn) errors.push(`Row ${rowNum}: Option D खाली है।`);
+        if (!["A", "B", "C", "D"].includes(correct)) errors.push(`Row ${rowNum}: Correct Answer A/B/C/D में से एक होना चाहिए (मिला: "${correct}")।`);
+        if (!explHi && !explEn) errors.push(`Row ${rowNum}: Explanation (Hindi/English) खाली है।`);
+
+        valid.push({
+          srNo: Number(srNo) || rowNum - 1,
+          qHi, qEn, aHi, aEn, bHi, bEn, cHi, cEn, dHi, dEn,
+          correct, explHi, explEn
+        });
+      });
+
+      if (errors.length > 0) {
+        msgEl.innerHTML = `<div class="error-box">Import रोका गया — ${errors.length} समस्याएँ मिलीं:\n\n${errors.join("\n")}</div>`;
+        return;
+      }
+
+      // All-or-nothing write, batched in chunks of 450.
+      const CHUNK = 450;
+      for (let i = 0; i < valid.length; i += CHUNK) {
+        const batch = writeBatch(db);
+        valid.slice(i, i + CHUNK).forEach((q) => {
+          const ref = doc(collection(db, "quizQuestions"));
+          batch.set(ref, {
+            subjectId: state.subjectId,
+            topicId: state.topicId,
+            order: q.srNo,
+            ...q,
+            createdAt: serverTimestamp()
+          });
+        });
+        await batch.commit();
+      }
+
+      msgEl.innerHTML = `<div class="success-box">${valid.length} प्रश्न सफलतापूर्वक Import हो गए ✅</div>`;
+      document.getElementById("excelFile").value = "";
+      renderQuestions();
+    } catch (err) {
+      console.error(err);
+      msgEl.innerHTML = `<div class="error-box">Import में त्रुटि: ${escapeHtml(err.message || String(err))}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+render();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+</body>
+</html>

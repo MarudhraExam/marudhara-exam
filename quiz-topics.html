@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topics - Quiz Section | मरुधरा एग्जाम</title>
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:0;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+padding:20px;
+}
+
+.top-bar{
+display:flex;
+align-items:center;
+gap:12px;
+margin-bottom:20px;
+}
+
+.back-btn{
+background:#002B5B;
+color:white;
+border:none;
+padding:9px 16px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+}
+
+.back-btn:hover{ opacity:.9; }
+
+h1{
+color:#002B5B;
+margin:0;
+font-size:24px;
+}
+
+.topic-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+}
+
+.topic-folder{
+background:white;
+border-radius:14px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+padding:22px 18px;
+text-align:center;
+cursor:pointer;
+transition:transform .15s ease;
+border:1px solid #eef1f6;
+}
+
+.topic-folder:hover{
+transform:translateY(-4px);
+box-shadow:0 6px 16px rgba(0,0,0,0.14);
+}
+
+.topic-folder .folder-icon{
+font-size:42px;
+margin-bottom:10px;
+}
+
+.topic-folder h3{
+color:#002B5B;
+font-size:16px;
+margin-bottom:6px;
+line-height:1.4;
+}
+
+.topic-folder .q-count{
+color:#FF8C00;
+font-weight:bold;
+font-size:14px;
+}
+
+.quiz-state-msg{
+text-align:center;
+color:#666;
+padding:30px 10px;
+font-size:15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="top-bar">
+<button class="back-btn" onclick="window.location.href='quiz-section.html'">⬅ Back</button>
+<h1 id="subjectTitle">📁 Loading...</h1>
+</div>
+
+<div id="topicGrid" class="topic-grid">
+<p class="quiz-state-msg">Loading topics...</p>
+</div>
+
+</div>
+
+<script type="module">
+import { fetchTopics, fetchQuestionCountForTopic, getParam, escapeHtml } from "./quiz-common.js";
+
+const subjectId = getParam("subject");
+const subjectName = getParam("name") || "Subject";
+document.getElementById("subjectTitle").textContent = "📁 " + subjectName;
+document.title = subjectName + " - Topics | मरुधरा एग्जाम";
+
+const grid = document.getElementById("topicGrid");
+
+(async () => {
+  if (!subjectId) {
+    grid.innerHTML = '<p class="quiz-state-msg">विषय नहीं मिला। कृपया वापस जाएं।</p>';
+    return;
+  }
+
+  try {
+    const topics = await fetchTopics(subjectId);
+
+    if (topics.length === 0) {
+      grid.innerHTML = '<p class="quiz-state-msg">इस विषय में अभी कोई टॉपिक उपलब्ध नहीं है।</p>';
+      return;
+    }
+
+    const counts = await Promise.all(
+      topics.map((t) => fetchQuestionCountForTopic(t.id))
+    );
+
+    grid.innerHTML = topics.map((t, i) => `
+      <div class="topic-folder" data-id="${escapeHtml(t.id)}">
+        <div class="folder-icon">📁</div>
+        <h3>${escapeHtml(t.name)}</h3>
+        <div class="q-count">${counts[i]} Questions</div>
+      </div>
+    `).join("");
+
+    grid.querySelectorAll(".topic-folder").forEach((el) => {
+      el.addEventListener("click", () => {
+        const id = el.getAttribute("data-id");
+        const name = el.querySelector("h3").textContent;
+        window.location.href = `quiz-attempt.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML = '<p class="quiz-state-msg">टॉपिक लोड करने में समस्या हुई। कृपया पेज रीफ्रेश करें।</p>';
+  }
+})();
+</script>
+
+</body>
+</html>

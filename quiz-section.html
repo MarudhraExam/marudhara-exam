@@ -23,7 +23,14 @@ padding:20px;
 h1{
 text-align:center;
 color:#002B5B;
-margin-bottom:30px;
+margin-bottom:10px;
+}
+
+h2.section-title{
+color:#002B5B;
+font-size:20px;
+margin:30px 0 15px;
+padding-left:2px;
 }
 
 .quiz-grid{
@@ -65,6 +72,54 @@ margin-top:15px;
 opacity:0.9;
 }
 
+/* --- Subject folder cards (topic-wise quiz) --- */
+.subject-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+}
+
+.subject-folder{
+background:white;
+border-radius:14px;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+padding:22px 18px;
+text-align:center;
+cursor:pointer;
+transition:transform .15s ease;
+border:1px solid #eef1f6;
+}
+
+.subject-folder:hover{
+transform:translateY(-4px);
+box-shadow:0 6px 16px rgba(0,0,0,0.14);
+}
+
+.subject-folder .folder-icon{
+font-size:42px;
+margin-bottom:10px;
+}
+
+.subject-folder h3{
+color:#002B5B;
+font-size:17px;
+margin-bottom:6px;
+line-height:1.4;
+}
+
+.subject-folder .topic-count{
+color:#FF8C00;
+font-weight:bold;
+font-size:14px;
+}
+
+.quiz-state-msg{
+text-align:center;
+color:#666;
+padding:30px 10px;
+font-size:15px;
+}
+
 </style>
 </head>
 
@@ -74,6 +129,12 @@ opacity:0.9;
 
 <h1>🎯 Quiz Section</h1>
 
+<h2 class="section-title">📚 विषयवार क्विज़ (Subject-wise Quiz)</h2>
+<div id="subjectGrid" class="subject-grid">
+<p class="quiz-state-msg">Loading subjects...</p>
+</div>
+
+<h2 class="section-title">🗓️ अन्य क्विज़</h2>
 <div class="quiz-grid">
 
 <div class="quiz-card">
@@ -93,6 +154,46 @@ Start Quiz
 </div>
 
 </div>
+
+<script type="module">
+import { fetchSubjects, fetchTopicCountForSubject, escapeHtml } from "./quiz-common.js";
+
+const grid = document.getElementById("subjectGrid");
+
+(async () => {
+  try {
+    const subjects = await fetchSubjects();
+
+    if (subjects.length === 0) {
+      grid.innerHTML = '<p class="quiz-state-msg">अभी कोई विषय उपलब्ध नहीं है। जल्द ही जोड़े जाएंगे।</p>';
+      return;
+    }
+
+    const counts = await Promise.all(
+      subjects.map((s) => fetchTopicCountForSubject(s.id))
+    );
+
+    grid.innerHTML = subjects.map((s, i) => `
+      <div class="subject-folder" data-id="${escapeHtml(s.id)}">
+        <div class="folder-icon">📁</div>
+        <h3>${escapeHtml(s.name)}</h3>
+        <div class="topic-count">${counts[i]} Topics</div>
+      </div>
+    `).join("");
+
+    grid.querySelectorAll(".subject-folder").forEach((el) => {
+      el.addEventListener("click", () => {
+        const id = el.getAttribute("data-id");
+        const name = el.querySelector("h3").textContent;
+        window.location.href = `quiz-topics.html?subject=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML = '<p class="quiz-state-msg">विषय लोड करने में समस्या हुई। कृपया पेज रीफ्रेश करें।</p>';
+  }
+})();
+</script>
 
 </body>
 </html>

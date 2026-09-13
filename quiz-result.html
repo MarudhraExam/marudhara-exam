@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result - Quiz | मरुधरा एग्जाम</title>
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+padding:0;
+}
+
+.container{
+max-width:600px;
+margin:auto;
+padding:20px;
+}
+
+.result-card{
+background:white;
+border-radius:16px;
+box-shadow:0 3px 12px rgba(0,0,0,0.12);
+padding:30px 25px;
+text-align:center;
+}
+
+.result-card h1{
+color:#002B5B;
+font-size:22px;
+margin-bottom:6px;
+}
+
+.result-card h2{
+color:#555;
+font-size:16px;
+font-weight:normal;
+margin-bottom:20px;
+}
+
+.percentage-circle{
+width:130px;
+height:130px;
+border-radius:50%;
+border:10px solid #FF8C00;
+display:flex;
+align-items:center;
+justify-content:center;
+margin:0 auto 20px;
+font-size:28px;
+font-weight:bold;
+color:#002B5B;
+}
+
+.stats-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-bottom:25px;
+text-align:left;
+}
+
+.stat-box{
+background:#f5f7fa;
+border-radius:10px;
+padding:12px 15px;
+}
+
+.stat-box .label{
+font-size:13px;
+color:#777;
+}
+
+.stat-box .value{
+font-size:20px;
+font-weight:bold;
+color:#002B5B;
+}
+
+.stat-box.correct .value{ color:#1e8e3e; }
+.stat-box.wrong .value{ color:#d93025; }
+.stat-box.skipped .value{ color:#f9a825; }
+
+.action-buttons{
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.action-buttons button{
+padding:14px;
+border:none;
+border-radius:10px;
+font-size:15px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.btn-primary{
+background:#002B5B;
+color:white;
+}
+
+.btn-secondary{
+background:#FF8C00;
+color:white;
+}
+
+.btn-outline{
+background:white;
+color:#002B5B;
+border:2px solid #002B5B !important;
+}
+
+.quiz-state-msg{
+text-align:center;
+color:#666;
+padding:30px 10px;
+font-size:15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container" id="resultContainer">
+<p class="quiz-state-msg">Loading result...</p>
+</div>
+
+<script type="module">
+import { getParam, escapeHtml } from "./quiz-common.js";
+
+const subjectId = getParam("subject");
+const subjectName = getParam("subjectName") || "";
+const topicId = getParam("topic");
+const topicName = getParam("name") || "Topic";
+
+const container = document.getElementById("resultContainer");
+const raw = sessionStorage.getItem("quizResult");
+
+if (!raw) {
+  container.innerHTML = '<p class="quiz-state-msg">रिजल्ट डेटा नहीं मिला। कृपया क्विज़ दोबारा शुरू करें।</p>';
+} else {
+  const r = JSON.parse(raw);
+
+  container.innerHTML = `
+    <div class="result-card">
+      <h1>${escapeHtml(r.topicName || topicName)}</h1>
+      <h2>${escapeHtml(r.subjectName || subjectName)}</h2>
+
+      <div class="percentage-circle">${r.percentage}%</div>
+
+      <div class="stats-grid">
+        <div class="stat-box"><div class="label">Total Questions</div><div class="value">${r.total}</div></div>
+        <div class="stat-box"><div class="label">Attempted</div><div class="value">${r.attempted}</div></div>
+        <div class="stat-box correct"><div class="label">Correct</div><div class="value">${r.correct}</div></div>
+        <div class="stat-box wrong"><div class="label">Wrong</div><div class="value">${r.wrong}</div></div>
+        <div class="stat-box skipped"><div class="label">Skipped</div><div class="value">${r.skipped}</div></div>
+        <div class="stat-box"><div class="label">Score</div><div class="value">${r.score}</div></div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-primary" id="reviewBtn">📖 Answers &amp; Explanations</button>
+        <button class="btn-secondary" id="retakeBtn">🔁 Retake Quiz</button>
+        <button class="btn-outline" id="backBtn">⬅ Back to Topics</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("reviewBtn").addEventListener("click", () => {
+    window.location.href = `quiz-review.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(topicId)}&name=${encodeURIComponent(topicName)}`;
+  });
+
+  document.getElementById("retakeBtn").addEventListener("click", () => {
+    sessionStorage.removeItem("quizResult");
+    window.location.href = `quiz-attempt.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(topicId)}&name=${encodeURIComponent(topicName)}`;
+  });
+
+  document.getElementById("backBtn").addEventListener("click", () => {
+    window.location.href = `quiz-topics.html?subject=${encodeURIComponent(subjectId)}&name=${encodeURIComponent(subjectName)}`;
+  });
+}
+</script>
+
+</body>
+</html>

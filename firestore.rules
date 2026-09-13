@@ -94,6 +94,22 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Topic-wise Quiz feature (Quiz Section: Subject -> Topic -> Questions).
+    match /quizSubjects/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /quizTopics/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /quizQuestions/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /dailySujas/{docId} {
       allow read: if true;
       allow write: if isAdmin();
