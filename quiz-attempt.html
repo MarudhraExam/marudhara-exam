@@ -190,10 +190,12 @@ import { fetchQuestions, optionText, getParam, escapeHtml } from "./quiz-common.
 const subjectId = getParam("subject");
 const subjectName = getParam("subjectName") || "Subject";
 const topicId = getParam("topic");
-const topicName = getParam("name") || "Topic";
+const topicName = getParam("topicName") || "Topic";
+const quizId = getParam("quiz");
+const quizName = getParam("quizName") || "Quiz";
 
-document.getElementById("topicTitle").textContent = "📁 " + topicName;
-document.title = topicName + " Quiz | मरुधरा एग्जाम";
+document.getElementById("topicTitle").textContent = "📝 " + quizName;
+document.title = quizName + " | " + topicName + " | मरुधरा एग्जाम";
 
 const quizArea = document.getElementById("quizArea");
 const qCounter = document.getElementById("qCounter");
@@ -285,29 +287,29 @@ function submitQuiz() {
   const percentage = total > 0 ? Math.round((correct / total) * 10000) / 100 : 0;
 
   const result = {
-    subjectId, subjectName, topicId, topicName,
+    subjectId, subjectName, topicId, topicName, quizId, quizName,
     total, attempted, correct, wrong, skipped,
     score: correct, percentage,
     details
   };
 
   sessionStorage.setItem("quizResult", JSON.stringify(result));
-  window.location.href = `quiz-result.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(topicId)}&name=${encodeURIComponent(topicName)}`;
+  window.location.href = `quiz-result.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(topicId)}&name=${encodeURIComponent(topicName)}&quiz=${encodeURIComponent(quizId)}&quizName=${encodeURIComponent(quizName)}`;
 }
 
 (async () => {
-  if (!topicId) {
-    quizArea.innerHTML = '<p class="quiz-state-msg">टॉपिक नहीं मिला। कृपया वापस जाएं।</p>';
+  if (!quizId) {
+    quizArea.innerHTML = '<p class="quiz-state-msg">Quiz नहीं मिला। कृपया वापस जाएं।</p>';
     return;
   }
 
   try {
-    questions = await fetchQuestions(topicId);
+    questions = await fetchQuestions(quizId);
     answers = {};
     current = 0;
 
     if (questions.length === 0) {
-      quizArea.innerHTML = '<p class="quiz-state-msg">इस टॉपिक में अभी कोई प्रश्न उपलब्ध नहीं है।</p>';
+      quizArea.innerHTML = '<p class="quiz-state-msg">इस Quiz में अभी कोई प्रश्न उपलब्ध नहीं है।</p>';
       return;
     }
 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quizzes - मरुधरा एग्जाम</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f7fa;margin:0;padding:0}.container{max-width:1000px;margin:auto;padding:20px}.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px}.back-btn{background:#002B5B;color:white;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px}.back-btn:hover{opacity:.9}h1{color:#002B5B;margin:0;font-size:24px}.quiz-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}.quiz-card{background:white;border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.1);padding:22px 18px;text-align:center;cursor:pointer;transition:transform .15s ease;border:1px solid #eef1f6}.quiz-card:hover{transform:translateY(-4px);box-shadow:0 6px 16px rgba(0,0,0,.14)}.quiz-icon{font-size:42px;margin-bottom:10px}.quiz-card h3{color:#002B5B;font-size:17px;margin-bottom:6px;line-height:1.4}.q-count{color:#FF8C00;font-weight:bold;font-size:14px}.quiz-state-msg{text-align:center;color:#666;padding:30px 10px;font-size:15px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="top-bar"><button class="back-btn" id="backBtn">⬅ Back</button><h1 id="topicTitle">📂 Loading...</h1></div>
+<div id="quizGrid" class="quiz-grid"><p class="quiz-state-msg">Loading quizzes...</p></div>
+</div>
+<script type="module">
+import { fetchQuizzes, fetchQuestionCountForQuiz, getParam, escapeHtml } from "./quiz-common.js";
+const subjectId=getParam("subject"), subjectName=getParam("subjectName")||"Subject", topicId=getParam("topic"), topicName=getParam("topicName")||"Topic";
+document.getElementById("topicTitle").textContent="📂 "+topicName; document.title=topicName+" - Quizzes | मरुधरा एग्जाम";
+document.getElementById("backBtn").onclick=()=>{window.location.href=`quiz-topics.html?subject=${encodeURIComponent(subjectId)}&name=${encodeURIComponent(subjectName)}`};
+const grid=document.getElementById("quizGrid");
+(async()=>{
+ if(!topicId){grid.innerHTML='<p class="quiz-state-msg">टॉपिक नहीं मिला। कृपया वापस जाएं।</p>';return;}
+ try{
+  const quizzes=await fetchQuizzes(topicId);
+  if(!quizzes.length){grid.innerHTML='<p class="quiz-state-msg">इस टॉपिक में अभी कोई Quiz उपलब्ध नहीं है।</p>';return;}
+  const counts=await Promise.all(quizzes.map(q=>fetchQuestionCountForQuiz(q.id)));
+  grid.innerHTML=quizzes.map((q,i)=>`<div class="quiz-card" data-id="${escapeHtml(q.id)}"><div class="quiz-icon">📝</div><h3>${escapeHtml(q.name)}</h3><div class="q-count">${counts[i]} Questions</div></div>`).join("");
+  grid.querySelectorAll(".quiz-card").forEach(el=>el.addEventListener("click",()=>{const id=el.dataset.id,name=el.querySelector("h3").textContent;window.location.href=`quiz-attempt.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(topicId)}&topicName=${encodeURIComponent(topicName)}&quiz=${encodeURIComponent(id)}&quizName=${encodeURIComponent(name)}`}));
+ }catch(err){console.error(err);grid.innerHTML='<p class="quiz-state-msg">Quiz लोड करने में समस्या हुई। कृपया पेज रीफ्रेश करें।</p>';}})();
+</script>
+</body>
+</html>

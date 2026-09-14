@@ -212,16 +212,19 @@ await guardAdmin(app);
 const appEl = document.getElementById("app");
 const breadcrumbEl = document.getElementById("breadcrumb");
 
-// view state: { level: 'subjects' } | { level:'topics', subjectId, subjectName } | { level:'questions', subjectId, subjectName, topicId, topicName }
+// view state: Subjects -> Topics -> Quizzes -> Questions
 let state = { level: "subjects" };
 
 function renderBreadcrumb() {
   let html = `<span class="crumb" id="crumbSubjects">📚 Subjects</span>`;
-  if (state.level === "topics" || state.level === "questions") {
+  if (state.level === "topics" || state.level === "quizzes" || state.level === "questions") {
     html += ` / <span class="crumb" id="crumbTopics">📁 ${escapeHtml(state.subjectName)}</span>`;
   }
+  if (state.level === "quizzes" || state.level === "questions") {
+    html += ` / <span class="crumb" id="crumbQuizzes">📂 ${escapeHtml(state.topicName)}</span>`;
+  }
   if (state.level === "questions") {
-    html += ` / <span>📄 ${escapeHtml(state.topicName)}</span>`;
+    html += ` / <span>📄 ${escapeHtml(state.quizName)}</span>`;
   }
   breadcrumbEl.innerHTML = html;
 
@@ -231,6 +234,12 @@ function renderBreadcrumb() {
   const ct = document.getElementById("crumbTopics");
   if (ct) ct.addEventListener("click", () => {
     state = { level: "topics", subjectId: state.subjectId, subjectName: state.subjectName };
+    render();
+  });
+
+  const cq = document.getElementById("crumbQuizzes");
+  if (cq) cq.addEventListener("click", () => {
+    state = { level: "quizzes", subjectId: state.subjectId, subjectName: state.subjectName, topicId: state.topicId, topicName: state.topicName };
     render();
   });
 }
@@ -245,6 +254,7 @@ async function render() {
   renderBreadcrumb();
   if (state.level === "subjects") return renderSubjects();
   if (state.level === "topics") return renderTopics();
+  if (state.level === "quizzes") return renderQuizzes();
   if (state.level === "questions") return renderQuestions();
 }
 
@@ -369,7 +379,7 @@ async function renderTopics() {
   }
 
   const counts = await Promise.all(topics.map((t) =>
-    getCountFromServer(query(collection(db, "quizQuestions"), where("topicId", "==", t.id)))
+    getCountFromServer(query(collection(db, "quizSets"), where("topicId", "==", t.id)))
   ));
 
   listEl.innerHTML = topics.map((t, i) => {
@@ -380,7 +390,7 @@ async function renderTopics() {
         <div class="name" data-open="${t.id}">📄 ${escapeHtml(t.name)}
           <span class="pill ${isPublished ? "published" : "unpublished"}">${isPublished ? "Published" : "Unpublished"}</span>
         </div>
-        <div class="meta">${counts[i].data().count} Questions</div>
+        <div class="meta">${counts[i].data().count} Quizzes</div>
       </div>
       <div class="actions">
         <button class="btn-toggle ${isPublished ? "published" : ""}" data-toggle="${t.id}">${isPublished ? "Unpublish" : "Publish"}</button>
@@ -394,7 +404,7 @@ async function renderTopics() {
   listEl.querySelectorAll("[data-open]").forEach((el) => {
     el.addEventListener("click", () => {
       const t = topics.find((x) => x.id === el.getAttribute("data-open"));
-      state = { level: "questions", subjectId: state.subjectId, subjectName: state.subjectName, topicId: t.id, topicName: t.name };
+      state = { level: "quizzes", subjectId: state.subjectId, subjectName: state.subjectName, topicId: t.id, topicName: t.name };
       render();
     });
   });
@@ -434,6 +444,122 @@ async function renderTopics() {
   });
 }
 
+// ------------------------------------------------------------------ QUIZZES
+async function renderQuizzes() {
+  appEl.innerHTML = `
+    <div class="panel">
+      <h2>➕ Add Quiz in "${escapeHtml(state.topicName)}"</h2>
+      <div class="form-row">
+        <input type="text" id="newQuizName" placeholder="Quiz name (e.g. Quiz 1)">
+        <button id="addQuizBtn">Add Quiz</button>
+      </div>
+      <div class="hint">Topic के अंदर अलग-अलग Quiz बनाएं, जैसे Quiz 1, Quiz 2, Quiz 3.</div>
+    </div>
+    <div class="panel">
+      <h2>📂 Quizzes</h2>
+      <div id="quizList"><p class="empty-msg">Loading...</p></div>
+    </div>
+  `;
+
+  document.getElementById("addQuizBtn").addEventListener("click", async () => {
+    const name = document.getElementById("newQuizName").value.trim();
+    if (!name) { alert("Quiz name भरें"); return; }
+    await addDoc(collection(db, "quizSets"), {
+      subjectId: state.subjectId,
+      topicId: state.topicId,
+      name,
+      order: Date.now(),
+      published: true,
+      createdAt: serverTimestamp()
+    });
+    renderQuizzes();
+  });
+
+  const listEl = document.getElementById("quizList");
+  const snap = await getDocs(query(
+    collection(db, "quizSets"),
+    where("quizId", "==", state.quizId),
+    orderBy("order", "asc")
+  ));
+  const quizzes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  if (quizzes.length === 0) {
+    listEl.innerHTML = '<p class="empty-msg">अभी कोई Quiz नहीं है। ऊपर से Quiz 1, Quiz 2 आदि जोड़ें।</p>';
+    return;
+  }
+
+  const counts = await Promise.all(quizzes.map((q) =>
+    getCountFromServer(query(collection(db, "quizQuestions"), where("quizId", "==", q.id)))
+  ));
+
+  listEl.innerHTML = quizzes.map((q, i) => {
+    const isPublished = q.published !== false;
+    return `
+    <div class="list-item" data-id="${escapeHtml(q.id)}">
+      <div>
+        <div class="name" data-open="${escapeHtml(q.id)}">📂 ${escapeHtml(q.name)}
+          <span class="pill ${isPublished ? "published" : "unpublished"}">${isPublished ? "Published" : "Unpublished"}</span>
+        </div>
+        <div class="meta">${counts[i].data().count} Questions</div>
+      </div>
+      <div class="actions">
+        <button class="btn-toggle ${isPublished ? "published" : ""}" data-toggle="${escapeHtml(q.id)}">${isPublished ? "Unpublish" : "Publish"}</button>
+        <button class="btn-edit" data-edit="${escapeHtml(q.id)}">Rename</button>
+        <button class="btn-del" data-del="${escapeHtml(q.id)}">Delete</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  listEl.querySelectorAll("[data-open]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const q = quizzes.find((x) => x.id === el.getAttribute("data-open"));
+      state = {
+        level: "questions",
+        subjectId: state.subjectId,
+        subjectName: state.subjectName,
+        topicId: state.topicId,
+        topicName: state.topicName,
+        quizId: q.id,
+        quizName: q.name
+      };
+      render();
+    });
+  });
+
+  listEl.querySelectorAll("[data-toggle]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-toggle");
+      const q = quizzes.find((x) => x.id === id);
+      await updateDoc(doc(db, "quizSets", id), { published: q.published === false });
+      renderQuizzes();
+    });
+  });
+
+  listEl.querySelectorAll("[data-edit]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-edit");
+      const q = quizzes.find((x) => x.id === id);
+      const newName = prompt("नया Quiz नाम:", q.name);
+      if (newName && newName.trim()) {
+        await updateDoc(doc(db, "quizSets", id), { name: newName.trim() });
+        renderQuizzes();
+      }
+    });
+  });
+
+  listEl.querySelectorAll("[data-del]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-del");
+      if (!confirm("इस Quiz को डिलीट करें? इसके Questions अलग से डिलीट करने होंगे।")) return;
+      await deleteDoc(doc(db, "quizSets", id));
+      renderQuizzes();
+    });
+  });
+}
+
 // -------------------------------------------------------------- QUESTIONS
 const REQUIRED_HEADERS = [
   "Question No", "Question Hindi", "Question English",
@@ -454,7 +580,8 @@ async function renderQuestions() {
       <div id="importMsg"></div>
     </div>
     <div class="panel">
-      <h2>📄 Questions in "${escapeHtml(state.topicName)}"</h2>
+      <h2>📄 Questions in "${escapeHtml(state.quizName)}"</h2>
+      <div class="hint">Topic: ${escapeHtml(state.topicName)} | Quiz: ${escapeHtml(state.quizName)}</div>
       <div id="questionList"><p class="empty-msg">Loading...</p></div>
     </div>
   `;
@@ -464,7 +591,7 @@ async function renderQuestions() {
   const listEl = document.getElementById("questionList");
   const snap = await getDocs(query(
     collection(db, "quizQuestions"),
-    where("topicId", "==", state.topicId),
+    where("quizId", "==", state.quizId),
     orderBy("order", "asc")
   ));
   const questions = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -583,6 +710,7 @@ async function importExcel() {
           batch.set(ref, {
             subjectId: state.subjectId,
             topicId: state.topicId,
+            quizId: state.quizId,
             order: q.srNo,
             ...q,
             createdAt: serverTimestamp()

@@ -110,6 +110,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /quizSets/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /dailySujas/{docId} {
       allow read: if true;
       allow write: if isAdmin();

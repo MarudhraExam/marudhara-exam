@@ -59,11 +59,30 @@ export async function fetchQuestionCountForTopic(topicId) {
   return snap.data().count;
 }
 
-export async function fetchQuestions(topicId) {
+export async function fetchQuizzes(topicId) {
+  const snap = await getDocs(
+    query(
+      collection(db, "quizSets"),
+      where("topicId", "==", topicId),
+      orderBy("order", "asc")
+    )
+  );
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((q) => q.published !== false);
+}
+
+export async function fetchQuestionCountForQuiz(quizId) {
+  const q = query(collection(db, "quizQuestions"), where("quizId", "==", quizId));
+  const snap = await getCountFromServer(q);
+  return snap.data().count;
+}
+
+export async function fetchQuestions(quizId) {
   const snap = await getDocs(
     query(
       collection(db, "quizQuestions"),
-      where("topicId", "==", topicId),
+      where("quizId", "==", quizId),
       orderBy("order", "asc")
     )
   );

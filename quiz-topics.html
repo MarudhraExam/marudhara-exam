@@ -150,7 +150,7 @@ const grid = document.getElementById("topicGrid");
       el.addEventListener("click", () => {
         const id = el.getAttribute("data-id");
         const name = el.querySelector("h3").textContent;
-        window.location.href = `quiz-attempt.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
+        window.location.href = `quiz-list.html?subject=${encodeURIComponent(subjectId)}&subjectName=${encodeURIComponent(subjectName)}&topic=${encodeURIComponent(id)}&topicName=${encodeURIComponent(name)}`;
       });
     });
   } catch (err) {
