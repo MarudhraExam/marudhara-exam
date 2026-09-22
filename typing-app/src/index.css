@@ -1,0 +1,28 @@
+/* Devanagari font support for Hindi typing */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+}
+
+/* Ensure Devanagari renders correctly in typing areas */
+[lang='hi'], [dir='ltr'] {
+  font-family: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
