@@ -168,17 +168,22 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
-    // Typing Test Manager (typing-admin.html) — public read, admin-only
-    // write. Same pattern as mockTests/quizzes above.
+    // Typing Test Manager (typing-admin.html).
+    // Admin: full read/create/update/delete.
+    // Public/students: read allowed only for content the admin has
+    // actually published and marked active — drafts/inactive/removed
+    // items stay invisible to anyone who isn't signed in as admin.
     // ------------------------------------------------------------------
     match /typingTests/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if isAdmin() ||
+        (resource.data.status == 'published' && resource.data.isActive == true);
+      allow create, update, delete: if isAdmin();
     }
 
     match /typingTestSeries/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if isAdmin() ||
+        (resource.data.status == 'published' && resource.data.isActive == true);
+      allow create, update, delete: if isAdmin();
     }
 
     // ------------------------------------------------------------------
