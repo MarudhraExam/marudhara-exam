@@ -168,6 +168,20 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Typing Test Manager (typing-admin.html) — public read, admin-only
+    // write. Same pattern as mockTests/quizzes above.
+    // ------------------------------------------------------------------
+    match /typingTests/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /typingTestSeries/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------
     // Student-submitted exam attempts — anyone may create their own
     // attempt (site has no login for students), nobody may edit/delete
     // one after submission. Read stays public because result.html uses

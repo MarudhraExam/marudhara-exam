@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Test Manager - Admin</title>
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f7fa;
+margin:0;
+}
+
+.container{
+max-width:1300px;
+margin:auto;
+padding:20px;
+}
+
+h1{
+text-align:center;
+color:#002B5B;
+}
+
+.backlink{
+display:inline-block;
+margin-bottom:15px;
+color:#002B5B;
+font-weight:bold;
+text-decoration:none;
+}
+.backlink:hover{ text-decoration:underline; }
+
+.tabs{
+display:flex;
+gap:10px;
+margin:20px 0;
+flex-wrap:wrap;
+}
+
+.tab-btn{
+background:#eef1f6;
+color:#002B5B;
+border:none;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+font-size:15px;
+}
+
+.tab-btn.active{
+background:#002B5B;
+color:#fff;
+}
+
+.section{
+display:none;
+margin-top:10px;
+background:white;
+padding:20px;
+border-radius:15px;
+box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+.section.active{ display:block; }
+
+label{
+display:block;
+margin-top:15px;
+font-weight:bold;
+font-size:14px;
+}
+
+input,
+textarea,
+select{
+width:100%;
+padding:10px;
+margin-top:5px;
+border:1px solid #ccc;
+border-radius:8px;
+box-sizing:border-box;
+font-size:14px;
+font-family:inherit;
+}
+
+textarea{ min-height:110px; resize:vertical; }
+
+.row{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:15px;
+}
+
+button{
+margin-top:15px;
+background:#002B5B;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:8px;
+cursor:pointer;
+font-size:14px;
+}
+button.secondary{ background:#6c757d; }
+button.danger{ background:#c0392b; }
+button.warn{ background:#FF8C00; }
+button.small{
+padding:6px 10px;
+margin:2px;
+font-size:12px;
+}
+
+.toolbar{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:15px;
+align-items:flex-end;
+}
+.toolbar > div{ flex:1; min-width:160px; }
+.toolbar label{ margin-top:0; }
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+font-size:13px;
+}
+
+table th,
+table td{
+padding:8px;
+border-bottom:1px solid #eee;
+text-align:left;
+}
+
+table th{
+background:#002B5B;
+color:white;
+white-space:nowrap;
+}
+
+.table-wrap{ overflow-x:auto; }
+
+.badge{
+display:inline-block;
+padding:3px 8px;
+border-radius:12px;
+font-size:11px;
+font-weight:bold;
+color:#fff;
+}
+.badge.draft{ background:#6c757d; }
+.badge.published{ background:#2ecc71; }
+.badge.inactive{ background:#c0392b; }
+.badge.scheduled{ background:#f39c12; }
+.badge.live{ background:#2ecc71; }
+.badge.expired{ background:#95a5a6; }
+.badge.free{ background:#2ecc71; }
+.badge.paid{ background:#FF8C00; }
+
+.hint{ font-size:12px; color:#777; margin-top:4px; }
+
+.modal-overlay{
+position:fixed; inset:0; background:rgba(0,0,0,.5);
+display:none; align-items:flex-start; justify-content:center;
+z-index:99999; overflow:auto; padding:30px 15px;
+}
+.modal-overlay.open{ display:flex; }
+.modal-box{
+background:#fff; border-radius:14px; padding:25px;
+width:600px; max-width:100%;
+}
+.modal-box h3{ margin-top:0; color:#002B5B; }
+.chip-list{
+display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;
+}
+.chip{
+background:#eef1f6; border-radius:20px; padding:8px 12px;
+font-size:13px; display:flex; align-items:center; gap:8px;
+}
+.chip button{
+margin:0; padding:2px 8px; font-size:11px; background:#c0392b;
+}
+.msg{ font-size:13px; margin-top:8px; min-height:16px; }
+.msg.ok{ color:#2ecc71; }
+.msg.err{ color:#c0392b; }
+
+@media(max-width:600px){
+  .modal-box{ padding:15px; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<a class="backlink" href="admin-v2.html">&larr; Back to Admin Dashboard</a>
+
+<h1>⌨️ Typing Test Manager</h1>
+
+<div class="tabs">
+<button class="tab-btn active" onclick="showTab('testsTab')">📄 Typing Tests</button>
+<button class="tab-btn" onclick="showTab('seriesTab')">🗂️ Typing Test Series</button>
+</div>
+
+<!-- ================= TYPING TESTS TAB ================= -->
+<div id="testsTab" class="section active">
+
+<h2 id="testFormTitle">➕ Add Typing Test</h2>
+<input type="hidden" id="testDocId">
+
+<div class="row">
+<div>
+<label>Test Name</label>
+<input type="text" id="testTitle" placeholder="e.g. RSMSSB LDC Typing Test 1">
+</div>
+<div>
+<label>Language</label>
+<select id="testLanguage" onchange="toggleHindiMode()">
+<option value="English">English</option>
+<option value="Hindi">Hindi</option>
+</select>
+</div>
+</div>
+
+<div id="hindiModeWrap" style="display:none;">
+<label>Hindi Keyboard / Layout</label>
+<select id="testHindiMode">
+<option value="Kruti Dev 010">Kruti Dev 010</option>
+<option value="Mangal Unicode">Mangal Unicode</option>
+<option value="Remington Gail">Remington Gail</option>
+<option value="InScript">InScript</option>
+</select>
+</div>
+
+<label>Typing Passage</label>
+<textarea id="testPassage" placeholder="Paste the typing passage text here..."></textarea>
+
+<div class="row">
+<div>
+<label>Duration (minutes)</label>
+<input type="number" id="testDuration" min="1" value="10">
+</div>
+<div>
+<label>Minimum Required Speed (WPM)</label>
+<input type="number" id="testMinSpeed" min="0" value="25">
+</div>
+<div>
+<label>Minimum Required Accuracy (%)</label>
+<input type="number" id="testMinAccuracy" min="0" max="100" value="90">
+</div>
+</div>
+
+<div class="row">
+<div>
+<label>Test Type</label>
+<select id="testAccessType" onchange="togglePriceField()">
+<option value="free">Free</option>
+<option value="paid">Paid</option>
+</select>
+</div>
+<div id="testPriceWrap" style="display:none;">
+<label>Price (₹)</label>
+<input type="number" id="testPrice" min="0" value="0">
+</div>
+<div>
+<label>Status</label>
+<select id="testStatus">
+<option value="draft">Draft</option>
+<option value="published">Published</option>
+<option value="inactive">Inactive</option>
+</select>
+</div>
+</div>
+
+<div class="row">
+<div>
+<label>Start Date/Time (optional)</label>
+<input type="datetime-local" id="testStartAt">
+</div>
+<div>
+<label>End Date/Time (optional)</label>
+<input type="datetime-local" id="testEndAt">
+</div>
+</div>
+
+<div class="row">
+<div>
+<label>Series (optional)</label>
+<select id="testSeriesId">
+<option value="">-- None --</option>
+</select>
+</div>
+<div>
+<label>Display Order</label>
+<input type="number" id="testOrder" value="0">
+</div>
+</div>
+
+<div class="msg" id="testFormMsg"></div>
+
+<button onclick="saveTest()" id="testSaveBtn">Save Typing Test</button>
+<button class="secondary" onclick="resetTestForm()">Clear Form</button>
+
+<hr style="margin:30px 0;border:none;border-top:1px solid #eee;">
+
+<h3>📋 Typing Test List</h3>
+
+<div class="toolbar">
+<div>
+<label>Search</label>
+<input type="text" id="testSearch" placeholder="Search by test name..." oninput="renderTestTable()">
+</div>
+<div>
+<label>Filter: Language</label>
+<select id="filterLanguage" onchange="renderTestTable()">
+<option value="">All</option>
+<option value="English">English</option>
+<option value="Hindi">Hindi</option>
+</select>
+</div>
+<div>
+<label>Filter: Status</label>
+<select id="filterStatus" onchange="renderTestTable()">
+<option value="">All</option>
+<option value="draft">Draft</option>
+<option value="published">Published</option>
+<option value="inactive">Inactive</option>
+</select>
+</div>
+<div>
+<label>Filter: Free/Paid</label>
+<select id="filterAccessType" onchange="renderTestTable()">
+<option value="">All</option>
+<option value="free">Free</option>
+<option value="paid">Paid</option>
+</select>
+</div>
+<div>
+<label>Filter: Series</label>
+<select id="filterSeries" onchange="renderTestTable()">
+<option value="">All</option>
+</select>
+</div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Test Name</th>
+<th>Language</th>
+<th>Layout</th>
+<th>Duration</th>
+<th>Speed</th>
+<th>Accuracy</th>
+<th>Type</th>
+<th>Price</th>
+<th>Series</th>
+<th>Start</th>
+<th>End</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="testTableBody">
+<tr><td colspan="14">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<!-- ================= SERIES TAB ================= -->
+<div id="seriesTab" class="section">
+
+<h2 id="seriesFormTitle">➕ Add Typing Test Series</h2>
+<input type="hidden" id="seriesDocId">
+
+<label>Series Name</label>
+<input type="text" id="seriesTitle" placeholder="e.g. Rajasthan LDC Typing Test Series">
+
+<label>Description</label>
+<textarea id="seriesDescription" placeholder="Short description of this series"></textarea>
+
+<div class="row">
+<div>
+<label>Language</label>
+<select id="seriesLanguage">
+<option value="English">English</option>
+<option value="Hindi">Hindi</option>
+<option value="Mixed">Mixed</option>
+</select>
+</div>
+<div>
+<label>Test Type</label>
+<select id="seriesAccessType" onchange="toggleSeriesPriceField()">
+<option value="free">Free</option>
+<option value="paid">Paid</option>
+</select>
+</div>
+<div id="seriesPriceWrap" style="display:none;">
+<label>Price (₹)</label>
+<input type="number" id="seriesPrice" min="0" value="0">
+</div>
+</div>
+
+<div class="row">
+<div>
+<label>Status</label>
+<select id="seriesStatus">
+<option value="draft">Draft</option>
+<option value="published">Published</option>
+<option value="inactive">Inactive</option>
+</select>
+</div>
+<div>
+<label>Display Order</label>
+<input type="number" id="seriesOrder" value="0">
+</div>
+</div>
+
+<div class="msg" id="seriesFormMsg"></div>
+
+<button onclick="saveSeries()" id="seriesSaveBtn">Save Series</button>
+<button class="secondary" onclick="resetSeriesForm()">Clear Form</button>
+
+<hr style="margin:30px 0;border:none;border-top:1px solid #eee;">
+
+<h3>📋 Series List</h3>
+
+<div class="toolbar">
+<div>
+<label>Search</label>
+<input type="text" id="seriesSearch" placeholder="Search series..." oninput="renderSeriesTable()">
+</div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Series Name</th>
+<th>Language</th>
+<th>Tests</th>
+<th>Type</th>
+<th>Price</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="seriesTableBody">
+<tr><td colspan="8">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= MANAGE-TESTS-IN-SERIES MODAL ================= -->
+<div class="modal-overlay" id="manageSeriesModal">
+<div class="modal-box">
+<h3 id="manageSeriesTitle">Manage Tests in Series</h3>
+<input type="hidden" id="manageSeriesId">
+
+<label>Add a test to this series</label>
+<select id="addTestToSeriesSelect"></select>
+<button class="small" onclick="addTestToCurrentSeries()">Add Test</button>
+
+<p style="margin-top:20px;font-weight:bold;">Tests in this series (drag order using ▲▼):</p>
+<div class="chip-list" id="seriesTestChips"></div>
+
+<div class="msg" id="manageSeriesMsg"></div>
+
+<div style="margin-top:20px;text-align:right;">
+<button class="secondary" onclick="closeManageSeriesModal()">Close</button>
+</div>
+</div>
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  Timestamp,
+  query
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+import { guardAdmin } from "./admin-auth.js";
+
+// Same Firebase project as admin-v2.html — do NOT create a second config.
+const firebaseConfig = {
+  apiKey: "AIzaSyDHe87UG-QGy2Kxh7RI8t51qOGgppVd_YA",
+  authDomain: "marudhara-exam.firebaseapp.com",
+  projectId: "marudhara-exam",
+  storageBucket: "marudhara-exam.firebasestorage.app",
+  messagingSenderId: "680152404373",
+  appId: "1:680152404373:web:32f4dcb9e16c525d33669c",
+  measurementId: "G-8PVKGVQ74F"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Blocks page usage until a signed-in, allow-listed admin is present.
+// Real enforcement happens in firestore.rules (isAdmin()).
+await guardAdmin(app);
+
+const testsCol = collection(db, "typingTests");
+const seriesCol = collection(db, "typingTestSeries");
+
+let allTests = [];
+let allSeries = [];
+
+// ---------------------------------------------------------------
+// Tabs
+// ---------------------------------------------------------------
+window.showTab = function(id){
+  document.querySelectorAll(".tabs .tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  const btnIndex = id === "testsTab" ? 0 : 1;
+  document.querySelectorAll(".tabs .tab-btn")[btnIndex].classList.add("active");
+};
+
+window.toggleHindiMode = function(){
+  const isHindi = document.getElementById("testLanguage").value === "Hindi";
+  document.getElementById("hindiModeWrap").style.display = isHindi ? "block" : "none";
+};
+
+window.togglePriceField = function(){
+  const isPaid = document.getElementById("testAccessType").value === "paid";
+  document.getElementById("testPriceWrap").style.display = isPaid ? "block" : "none";
+};
+
+window.toggleSeriesPriceField = function(){
+  const isPaid = document.getElementById("seriesAccessType").value === "paid";
+  document.getElementById("seriesPriceWrap").style.display = isPaid ? "block" : "none";
+};
+
+// ---------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------
+function localInputToTimestamp(value){
+  if(!value) return null;
+  const d = new Date(value);
+  if(isNaN(d.getTime())) return null;
+  return Timestamp.fromDate(d);
+}
+
+function timestampToLocalInput(ts){
+  if(!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const pad = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatTimestamp(ts){
+  if(!ts) return "-";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+
+// Computed "effective" status shown in the list — combines the admin's
+// manual status with the schedule window, without overwriting the
+// stored `status` field (manual draft/published/inactive stays intact).
+function computeEffectiveStatus(t){
+  if(t.status === "inactive") return "inactive";
+  if(t.status === "draft") return "draft";
+  const now = new Date();
+  const start = t.startAt ? (t.startAt.toDate ? t.startAt.toDate() : new Date(t.startAt)) : null;
+  const end = t.endAt ? (t.endAt.toDate ? t.endAt.toDate() : new Date(t.endAt)) : null;
+  if(start && now < start) return "scheduled";
+  if(end && now > end) return "expired";
+  return "live";
+}
+
+function badge(text, cls){
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+
+function statusBadge(effective){
+  const map = { draft:"draft", published:"published", inactive:"inactive", scheduled:"scheduled", live:"live", expired:"expired" };
+  return badge(effective.charAt(0).toUpperCase()+effective.slice(1), map[effective] || "draft");
+}
+
+function seriesNameFor(id){
+  const s = allSeries.find(s=>s.id===id);
+  return s ? s.title : "-";
+}
+
+function escapeHtml(str){
+  return String(str||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function populateSeriesSelects(){
+  const selects = [
+    document.getElementById("testSeriesId"),
+    document.getElementById("filterSeries")
+  ];
+  selects.forEach(sel=>{
+    if(!sel) return;
+    const keepFirst = sel.options[0];
+    sel.innerHTML = "";
+    sel.appendChild(keepFirst);
+    allSeries.forEach(s=>{
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.title;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ---------------------------------------------------------------
+// Load data
+// ---------------------------------------------------------------
+async function loadSeries(){
+  const snap = await getDocs(query(seriesCol));
+  allSeries = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  allSeries.sort((a,b)=>(a.order||0)-(b.order||0));
+  populateSeriesSelects();
+  renderSeriesTable();
+}
+
+async function loadTests(){
+  const snap = await getDocs(query(testsCol));
+  allTests = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  allTests.sort((a,b)=>(a.order||0)-(b.order||0));
+  renderTestTable();
+}
+
+async function loadAll(){
+  await loadSeries();
+  await loadTests();
+}
+
+// ---------------------------------------------------------------
+// Typing Test: form
+// ---------------------------------------------------------------
+window.resetTestForm = function(){
+  document.getElementById("testDocId").value = "";
+  document.getElementById("testTitle").value = "";
+  document.getElementById("testLanguage").value = "English";
+  document.getElementById("testHindiMode").value = "Kruti Dev 010";
+  document.getElementById("testPassage").value = "";
+  document.getElementById("testDuration").value = 10;
+  document.getElementById("testMinSpeed").value = 25;
+  document.getElementById("testMinAccuracy").value = 90;
+  document.getElementById("testAccessType").value = "free";
+  document.getElementById("testPrice").value = 0;
+  document.getElementById("testStatus").value = "draft";
+  document.getElementById("testStartAt").value = "";
+  document.getElementById("testEndAt").value = "";
+  document.getElementById("testSeriesId").value = "";
+  document.getElementById("testOrder").value = 0;
+  document.getElementById("testFormTitle").textContent = "➕ Add Typing Test";
+  document.getElementById("testSaveBtn").textContent = "Save Typing Test";
+  document.getElementById("testFormMsg").textContent = "";
+  toggleHindiMode();
+  togglePriceField();
+};
+
+window.saveTest = async function(){
+  const msgEl = document.getElementById("testFormMsg");
+  msgEl.className = "msg";
+  msgEl.textContent = "";
+
+  const title = document.getElementById("testTitle").value.trim();
+  const passage = document.getElementById("testPassage").value.trim();
+  if(!title || !passage){
+    msgEl.textContent = "Test Name aur Typing Passage dono zaroori hain.";
+    msgEl.className = "msg err";
+    return;
+  }
+
+  const language = document.getElementById("testLanguage").value;
+  const seriesId = document.getElementById("testSeriesId").value;
+  const data = {
+    title,
+    language,
+    hindiMode: language === "Hindi" ? document.getElementById("testHindiMode").value : null,
+    passage,
+    durationMinutes: Number(document.getElementById("testDuration").value) || 0,
+    minSpeed: Number(document.getElementById("testMinSpeed").value) || 0,
+    minAccuracy: Number(document.getElementById("testMinAccuracy").value) || 0,
+    accessType: document.getElementById("testAccessType").value,
+    price: document.getElementById("testAccessType").value === "paid"
+      ? (Number(document.getElementById("testPrice").value) || 0) : 0,
+    status: document.getElementById("testStatus").value,
+    isActive: document.getElementById("testStatus").value !== "inactive",
+    startAt: localInputToTimestamp(document.getElementById("testStartAt").value),
+    endAt: localInputToTimestamp(document.getElementById("testEndAt").value),
+    seriesId: seriesId || null,
+    seriesName: seriesId ? seriesNameFor(seriesId) : null,
+    order: Number(document.getElementById("testOrder").value) || 0,
+    updatedAt: serverTimestamp()
+  };
+
+  const editId = document.getElementById("testDocId").value;
+  const btn = document.getElementById("testSaveBtn");
+  btn.disabled = true;
+
+  try{
+    if(editId){
+      await updateDoc(doc(db,"typingTests",editId), data);
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(testsCol, data);
+    }
+    msgEl.textContent = "Saved successfully.";
+    msgEl.className = "msg ok";
+    resetTestForm();
+    await loadTests();
+  } catch(e){
+    console.error(e);
+    msgEl.textContent = "Error saving test: " + e.message;
+    msgEl.className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+window.editTest = function(id){
+  const t = allTests.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById("testDocId").value = id;
+  document.getElementById("testTitle").value = t.title || "";
+  document.getElementById("testLanguage").value = t.language || "English";
+  document.getElementById("testHindiMode").value = t.hindiMode || "Kruti Dev 010";
+  document.getElementById("testPassage").value = t.passage || "";
+  document.getElementById("testDuration").value = t.durationMinutes ?? 10;
+  document.getElementById("testMinSpeed").value = t.minSpeed ?? 25;
+  document.getElementById("testMinAccuracy").value = t.minAccuracy ?? 90;
+  document.getElementById("testAccessType").value = t.accessType || "free";
+  document.getElementById("testPrice").value = t.price || 0;
+  document.getElementById("testStatus").value = t.status || "draft";
+  document.getElementById("testStartAt").value = timestampToLocalInput(t.startAt);
+  document.getElementById("testEndAt").value = timestampToLocalInput(t.endAt);
+  document.getElementById("testSeriesId").value = t.seriesId || "";
+  document.getElementById("testOrder").value = t.order || 0;
+  document.getElementById("testFormTitle").textContent = "✏️ Edit Typing Test";
+  document.getElementById("testSaveBtn").textContent = "Update Typing Test";
+  toggleHindiMode();
+  togglePriceField();
+  document.getElementById("testFormTitle").scrollIntoView({ behavior:"smooth" });
+};
+
+window.deleteTest = async function(id){
+  if(!confirm("Is typing test ko delete karein?")) return;
+  await deleteDoc(doc(db,"typingTests",id));
+  await loadTests();
+};
+
+window.toggleTestActive = async function(id){
+  const t = allTests.find(x=>x.id===id);
+  if(!t) return;
+  const nextStatus = t.status === "inactive" ? "published" : "inactive";
+  await updateDoc(doc(db,"typingTests",id), {
+    status: nextStatus,
+    isActive: nextStatus !== "inactive",
+    updatedAt: serverTimestamp()
+  });
+  await loadTests();
+};
+
+// ---------------------------------------------------------------
+// Typing Test: table
+// ---------------------------------------------------------------
+window.renderTestTable = function(){
+  const search = (document.getElementById("testSearch").value || "").toLowerCase();
+  const fLang = document.getElementById("filterLanguage").value;
+  const fStatus = document.getElementById("filterStatus").value;
+  const fAccess = document.getElementById("filterAccessType").value;
+  const fSeries = document.getElementById("filterSeries").value;
+
+  const rows = allTests.filter(t=>{
+    if(search && !(t.title||"").toLowerCase().includes(search)) return false;
+    if(fLang && t.language !== fLang) return false;
+    if(fStatus && t.status !== fStatus) return false;
+    if(fAccess && t.accessType !== fAccess) return false;
+    if(fSeries && t.seriesId !== fSeries) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById("testTableBody");
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="14">No typing tests found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(t=>{
+    const effective = computeEffectiveStatus(t);
+    return `<tr>
+      <td>${t.order ?? 0}</td>
+      <td>${escapeHtml(t.title)}</td>
+      <td>${escapeHtml(t.language)}</td>
+      <td>${escapeHtml(t.language === "Hindi" ? (t.hindiMode||"-") : "-")}</td>
+      <td>${t.durationMinutes ?? "-"} min</td>
+      <td>${t.minSpeed ?? "-"} WPM</td>
+      <td>${t.minAccuracy ?? "-"}%</td>
+      <td>${t.accessType === "paid" ? badge("Paid","paid") : badge("Free","free")}</td>
+      <td>${t.accessType === "paid" ? "₹"+(t.price||0) : "-"}</td>
+      <td>${escapeHtml(t.seriesName || "-")}</td>
+      <td>${formatTimestamp(t.startAt)}</td>
+      <td>${formatTimestamp(t.endAt)}</td>
+      <td>${statusBadge(effective)}</td>
+      <td style="white-space:nowrap;">
+        <button class="small" onclick="editTest('${t.id}')">Edit</button>
+        <button class="small warn" onclick="toggleTestActive('${t.id}')">${t.status==="inactive"?"Activate":"Deactivate"}</button>
+        <button class="small danger" onclick="deleteTest('${t.id}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join("");
+};
+
+// ---------------------------------------------------------------
+// Series: form
+// ---------------------------------------------------------------
+window.resetSeriesForm = function(){
+  document.getElementById("seriesDocId").value = "";
+  document.getElementById("seriesTitle").value = "";
+  document.getElementById("seriesDescription").value = "";
+  document.getElementById("seriesLanguage").value = "English";
+  document.getElementById("seriesAccessType").value = "free";
+  document.getElementById("seriesPrice").value = 0;
+  document.getElementById("seriesStatus").value = "draft";
+  document.getElementById("seriesOrder").value = 0;
+  document.getElementById("seriesFormTitle").textContent = "➕ Add Typing Test Series";
+  document.getElementById("seriesSaveBtn").textContent = "Save Series";
+  document.getElementById("seriesFormMsg").textContent = "";
+  toggleSeriesPriceField();
+};
+
+window.saveSeries = async function(){
+  const msgEl = document.getElementById("seriesFormMsg");
+  msgEl.className = "msg";
+  msgEl.textContent = "";
+
+  const title = document.getElementById("seriesTitle").value.trim();
+  if(!title){
+    msgEl.textContent = "Series Name zaroori hai.";
+    msgEl.className = "msg err";
+    return;
+  }
+
+  const editId = document.getElementById("seriesDocId").value;
+  const existing = editId ? allSeries.find(s=>s.id===editId) : null;
+
+  const data = {
+    title,
+    description: document.getElementById("seriesDescription").value.trim(),
+    language: document.getElementById("seriesLanguage").value,
+    accessType: document.getElementById("seriesAccessType").value,
+    price: document.getElementById("seriesAccessType").value === "paid"
+      ? (Number(document.getElementById("seriesPrice").value) || 0) : 0,
+    status: document.getElementById("seriesStatus").value,
+    isActive: document.getElementById("seriesStatus").value !== "inactive",
+    order: Number(document.getElementById("seriesOrder").value) || 0,
+    testIds: existing ? (existing.testIds || []) : [],
+    updatedAt: serverTimestamp()
+  };
+
+  const btn = document.getElementById("seriesSaveBtn");
+  btn.disabled = true;
+
+  try{
+    if(editId){
+      await updateDoc(doc(db,"typingTestSeries",editId), data);
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(seriesCol, data);
+    }
+    msgEl.textContent = "Saved successfully.";
+    msgEl.className = "msg ok";
+    resetSeriesForm();
+    await loadSeries();
+    await loadTests(); // series names shown on tests may need refresh
+  } catch(e){
+    console.error(e);
+    msgEl.textContent = "Error saving series: " + e.message;
+    msgEl.className = "msg err";
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+window.editSeries = function(id){
+  const s = allSeries.find(x=>x.id===id);
+  if(!s) return;
+  document.getElementById("seriesDocId").value = id;
+  document.getElementById("seriesTitle").value = s.title || "";
+  document.getElementById("seriesDescription").value = s.description || "";
+  document.getElementById("seriesLanguage").value = s.language || "English";
+  document.getElementById("seriesAccessType").value = s.accessType || "free";
+  document.getElementById("seriesPrice").value = s.price || 0;
+  document.getElementById("seriesStatus").value = s.status || "draft";
+  document.getElementById("seriesOrder").value = s.order || 0;
+  document.getElementById("seriesFormTitle").textContent = "✏️ Edit Typing Test Series";
+  document.getElementById("seriesSaveBtn").textContent = "Update Series";
+  toggleSeriesPriceField();
+  document.getElementById("seriesFormTitle").scrollIntoView({ behavior:"smooth" });
+};
+
+window.deleteSeries = async function(id){
+  if(!confirm("Is series ko delete karein? (Tests khud delete nahi honge, unka seriesId clear ho jayega.)")) return;
+  const affected = allTests.filter(t=>t.seriesId===id);
+  for(const t of affected){
+    await updateDoc(doc(db,"typingTests",t.id), { seriesId:null, seriesName:null, updatedAt: serverTimestamp() });
+  }
+  await deleteDoc(doc(db,"typingTestSeries",id));
+  await loadAll();
+};
+
+window.toggleSeriesActive = async function(id){
+  const s = allSeries.find(x=>x.id===id);
+  if(!s) return;
+  const nextStatus = s.status === "inactive" ? "published" : "inactive";
+  await updateDoc(doc(db,"typingTestSeries",id), {
+    status: nextStatus,
+    isActive: nextStatus !== "inactive",
+    updatedAt: serverTimestamp()
+  });
+  await loadSeries();
+};
+
+// ---------------------------------------------------------------
+// Series: table
+// ---------------------------------------------------------------
+window.renderSeriesTable = function(){
+  const search = (document.getElementById("seriesSearch").value || "").toLowerCase();
+  const rows = allSeries.filter(s => !search || (s.title||"").toLowerCase().includes(search));
+
+  const tbody = document.getElementById("seriesTableBody");
+  if(rows.length === 0){
+    tbody.innerHTML = `<tr><td colspan="8">No series found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(s=>{
+    const count = (s.testIds||[]).length;
+    return `<tr>
+      <td>${s.order ?? 0}</td>
+      <td>${escapeHtml(s.title)}</td>
+      <td>${escapeHtml(s.language)}</td>
+      <td>${count}</td>
+      <td>${s.accessType === "paid" ? badge("Paid","paid") : badge("Free","free")}</td>
+      <td>${s.accessType === "paid" ? "₹"+(s.price||0) : "-"}</td>
+      <td>${statusBadge(s.status === "inactive" ? "inactive" : (s.status || "draft"))}</td>
+      <td style="white-space:nowrap;">
+        <button class="small" onclick="editSeries('${s.id}')">Edit</button>
+        <button class="small warn" onclick="toggleSeriesActive('${s.id}')">${s.status==="inactive"?"Activate":"Deactivate"}</button>
+        <button class="small" onclick="openManageSeriesModal('${s.id}')">Manage Tests</button>
+        <button class="small danger" onclick="deleteSeries('${s.id}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join("");
+};
+
+// ---------------------------------------------------------------
+// Manage tests inside a series (modal)
+// ---------------------------------------------------------------
+window.openManageSeriesModal = function(seriesId){
+  document.getElementById("manageSeriesId").value = seriesId;
+  const s = allSeries.find(x=>x.id===seriesId);
+  document.getElementById("manageSeriesTitle").textContent = "Manage Tests in: " + (s ? s.title : "");
+  document.getElementById("manageSeriesMsg").textContent = "";
+  renderAddTestSelect(seriesId);
+  renderSeriesTestChips(seriesId);
+  document.getElementById("manageSeriesModal").classList.add("open");
+};
+
+window.closeManageSeriesModal = function(){
+  document.getElementById("manageSeriesModal").classList.remove("open");
+};
+
+function renderAddTestSelect(seriesId){
+  const s = allSeries.find(x=>x.id===seriesId);
+  const currentIds = s ? (s.testIds||[]) : [];
+  const sel = document.getElementById("addTestToSeriesSelect");
+  const available = allTests.filter(t=>!currentIds.includes(t.id));
+  sel.innerHTML = available.length
+    ? available.map(t=>`<option value="${t.id}">${escapeHtml(t.title)}</option>`).join("")
+    : `<option value="">No other tests available</option>`;
+}
+
+function renderSeriesTestChips(seriesId){
+  const s = allSeries.find(x=>x.id===seriesId);
+  const ids = s ? (s.testIds||[]) : [];
+  const chipsEl = document.getElementById("seriesTestChips");
+  if(ids.length === 0){
+    chipsEl.innerHTML = `<span class="hint">Is series mein abhi koi test nahi hai.</span>`;
+    return;
+  }
+  chipsEl.innerHTML = ids.map((id,idx)=>{
+    const t = allTests.find(x=>x.id===id);
+    const name = t ? t.title : "(deleted test)";
+    return `<span class="chip">
+      <button class="small" style="background:#6c757d;" onclick="moveTestInSeries('${seriesId}',${idx},-1)">▲</button>
+      <button class="small" style="background:#6c757d;" onclick="moveTestInSeries('${seriesId}',${idx},1)">▼</button>
+      ${escapeHtml(name)}
+      <button onclick="removeTestFromSeries('${seriesId}','${id}')">Remove</button>
+    </span>`;
+  }).join("");
+}
+
+window.addTestToCurrentSeries = async function(){
+  const seriesId = document.getElementById("manageSeriesId").value;
+  const testId = document.getElementById("addTestToSeriesSelect").value;
+  if(!testId) return;
+  const s = allSeries.find(x=>x.id===seriesId);
+  const ids = s ? (s.testIds||[]) : [];
+  if(ids.includes(testId)) return;
+  ids.push(testId);
+  await persistSeriesTestIds(seriesId, ids);
+};
+
+window.removeTestFromSeries = async function(seriesId, testId){
+  const s = allSeries.find(x=>x.id===seriesId);
+  const ids = (s ? (s.testIds||[]) : []).filter(id=>id!==testId);
+  await persistSeriesTestIds(seriesId, ids);
+};
+
+window.moveTestInSeries = async function(seriesId, idx, dir){
+  const s = allSeries.find(x=>x.id===seriesId);
+  const ids = s ? [...(s.testIds||[])] : [];
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= ids.length) return;
+  [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
+  await persistSeriesTestIds(seriesId, ids);
+};
+
+async function persistSeriesTestIds(seriesId, ids){
+  const msgEl = document.getElementById("manageSeriesMsg");
+  try{
+    await updateDoc(doc(db,"typingTestSeries",seriesId), { testIds: ids, updatedAt: serverTimestamp() });
+    // keep each test's own seriesId/seriesName in sync for tests newly
+    // added/removed, and also update this test's order within series list
+    const s = allSeries.find(x=>x.id===seriesId);
+    if(s) s.testIds = ids;
+    for(const t of allTests){
+      const shouldBelong = ids.includes(t.id);
+      const currentlyBelongs = t.seriesId === seriesId;
+      if(shouldBelong && !currentlyBelongs){
+        await updateDoc(doc(db,"typingTests",t.id), { seriesId, seriesName: s ? s.title : null, updatedAt: serverTimestamp() });
+      } else if(!shouldBelong && currentlyBelongs){
+        await updateDoc(doc(db,"typingTests",t.id), { seriesId:null, seriesName:null, updatedAt: serverTimestamp() });
+      }
+    }
+    await loadAll();
+    renderAddTestSelect(seriesId);
+    renderSeriesTestChips(seriesId);
+    msgEl.textContent = "Updated.";
+    msgEl.className = "msg ok";
+  } catch(e){
+    console.error(e);
+    msgEl.textContent = "Error: " + e.message;
+    msgEl.className = "msg err";
+  }
+}
+
+// ---------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------
+resetTestForm();
+resetSeriesForm();
+await loadAll();
+
+</script>
+
+</body>
+</html>
