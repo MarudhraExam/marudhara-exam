@@ -478,7 +478,7 @@ async function renderQuizzes() {
   const listEl = document.getElementById("quizList");
   const snap = await getDocs(query(
     collection(db, "quizSets"),
-    where("quizId", "==", state.quizId),
+    where("topicId", "==", state.topicId),
     orderBy("order", "asc")
   ));
   const quizzes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
