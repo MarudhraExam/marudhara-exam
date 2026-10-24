@@ -145,6 +145,73 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Preparation Exam master (My Preparation feature) — a SEPARATE exam
+    // catalog from /exams above, managed only via the "🎯 Preparation
+    // Exams" section in the existing Admin Panel (admin-v2.html). Public/
+    // students may only read exams the admin has marked Active; drafts/
+    // inactive exams stay invisible to students, same rule shape as
+    // typingTests below. Only the allow-listed admin (isAdmin()) may
+    // create, update, or delete entries.
+    // ------------------------------------------------------------------
+    match /preparationExams/{docId} {
+      allow read: if isAdmin() || resource.data.status in ['Active', 'active', 'ACTIVE'] || resource.data.isActive == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Exam structure (Subject -> Chapter -> Topic), managed only from the
+    // "🎯 Preparation Exams" admin section. Public/student read (same as
+    // quizSubjects/quizTopics below) so the syllabus tree can render for
+    // any student who has selected the exam; only admin may write.
+    match /preparationSubjects/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /preparationChapters/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /preparationTopics/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admin-curated links from existing content (MCQ topics, PYQ papers,
+    // notes, mock categories) to a preparation exam/subject/chapter/topic.
+    // Public/student read, admin-only write.
+    match /preparationMappings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Lightweight aggregate counters per exam (e.g. how many students have
+    // selected it) shown in the admin analytics tile. Publicly readable
+    // (contains no personal student data); any signed-in student may only
+    // touch the counter fields when they select/remove the exam, never
+    // rewrite the whole document.
+    match /preparationExamStats/{docId} {
+      allow read: if true;
+      // The counter doc is created lazily by the first student who selects
+      // the exam (via setDoc merge), so create must be allowed for any
+      // signed-in student too - but only with exactly the counter fields,
+      // never arbitrary data.
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['selectedCount', 'updatedAt']) &&
+        request.resource.data.selectedCount is int &&
+        request.resource.data.selectedCount == 1;
+      // Permit only a one-step counter change per request; do not let a client
+      // overwrite the aggregate with an arbitrary number. Admin can repair it.
+      allow update: if request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['selectedCount', 'updatedAt']) &&
+        request.resource.data.selectedCount is int &&
+        resource.data.selectedCount is int &&
+        (request.resource.data.selectedCount == resource.data.selectedCount + 1 ||
+         request.resource.data.selectedCount == resource.data.selectedCount - 1) &&
+        request.resource.data.selectedCount >= 0;
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------------
     // Mock test system — public read, admin-only write.
     // ------------------------------------------------------------------
     match /mockCategories/{docId} {
@@ -195,7 +262,13 @@ service cloud.firestore {
     match /mockResults/{docId} {
       allow read: if true;
       allow create: if request.resource.data.mockId is string
-        && request.resource.data.score is number;
+        && request.resource.data.score is number
+        // My Preparation bridge: studentUid is optional (old clients / logged-out
+        // flows omit it or send ""), but if present it must be the signer's own
+        // uid, so nobody can attribute a result to another student's UID.
+        && (!('studentUid' in request.resource.data)
+            || request.resource.data.studentUid == ''
+            || (request.auth != null && request.auth.uid == request.resource.data.studentUid));
       allow update, delete: if isAdmin();
     }
 
@@ -227,6 +300,27 @@ service cloud.firestore {
     // read or modify another student's profile.
     // ------------------------------------------------------------------
     match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ------------------------------------------------------------------
+    // My Preparation (Phase 1) — studentPreparations/{uid}: one document
+    // per student, keyed by the SAME Firebase Auth uid used by users/{uid}
+    // above. A signed-in student may read/write ONLY their own document;
+    // no student can ever see or modify another student's selected
+    // exams/preparation data.
+    // ------------------------------------------------------------------
+    match /studentPreparations/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Per-student, per-exam preparation activity: topic completion status,
+    // MCQ/PYQ/Mock/Notes activity log, study-planner tasks, and revision
+    // flags. All stored as subcollections UNDER the student's own
+    // studentPreparations/{uid} document (same uid as above) so a single
+    // rule keeps every one of them owner-only and nothing ever needs a
+    // separate "does this activity belong to me" check.
+    match /studentPreparations/{uid}/{subcollection}/{docId} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
