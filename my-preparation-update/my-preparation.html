@@ -104,7 +104,7 @@
         </div>
       </div>
       <div class="top-actions">
-        <a class="button-secondary" href="index.html">Back to Home</a>
+<a class="button-secondary" href="../index.html">Back to Home</a>
         <button class="button-secondary" id="logoutBtn" type="button" style="display:none;">Logout</button>
       </div>
     </header>
@@ -203,7 +203,7 @@ import { db, auth } from '../firebase.js';
     logoutBtn.addEventListener('click', async () => {
       try { await signOut(auth); } catch (err) { console.error('Sign out failed:', err); }
       clearStoredStudent();
-      window.location.href = 'mock-tests/index.html';
+window.location.href = '../mock-tests/index.html';
     });
 
     /* ================================================================
