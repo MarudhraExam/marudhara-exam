@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Preparation</title>
+<style>
+  :root { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+  a { color: inherit; text-decoration: none; }
+  .page-shell { max-width: 1000px; margin: 0 auto; padding: 22px 18px 48px; }
+  .top-actions { display: flex; justify-content: space-between; margin-bottom: 14px; }
+  .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 12px; padding: 10px 16px; background: #fff; color: #0b4ea2; cursor: pointer; font-weight: 600; }
+  .status-bar { margin-bottom: 16px; padding: 12px 16px; border-radius: 14px; background: #eef4ff; color: #102a52; font-weight: 600; }
+  .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+
+  .exam-header { background: #fff; border-radius: 22px; padding: 22px; border: 1px solid rgba(35,49,79,.08); display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+  .exam-header .prep-icon { font-size: 2.4rem; }
+  .exam-header .prep-icon img { width: 56px; height: 56px; object-fit: contain; border-radius: 12px; }
+  .exam-header h2 { margin: 0 0 4px; font-size: 1.4rem; color: #102a52; }
+  .exam-header .meta-line { color: #5f6f8f; font-size: 0.9rem; }
+  .exam-header .countdown { display: inline-block; margin-top: 6px; background: #fff3cd; color: #8a6400; padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+
+  .overall-box { margin-left: auto; text-align: center; min-width: 140px; }
+  .overall-box strong { display: block; font-size: 2rem; color: #0b4ea2; }
+  .overall-bar { width: 140px; height: 10px; border-radius: 999px; background: #eef1f6; overflow: hidden; margin-top: 6px; }
+  .overall-bar-fill { height: 100%; background: #0b4ea2; border-radius: 999px; }
+
+  .tile-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px; }
+  .tile { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 18px; padding: 16px 18px; display: block; }
+  .tile h3 { margin: 0 0 6px; font-size: 1rem; color: #102a52; }
+  .tile .tile-pct { font-size: 1.3rem; font-weight: 700; color: #0b4ea2; }
+  .tile .tile-bar { height: 7px; border-radius: 999px; background: #eef1f6; overflow: hidden; margin: 8px 0; }
+  .tile .tile-bar-fill { height: 100%; background: #0b4ea2; }
+  .tile p.tile-note { margin: 0; color: #5f6f8f; font-size: 0.82rem; }
+
+  .section-block { background: #fff; border-radius: 18px; border: 1px solid rgba(35,49,79,.1); padding: 18px; margin-bottom: 18px; }
+  .section-block h3 { margin: 0 0 10px; font-size: 1.02rem; color: #102a52; }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #f3f8ff; color: #0b4ea2; border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; }
+  .activity-row { display: flex; justify-content: space-between; font-size: 0.86rem; padding: 7px 0; border-bottom: 1px solid #f1f3f8; color: #556180; }
+  .activity-row:last-child { border-bottom: none; }
+  .empty-note { color: #8a97ad; font-size: 0.85rem; }
+  @media (max-width: 640px) { .exam-header { flex-direction: column; align-items: flex-start; } .overall-box { margin-left: 0; } }
+</style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="top-actions">
+      <a class="button-secondary" href="my-preparation.html">⬅ My Preparation</a>
+    </div>
+    <div id="statusBar" class="status-bar">Loading…</div>
+
+    <div id="examHeader" class="exam-header" style="display:none;"></div>
+
+    <div id="tileGrid" class="tile-grid"></div>
+
+    <div class="section-block">
+      <h3>🗓️ Today's Target</h3>
+      <div id="todayTargetBox"></div>
+    </div>
+
+    <div class="section-block">
+      <h3>⚠️ Weak Areas</h3>
+      <div id="weakAreasBox"></div>
+    </div>
+
+    <div class="section-block">
+      <h3>🕓 Recent Activity</h3>
+      <div id="recentActivityBox"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, getDocs, query, where, doc, getDoc, setDoc, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import {
+      watchStudentAuth, getStoredStudent, escapeHtml, formatExamDate, daysRemainingLabel,
+      renderIconHtml, computeOverallProgress, computeSyllabusPercent
+    } from './preparation-shared.js';
+    import { loadExamProgress } from './preparation-progress.js';
+    const fsApi = { collection, getDocs, query, where, doc, getDoc, getCountFromServer };
+
+    const params = new URLSearchParams(location.search);
+    const examId = params.get('examId');
+    const statusBar = document.getElementById('statusBar');
+    function setStatus(msg, kind) { statusBar.textContent = msg; statusBar.className = kind === 'error' ? 'status-bar error' : 'status-bar'; }
+    if (!examId) setStatus('No exam selected. Go back to My Preparation and pick an exam.', 'error');
+
+    let currentUid = null;
+
+    async function resolveExamMeta(uid) {
+      // Prefer the live preparationExams doc; fall back to the student's own
+      // cached selection meta if the exam was deactivated/removed later.
+      try {
+        const snap = await getDoc(doc(db, 'preparationExams', examId));
+        if (snap.exists()) return { id: examId, ...snap.data() };
+      } catch (err) { console.error(err); }
+      try {
+        const prepSnap = await getDoc(doc(db, 'studentPreparations', uid));
+        const meta = prepSnap.exists() && prepSnap.data().selectedExamsMeta && prepSnap.data().selectedExamsMeta[examId];
+        if (meta) return { id: examId, examName: meta.examName, examDate: meta.examDate, icon: meta.icon };
+      } catch (err) { console.error(err); }
+      return { id: examId, examName: 'Exam', examDate: '', icon: '' };
+    }
+
+    function renderHeader(exam, overall) {
+      const box = document.getElementById('examHeader');
+      box.style.display = 'flex';
+      box.innerHTML = `
+        ${renderIconHtml(exam.icon)}
+        <div>
+          <h2>${escapeHtml(exam.examName)}</h2>
+          <div class="meta-line">📅 Exam Date: ${escapeHtml(formatExamDate(exam.examDate))}</div>
+          <span class="countdown">${escapeHtml(daysRemainingLabel(exam.examDate))}</span>
+        </div>
+        <div class="overall-box">
+          <strong>${overall}%</strong>
+          <div class="overall-bar"><div class="overall-bar-fill" style="width:${overall}%"></div></div>
+          <div style="font-size:0.78rem;color:#5f6f8f;margin-top:4px;">Overall Preparation</div>
+        </div>`;
+    }
+
+    function tileHtml(href, title, pct, note) {
+      const pctHtml = pct === null
+        ? `<p class="tile-note">${note || 'Not mapped yet'}</p>`
+        : `<div class="tile-pct">${pct}%</div><div class="tile-bar"><div class="tile-bar-fill" style="width:${pct}%"></div></div>${note ? `<p class="tile-note">${note}</p>` : ''}`;
+      return `<a class="tile" href="${href}"><h3>${title}</h3>${pctHtml}</a>`;
+    }
+
+    async function init(uid) {
+      currentUid = uid;
+      setStatus('Loading your preparation…');
+
+      try {
+        // ---- Confirm this exam is actually part of the student's selection ----
+        const prepDocSnap = await getDoc(doc(db, 'studentPreparations', uid));
+        const prepData = prepDocSnap.exists() ? prepDocSnap.data() : null;
+        const selected = (prepData && prepData.selectedExams) || [];
+        if (!selected.some(e => e.preparationExamId === examId)) {
+          window.location.href = 'my-preparation.html';
+          return;
+        }
+
+        const exam = await resolveExamMeta(uid);
+
+        // ---- ONE centralized progress calculation (preparation-progress.js) ----
+        // Everything is scoped by examId + the authenticated uid.
+        const [P, planSnap] = await Promise.all([
+          loadExamProgress(fsApi, db, uid, examId),
+          getDocs(query(collection(db, 'studentPreparations', uid, 'studyPlan'), where('preparationExamId', '==', examId), where('date', '==', new Date().toISOString().slice(0, 10))))
+        ]);
+        const { topics, progressByTopicId, mappings, activity, revisionDocs, mcq, mock, pyq, notes, revision, components, overall } = P;
+        const planTasks = planSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const syllabusPct = components.syllabus, mcqPct = components.mcq, pyqPct = components.pyq,
+              mockPct = components.mock, notesPct = components.notes, revisionPct = components.revision;
+        const mcqMappings = mappings.filter(m => m.type === 'mcq');
+        const pyqMappings = mappings.filter(m => m.type === 'pyq');
+        const notesMappings = mappings.filter(m => m.type === 'notes');
+        const caMappings = mappings.filter(m => m.type === 'currentAffairs');
+        const mockMappings = mappings.filter(m => m.type === 'mock');
+        const mockAvailableTotal = mock ? mock.available : 0, mockAttemptedTotal = mock ? mock.attempted : 0, mockBestOverall = mock ? mock.best : null;
+        renderHeader(exam, overall);
+
+        // ---- Cache overall % on the student doc (list-page badge). Written only when it changed. ----
+        if (!prepData.progressCache || !prepData.progressCache[examId] || prepData.progressCache[examId].overall !== overall) {
+          try {
+            await setDoc(doc(db, 'studentPreparations', uid), {
+              progressCache: { [examId]: { overall, updatedAt: new Date().toISOString() } }
+            }, { merge: true });
+          } catch (err) { console.error('Unable to cache progress:', err); }
+        }
+        // ---- Tiles ----
+        const revisionPending = revision.pending;
+        const planDone = planTasks.filter(t => t.completed).length;
+
+        document.getElementById('tileGrid').innerHTML = [
+          tileHtml(`preparation-syllabus.html?examId=${examId}`, '📘 Syllabus', syllabusPct, topics.length ? `${topics.length} topics` : 'Not set up yet'),
+          tileHtml(`preparation-resources.html?examId=${examId}&type=notes`, '📄 Notes / Study Material', notesPct, notes ? `${notes.completed}/${notes.total} completed` : 'None linked yet'),
+          tileHtml(`preparation-resources.html?examId=${examId}&type=mcq`, '📝 MCQ Practice', mcqPct, mcq ? `${mcq.attempted}/${mcq.totalQuestions} questions • ${mcq.accuracy ?? 0}% accuracy` : 'None linked yet'),
+          tileHtml(`preparation-resources.html?examId=${examId}&type=pyq`, '📜 Previous Year Questions', pyqPct, pyq ? `${pyq.completed}/${pyq.total} papers done` : 'None linked yet'),
+          tileHtml(`preparation-resources.html?examId=${examId}&type=mock`, '🧪 Mock Tests', mockPct, mock ? `${mockAttemptedTotal}/${mockAvailableTotal} attempted${mockBestOverall != null ? ` • Best ${mockBestOverall}% • Avg ${mock.average}%` : ''}` : 'None linked yet'),
+          tileHtml(`preparation-resources.html?examId=${examId}&type=currentAffairs`, '🗞️ Current Affairs', null, caMappings.length ? `${caMappings.length} linked for this exam` : 'None linked yet'),
+          tileHtml(`preparation-syllabus.html?examId=${examId}&tab=revision`, '🔁 Revision', revisionPct, `${revisionPending} pending`),
+          tileHtml(`preparation-planner.html?examId=${examId}`, '🗓️ Study Planner', null, `${planDone}/${planTasks.length} done today`)
+        ].join('');
+
+        // ---- Today's Target widget ----
+        document.getElementById('todayTargetBox').innerHTML = planTasks.length
+          ? `<p>${planDone} of ${planTasks.length} tasks completed today.</p><a class="button-secondary" href="preparation-planner.html?examId=${examId}">Open Planner</a>`
+          : `<p class="empty-note">No targets set for today yet.</p><a class="button-secondary" href="preparation-planner.html?examId=${examId}">+ Add Today's Target</a>`;
+
+        // ---- Weak areas ----
+        const weakTopics = topics.filter(t => {
+          const status = (progressByTopicId[t.id] && progressByTopicId[t.id].status) || 'not_started';
+          return status !== 'completed';
+        }).slice(0, 6);
+        const unattemptedMcq = mcqMappings.filter(m => !(mcq && mcq.byTopic[m.refId])).slice(0, 4);
+
+        let weakHtml = '';
+        if (weakTopics.length) weakHtml += `<p style="margin:0 0 6px;font-size:0.85rem;color:#5f6f8f;">Topics still pending:</p><div class="chip-list">${weakTopics.map(t => `<span class="chip">${escapeHtml(t.name)}</span>`).join('')}</div>`;
+        if (unattemptedMcq.length) weakHtml += `<p style="margin:14px 0 6px;font-size:0.85rem;color:#5f6f8f;">MCQ topics not yet practiced:</p><div class="chip-list">${unattemptedMcq.map(m => `<span class="chip">${escapeHtml(m.refLabel || 'Topic')}</span>`).join('')}</div>`;
+        document.getElementById('weakAreasBox').innerHTML = weakHtml || '<p class="empty-note">No weak areas detected yet — keep going!</p>';
+
+        // ---- Recent activity ----
+        const recent = [...activity].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 6);
+        const TYPE_LABELS = { mcq: '📝 MCQ practice', pyq: '📜 PYQ', notes: '📄 Notes' };
+        document.getElementById('recentActivityBox').innerHTML = recent.length
+          ? recent.map(a => `<div class="activity-row"><span>${TYPE_LABELS[a.type] || a.type}</span><span>${a.updatedAt ? new Date(a.updatedAt).toLocaleDateString('en-IN') : ''}</span></div>`).join('')
+          : '<p class="empty-note">No activity recorded yet. Start practicing to see it here!</p>';
+
+        setStatus('Your preparation dashboard is up to date.');
+      } catch (err) {
+        console.error(err);
+        setStatus('Unable to load this exam\'s preparation right now. Please refresh.', 'error');
+      }
+    }
+
+    if (examId) {
+      watchStudentAuth(auth, onAuthStateChanged, {
+        onLogin: (user) => init(user.uid),
+        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+      });
+    }
+  </script>
+</body>
+</html>

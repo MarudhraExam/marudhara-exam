@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Preparation | Marudhara Exam</title>
+<style>
+  :root { color-scheme: light; font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+  body, button { font: inherit; }
+  a { color: inherit; text-decoration: none; }
+  .page-shell { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; }
+
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .logo { width: 52px; height: 52px; border-radius: 18px; display: grid; place-items: center; background: #0b4ea2; color: #fff; font-weight: 800; font-size: 1.1rem; }
+  .brand h1 { margin: 0; font-size: 1.7rem; line-height: 1.15; }
+  .brand small { display: block; color: #5f6f8f; margin-top: 4px; font-size: 0.92rem; }
+  .top-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .button-primary { border: 0; border-radius: 14px; padding: 12px 18px; background: #0b4ea2; color: #fff; cursor: pointer; font-weight: 600; }
+  .button-primary:hover { background: #0f3c7f; }
+  .button-primary:disabled { background: #9fb4d4; cursor: not-allowed; }
+  .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 14px; padding: 12px 18px; background: #fff; color: #0b4ea2; cursor: pointer; font-weight: 600; }
+  .button-secondary:hover { background: #eef4ff; }
+  .button-danger { border: 1px solid rgba(178,32,24,.3); border-radius: 12px; padding: 8px 14px; background: #fff; color: #b22018; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .button-danger:hover { background: #fff1f0; }
+
+  .status-bar { margin-bottom: 24px; padding: 14px 18px; border-radius: 18px; background: #eef4ff; color: #102a52; font-weight: 600; }
+  .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+
+  /* ---------------- First-time exam selection ---------------- */
+  .select-hero { text-align: center; margin: 10px 0 28px; }
+  .select-hero h2 { margin: 0 0 8px; font-size: 1.7rem; color: #102a52; }
+  .select-hero p { margin: 0; color: #5f6f8f; font-size: 1rem; }
+
+  .exam-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 24px; }
+  .exam-card {
+    background: #fff; border: 2px solid rgba(35,49,79,.1); border-radius: 18px; padding: 16px 18px;
+    display: flex; align-items: flex-start; gap: 12px; cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .exam-card:hover { box-shadow: 0 16px 30px rgba(23,42,77,.08); }
+  .exam-card.selected { border-color: #0b4ea2; background: #f3f8ff; }
+  .exam-card input { margin-top: 3px; width: 18px; height: 18px; accent-color: #0b4ea2; flex-shrink: 0; }
+  .exam-card .exam-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+  .exam-card .exam-icon img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; }
+  .exam-card .exam-meta h3 { margin: 0 0 4px; font-size: 1.02rem; color: #102a52; }
+  .exam-card .exam-meta span { display: block; color: #5f6f8f; font-size: 0.85rem; }
+  .exam-card .exam-meta p { margin: 6px 0 0; color: #7c8aa5; font-size: 0.82rem; }
+
+  .select-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .select-empty { text-align: center; padding: 30px; color: #7c8aa5; }
+
+  /* ---------------- Dashboard ---------------- */
+  .dash-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .dash-header h2 { margin: 0; font-size: 1.3rem; color: #102a52; }
+  .dash-header .dash-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .prep-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .prep-card { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .prep-card h3 { margin: 0; font-size: 1.12rem; color: #102a52; }
+  .prep-progress-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: #5f6f8f; }
+  .prep-progress-bar { height: 8px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+  .prep-progress-fill { height: 100%; background: #0b4ea2; border-radius: 999px; }
+  .prep-date { margin: 0; font-size: 0.88rem; color: #5f6f8f; }
+  .prep-card-actions { margin-top: auto; padding-top: 8px; }
+  .prep-card-actions .button-primary { width: 100%; }
+
+  /* ---------------- Manage Exams overlay ---------------- */
+  .manage-overlay { position: fixed; inset: 0; background: rgba(15,26,48,.55); display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; z-index: 9998; overflow-y: auto; }
+  .manage-overlay.hidden { display: none; }
+  .manage-box { background: #fff; border-radius: 22px; padding: 26px; width: 100%; max-width: 720px; margin: 20px auto; }
+  .manage-box h2 { margin: 0 0 4px; font-size: 1.3rem; color: #102a52; }
+  .manage-box p.modal-sub { margin: 0 0 16px; color: #5f6f8f; font-size: 0.9rem; }
+  .manage-close { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+  .modal-link-btn { background: none; border: none; color: #0b4ea2; font-weight: 600; cursor: pointer; padding: 0; margin: 0; font-size: 0.85rem; }
+
+  .manage-list { display: grid; gap: 10px; margin-bottom: 22px; }
+  .manage-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #f8fafd; border: 1px solid rgba(35,49,79,.08); border-radius: 14px; padding: 12px 16px; }
+  .manage-row .manage-meta h4 { margin: 0 0 2px; font-size: 0.98rem; color: #102a52; }
+  .manage-row .manage-meta span { font-size: 0.82rem; color: #5f6f8f; }
+
+  .manage-add-section h3 { font-size: 1rem; color: #102a52; margin: 0 0 10px; }
+  .manage-add-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 16px; }
+
+  .empty-state { padding: 24px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 640px) {
+    header { flex-direction: column; align-items: flex-start; }
+    .prep-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <h1>My Preparation</h1>
+          <small>Your personal exam preparation space</small>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="button-secondary" href="index.html">Back to Home</a>
+        <button class="button-secondary" id="logoutBtn" type="button" style="display:none;">Logout</button>
+      </div>
+    </header>
+
+    <div id="statusBar" class="status-bar">Checking your login…</div>
+
+    <!-- First-time student -> exam selection screen -->
+    <section id="selectScreen" class="hidden">
+      <div class="select-hero">
+        <h2>Start Your Preparation</h2>
+        <p>Select the exams you are preparing for</p>
+      </div>
+      <div id="selectExamGrid" class="exam-grid"></div>
+      <div class="select-actions">
+        <button class="button-primary" id="saveContinueBtn" type="button" disabled>Save &amp; Continue</button>
+      </div>
+    </section>
+
+    <!-- Returning student -> dashboard -->
+    <section id="dashboardScreen" class="hidden">
+      <div class="dash-header">
+        <h2>My Preparation Dashboard</h2>
+        <div class="dash-actions">
+          <button class="button-secondary" id="addExamBtn" type="button">+ Add Exam</button>
+          <button class="button-secondary" id="manageExamBtn" type="button">Manage Exams</button>
+        </div>
+      </div>
+      <div id="prepGrid" class="prep-grid"></div>
+    </section>
+  </div>
+
+  <!-- Manage / Add Exams overlay -->
+  <div id="manageOverlay" class="manage-overlay hidden">
+    <div class="manage-box">
+      <div class="manage-close"><button class="modal-link-btn" id="closeManageBtn" type="button">✕ Close</button></div>
+      <h2>Manage Your Exams</h2>
+      <p class="modal-sub">Remove exams you're no longer preparing for, or add new ones. This never affects your Mock Test results or account.</p>
+
+      <div id="manageList" class="manage-list"></div>
+
+      <div class="manage-add-section">
+        <h3>Add More Exams</h3>
+        <div id="manageAddGrid" class="manage-add-grid"></div>
+        <button class="button-primary" id="manageAddBtn" type="button" disabled>Save Selected Exams</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, getDocs, query, where, doc, getDoc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import {
+      watchStudentAuth, getStoredStudent, saveStoredStudent, clearStoredStudent,
+      escapeHtml, formatExamDate, renderIconHtml, daysRemainingLabel
+    } from './preparation-shared.js';
+
+    /* ================================================================
+       IDENTITY — reused as-is from the existing Mock Test system via
+       preparation-shared.js (same synthetic student email check, same
+       mockExamSession cache). This page creates NO authentication logic
+       of its own.
+
+       CASE 1 (already authenticated): open My Preparation directly.
+       CASE 2 (not authenticated): send the student to the EXISTING
+       login/register flow at mock-tests/index.html — this page never
+       shows its own Login/Register/Forgot Password UI.
+       ================================================================ */
+    function renderIcon(icon) { return renderIconHtml(icon); }
+
+    /* ================================================================
+       DOM refs
+       ================================================================ */
+    const statusBar = document.getElementById('statusBar');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    const selectScreen = document.getElementById('selectScreen');
+    const selectExamGrid = document.getElementById('selectExamGrid');
+    const saveContinueBtn = document.getElementById('saveContinueBtn');
+
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    const prepGrid = document.getElementById('prepGrid');
+    const addExamBtn = document.getElementById('addExamBtn');
+    const manageExamBtn = document.getElementById('manageExamBtn');
+
+    const manageOverlay = document.getElementById('manageOverlay');
+    const closeManageBtn = document.getElementById('closeManageBtn');
+    const manageList = document.getElementById('manageList');
+    const manageAddGrid = document.getElementById('manageAddGrid');
+    const manageAddBtn = document.getElementById('manageAddBtn');
+
+    function setStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = type === 'error' ? 'status-bar error' : 'status-bar';
+    }
+
+    logoutBtn.addEventListener('click', async () => {
+      try { await signOut(auth); } catch (err) { console.error('Sign out failed:', err); }
+      clearStoredStudent();
+      window.location.href = 'mock-tests/index.html';
+    });
+
+    /* ================================================================
+       DATA — Preparation Exam master + per-student selection.
+
+       preparationExams/{id}   -> admin-managed master list (added via
+                                   the "🎯 Preparation Exams" section in
+                                   admin-v2.html). Public read is limited
+                                   to status == 'Active' by firestore.rules.
+                                   This is a SEPARATE collection from the
+                                   existing `exams` collection and is
+                                   never mixed with it.
+
+       studentPreparations/{uid} -> ONE document per student, keyed by
+                                   the same Firebase Auth uid already
+                                   used by users/{uid}. Stores only
+                                   references (preparationExamId) plus a
+                                   timestamp — never a full copy of the
+                                   master exam data.
+       ================================================================ */
+    let currentUid = null;
+    let examsCatalog = null; // cached list from `preparationExams` (Active only)
+    let myPrep = null;       // current student's studentPreparations doc data
+
+    async function loadExamsCatalog() {
+      if (examsCatalog) return examsCatalog;
+      try {
+        const snap = await getDocs(query(collection(db, 'preparationExams'), where('status', '==', 'Active')));
+        const list = snap.docs.map(d => {
+          const data = d.data() || {};
+          return {
+            preparationExamId: d.id,
+            examName: data.examName || 'Exam',
+            examDate: data.examDate || '',
+            description: data.description || '',
+            icon: data.icon || ''
+          };
+        });
+        list.sort((a, b) => {
+          if (a.examDate && b.examDate) return new Date(a.examDate) - new Date(b.examDate);
+          if (a.examDate) return -1;
+          if (b.examDate) return 1;
+          return a.examName.localeCompare(b.examName);
+        });
+        examsCatalog = list;
+      } catch (err) {
+        console.error('Unable to load preparation exams catalog:', err);
+        examsCatalog = [];
+      }
+      return examsCatalog;
+    }
+
+    async function loadMyPreparation(uid) {
+      try {
+        const snap = await getDoc(doc(db, 'studentPreparations', uid));
+        return snap.exists() ? snap.data() : null;
+      } catch (err) {
+        console.error('Unable to load studentPreparations doc:', err);
+        return null;
+      }
+    }
+
+    // Looks up master exam info for a saved reference, falling back
+    // gracefully if the master exam was later removed by the admin.
+    function resolveExam(preparationExamId) {
+      const found = (examsCatalog || []).find(e => e.preparationExamId === preparationExamId);
+      if (found) return found;
+      const savedMeta = (myPrep && myPrep.selectedExamsMeta && myPrep.selectedExamsMeta[preparationExamId]) || null;
+      return {
+        preparationExamId,
+        examName: (savedMeta && savedMeta.examName) || 'Exam',
+        examDate: (savedMeta && savedMeta.examDate) || '',
+        icon: (savedMeta && savedMeta.icon) || ''
+      };
+    }
+
+    async function saveSelectedExams(examIdsToAdd) {
+      const now = new Date().toISOString();
+      const catalog = await loadExamsCatalog();
+      const chosen = catalog.filter(e => examIdsToAdd.has(e.preparationExamId));
+      const prepRef = doc(db, 'studentPreparations', currentUid);
+
+      const existingList = (myPrep && Array.isArray(myPrep.selectedExams)) ? myPrep.selectedExams : [];
+      const existingIds = new Set(existingList.map(e => e.preparationExamId));
+      const merged = [...existingList];
+      chosen.forEach(e => {
+        if (!existingIds.has(e.preparationExamId)) {
+          merged.push({ preparationExamId: e.preparationExamId, selectedAt: now });
+        }
+      });
+
+      // Only a light display cache (name/date/icon as of selection time) is
+      // kept alongside the reference, so a card can still render sensibly
+      // even if a master exam is ever deleted later — the full master
+      // record itself always stays in preparationExams/{id}, never
+      // duplicated wholesale here.
+      const existingMeta = (myPrep && myPrep.selectedExamsMeta) || {};
+      const mergedMeta = { ...existingMeta };
+      chosen.forEach(e => {
+        mergedMeta[e.preparationExamId] = { examName: e.examName, examDate: e.examDate || '', icon: e.icon || '' };
+      });
+
+      const payload = {
+        uid: currentUid,
+        selectedExams: merged,
+        selectedExamsMeta: mergedMeta,
+        createdAt: (myPrep && myPrep.createdAt) ? myPrep.createdAt : now,
+        updatedAt: now
+      };
+      await setDoc(prepRef, payload, { merge: true });
+      myPrep = payload;
+
+      // Newly-added exams only: bump each exam's lightweight "students
+      // selected" counter for the admin analytics tile. Never rewrites
+      // the whole stats doc - just the counter field (see firestore.rules).
+      const newlyAdded = chosen.filter(e => !existingIds.has(e.preparationExamId));
+      await Promise.all(newlyAdded.map(e =>
+        setDoc(doc(db, 'preparationExamStats', e.preparationExamId), { selectedCount: increment(1), updatedAt: now }, { merge: true }).catch(err => console.error('Unable to update exam stats:', err))
+      ));
+    }
+
+    async function removeSelectedExam(preparationExamId, examName) {
+      const confirmed = window.confirm(
+        `Remove "${examName}" from My Preparation?\n\nThis will NOT delete your Mock Test results, account, or any exam data — it only removes this exam from your preparation list.`
+      );
+      if (!confirmed) return;
+
+      const updatedList = (myPrep.selectedExams || []).filter(e => e.preparationExamId !== preparationExamId);
+      const updatedMeta = { ...(myPrep.selectedExamsMeta || {}) };
+      delete updatedMeta[preparationExamId];
+
+      const prepRef = doc(db, 'studentPreparations', currentUid);
+      try {
+        await setDoc(prepRef, { selectedExams: updatedList, selectedExamsMeta: updatedMeta, updatedAt: new Date().toISOString() }, { merge: true });
+        myPrep.selectedExams = updatedList;
+        myPrep.selectedExamsMeta = updatedMeta;
+        setDoc(doc(db, 'preparationExamStats', preparationExamId), { selectedCount: increment(-1), updatedAt: new Date().toISOString() }, { merge: true }).catch(err => console.error('Unable to update exam stats:', err));
+        renderManageList();
+        renderAfterDataChange();
+      } catch (err) {
+        console.error('Unable to remove exam:', err);
+        alert('Could not remove this exam right now. Please try again.');
+      }
+    }
+
+    /* ================================================================
+       Rendering
+       ================================================================ */
+    function renderSelectScreen() {
+      dashboardScreen.classList.add('hidden');
+      manageOverlay.classList.add('hidden');
+      selectScreen.classList.remove('hidden');
+
+      const selectedIds = new Set();
+      if (!examsCatalog.length) {
+        selectExamGrid.innerHTML = '<div class="select-empty">No preparation exams are available to select right now. Please check back soon.</div>';
+        saveContinueBtn.disabled = true;
+        return;
+      }
+
+      selectExamGrid.innerHTML = examsCatalog.map(e => `
+        <label class="exam-card" data-exam-id="${escapeHtml(e.preparationExamId)}">
+          <input type="checkbox" value="${escapeHtml(e.preparationExamId)}" />
+          ${renderIcon(e.icon)}
+          <div class="exam-meta">
+            <h3>${escapeHtml(e.examName)}</h3>
+            <span>📅 ${escapeHtml(formatExamDate(e.examDate))}</span>
+            ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ''}
+          </div>
+        </label>`).join('');
+
+      function refreshSaveBtn() { saveContinueBtn.disabled = selectedIds.size === 0; }
+
+      selectExamGrid.querySelectorAll('.exam-card').forEach(card => {
+        const checkbox = card.querySelector('input');
+        const examId = card.dataset.examId;
+        card.addEventListener('click', (evt) => {
+          if (evt.target !== checkbox) checkbox.checked = !checkbox.checked;
+          card.classList.toggle('selected', checkbox.checked);
+          if (checkbox.checked) selectedIds.add(examId); else selectedIds.delete(examId);
+          refreshSaveBtn();
+        });
+      });
+
+      saveContinueBtn.onclick = async () => {
+        if (!selectedIds.size) return; // at least one exam required
+        saveContinueBtn.disabled = true;
+        saveContinueBtn.textContent = 'Saving…';
+        try {
+          await saveSelectedExams(selectedIds);
+          renderDashboard();
+        } catch (err) {
+          console.error('Unable to save preparation selection:', err);
+          setStatus('Unable to save your selection right now. Please try again.', 'error');
+        } finally {
+          saveContinueBtn.disabled = false;
+          saveContinueBtn.textContent = 'Save & Continue';
+        }
+      };
+    }
+
+    function renderDashboard() {
+      const list = (myPrep && myPrep.selectedExams) || [];
+      if (!list.length) { renderSelectScreen(); return; }
+
+      selectScreen.classList.add('hidden');
+      manageOverlay.classList.add('hidden');
+      dashboardScreen.classList.remove('hidden');
+      setStatus('Your preparation dashboard is ready.');
+
+      const progressCache = (myPrep && myPrep.progressCache) || {};
+
+      prepGrid.innerHTML = list.map(ref => {
+        const e = resolveExam(ref.preparationExamId);
+        const cached = progressCache[ref.preparationExamId];
+        const pct = cached && typeof cached.overall === 'number' ? cached.overall : 0;
+        const pctLabel = cached ? `${pct}%` : 'Not started';
+        return `
+        <div class="prep-card">
+          <h3>${escapeHtml(e.examName)}</h3>
+          <div class="prep-progress-row"><span>Preparation</span><strong>${pctLabel}</strong></div>
+          <div class="prep-progress-bar"><div class="prep-progress-fill" style="width:${pct}%"></div></div>
+          <p class="prep-date">📅 ${escapeHtml(formatExamDate(e.examDate))} • ${escapeHtml(daysRemainingLabel(e.examDate))}</p>
+          <div class="prep-card-actions">
+            <a class="button-primary" style="display:block;text-align:center;" href="preparation-exam.html?examId=${encodeURIComponent(ref.preparationExamId)}">Continue Preparation</a>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderAfterDataChange() {
+      const list = (myPrep && myPrep.selectedExams) || [];
+      if (!list.length) renderSelectScreen(); else renderDashboard();
+    }
+
+    function renderManageList() {
+      const list = (myPrep && myPrep.selectedExams) || [];
+      manageList.innerHTML = list.length ? list.map(ref => {
+        const e = resolveExam(ref.preparationExamId);
+        return `
+        <div class="manage-row">
+          <div class="manage-meta">
+            <h4>${escapeHtml(e.examName)}</h4>
+            <span>📅 ${escapeHtml(formatExamDate(e.examDate))}</span>
+          </div>
+          <button class="button-danger" type="button" data-remove="${escapeHtml(ref.preparationExamId)}">Remove</button>
+        </div>`;
+      }).join('') : '<div class="empty-state">You have no exams in your preparation list yet.</div>';
+
+      manageList.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const preparationExamId = btn.getAttribute('data-remove');
+          const e = resolveExam(preparationExamId);
+          removeSelectedExam(preparationExamId, e ? e.examName : 'this exam');
+        });
+      });
+
+      renderManageAddGrid();
+    }
+
+    function renderManageAddGrid() {
+      const existingIds = new Set(((myPrep && myPrep.selectedExams) || []).map(e => e.preparationExamId));
+      const addable = examsCatalog.filter(e => !existingIds.has(e.preparationExamId));
+      const selectedIds = new Set();
+
+      if (!addable.length) {
+        manageAddGrid.innerHTML = '<div class="empty-state">You have already added every available exam.</div>';
+        manageAddBtn.disabled = true;
+        return;
+      }
+
+      manageAddGrid.innerHTML = addable.map(e => `
+        <label class="exam-card" data-exam-id="${escapeHtml(e.preparationExamId)}">
+          <input type="checkbox" value="${escapeHtml(e.preparationExamId)}" />
+          ${renderIcon(e.icon)}
+          <div class="exam-meta">
+            <h3>${escapeHtml(e.examName)}</h3>
+            <span>📅 ${escapeHtml(formatExamDate(e.examDate))}</span>
+          </div>
+        </label>`).join('');
+
+      manageAddBtn.disabled = true;
+      manageAddGrid.querySelectorAll('.exam-card').forEach(card => {
+        const checkbox = card.querySelector('input');
+        const examId = card.dataset.examId;
+        card.addEventListener('click', (evt) => {
+          if (evt.target !== checkbox) checkbox.checked = !checkbox.checked;
+          card.classList.toggle('selected', checkbox.checked);
+          if (checkbox.checked) selectedIds.add(examId); else selectedIds.delete(examId);
+          manageAddBtn.disabled = selectedIds.size === 0;
+        });
+      });
+
+      manageAddBtn.onclick = async () => {
+        if (!selectedIds.size) return;
+        manageAddBtn.disabled = true;
+        manageAddBtn.textContent = 'Saving…';
+        try {
+          await saveSelectedExams(selectedIds);
+          renderManageList();
+          renderDashboard();
+        } catch (err) {
+          console.error('Unable to add exams:', err);
+          alert('Could not add the selected exams right now. Please try again.');
+        } finally {
+          manageAddBtn.disabled = false;
+          manageAddBtn.textContent = 'Save Selected Exams';
+        }
+      };
+    }
+
+    addExamBtn.addEventListener('click', () => { renderManageList(); manageOverlay.classList.remove('hidden'); });
+    manageExamBtn.addEventListener('click', () => { renderManageList(); manageOverlay.classList.remove('hidden'); });
+    closeManageBtn.addEventListener('click', () => manageOverlay.classList.add('hidden'));
+
+    /* ================================================================
+       Entry point for a logged-in student
+       ================================================================ */
+    async function initPreparation(uid) {
+      currentUid = uid;
+      setStatus('Loading your preparation…');
+      try {
+        const [, prep] = await Promise.all([loadExamsCatalog(), loadMyPreparation(uid)]);
+        myPrep = prep;
+        if (myPrep && Array.isArray(myPrep.selectedExams) && myPrep.selectedExams.length) {
+          renderDashboard();
+        } else {
+          renderSelectScreen();
+          setStatus('Select the exams you are preparing for to get started.');
+        }
+      } catch (err) {
+        console.error('Error initializing My Preparation:', err);
+        setStatus('Unable to load My Preparation right now. Please refresh the page.', 'error');
+      }
+    }
+
+    // CASE 1 (already authenticated) vs CASE 2 (not authenticated) — same
+    // rule the rest of the site already uses (see account.html): only a
+    // password-auth student session with the synthetic student email
+    // domain counts as logged in. My Preparation shows NO login UI of its
+    // own — an unauthenticated visitor is sent straight to the EXISTING
+    // Mock Test login/register screen, and can come back to this page
+    // afterwards from the nav/Mock Test flow like any other page.
+    logoutBtn.style.display = 'none';
+    watchStudentAuth(auth, onAuthStateChanged, {
+      onLogin: async (user) => {
+        logoutBtn.style.display = '';
+        const stored = getStoredStudent();
+        if (!stored.studentMobile) {
+          try {
+            const snap = await getDoc(doc(db, 'users', user.uid));
+            if (snap.exists()) {
+              const data = snap.data();
+              saveStoredStudent({ studentName: data.name || '', studentMobile: data.mobile || '' });
+            }
+          } catch (err) { console.error('Unable to restore user profile:', err); }
+        }
+        await initPreparation(user.uid);
+      },
+      onLoggedOut: () => {
+        setStatus('Please login to open My Preparation…');
+        window.location.href = 'mock-tests/index.html';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -163,6 +163,9 @@ color:white;
 <div class="card" onclick="showSection('newsSection')">
 📰 Latest News
 </div>
+<div class="card" onclick="showSection('prepExamSection')">
+🎯 Preparation Exams
+</div>
 </div>
 
 <div id="answerSection" class="section">
@@ -1066,6 +1069,124 @@ style="background:#888;margin-left:10px;display:none;">
      Latest News System END
      ================================ -->
 
+<!-- ================================
+     Preparation Exam Manager (My Preparation feature) START
+     This is a SEPARATE exam master used only by the "My Preparation"
+     student feature (my-preparation.html). It does NOT touch, replace,
+     or share data with the existing "exams" collection used by
+     OMR/Answer Keys above.
+     ================================ -->
+<div id="prepExamSection" class="section">
+
+<h2>🎯 Preparation Exam Manager</h2>
+
+<label>Exam Name *</label>
+<input type="text" id="prepExamName" placeholder="जैसे: RSSB BCI 2026">
+
+<label>Exam Date</label>
+<input type="date" id="prepExamDate">
+
+<label>Short Description</label>
+<textarea id="prepExamDescription" rows="3" placeholder="Optional short description shown to students"></textarea>
+
+<label>Logo / Icon (emoji or image URL, optional)</label>
+<input type="text" id="prepExamIcon" placeholder="जैसे: 🎯 या https://example.com/logo.png">
+
+<label>Status</label>
+<select id="prepExamStatus">
+<option value="Active" selected>Active</option>
+<option value="Inactive">Inactive</option>
+</select>
+
+<button id="prepExamSaveBtn" onclick="savePreparationExam()">
+➕ Add Preparation Exam
+</button>
+
+<button id="prepExamCancelBtn"
+onclick="cancelPreparationExamEdit()"
+style="background:#888;margin-left:10px;display:none;">
+✖ Cancel Edit
+</button>
+
+<hr>
+
+<h3 style="margin-top:15px;">📋 Preparation Exam List</h3>
+
+<div style="overflow-x:auto;">
+<table id="prepExamTable">
+<thead>
+<tr>
+<th>Exam Date</th>
+<th>Exam Name</th>
+<th>Status</th>
+<th>Edit</th>
+<th>Delete</th>
+</tr>
+</thead>
+<tbody id="prepExamTableBody">
+<tr><td colspan="5">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+
+<hr style="margin:26px 0;">
+
+<h3>🧩 Exam Structure (Subjects → Chapters → Topics)</h3>
+<p style="color:#666;font-size:13px;">Pick an exam, then build its Subject → Chapter → Topic tree. Students see this exact tree on the "Syllabus" page for that exam.</p>
+
+<label>Select Preparation Exam</label>
+<select id="prepStructureExamSelect" onchange="onPrepStructureExamChange()">
+<option value="">-- Select Exam --</option>
+</select>
+
+<div id="prepStructureAnalytics" style="margin:10px 0;font-size:13px;color:#333;"></div>
+
+<button onclick="addPrepSubject()" style="margin-top:10px;">➕ Add Subject</button>
+
+<div id="prepStructureTree" style="margin-top:14px;">
+<p style="color:#888;">Select an exam above to manage its structure.</p>
+</div>
+
+<hr style="margin:26px 0;">
+
+<h3>🔗 Resource Mapping (MCQ / PYQ / Notes / Mock / Current Affairs)</h3>
+<p style="color:#666;font-size:13px;">Link existing Quiz topics, PYQ papers, Notes PDFs, and Mock categories to a preparation exam (and optionally a specific topic) so students see them inside "My Preparation".</p>
+
+<label>Mapping Type</label>
+<select id="prepMapType" onchange="onPrepMapTypeChange()">
+<option value="mcq">MCQ (Quiz Topic)</option>
+<option value="pyq">PYQ (Download Paper)</option>
+<option value="notes">Notes (PDF)</option>
+<option value="mock">Mock Test Category (all mocks in it)</option>
+<option value="mockTest">Single Mock Test</option>
+<option value="currentAffairs">Current Affairs (Daily Suja PDF)</option>
+</select>
+
+<label>Link to Topic (optional — leave blank to map at exam level, e.g. for Mock)</label>
+<select id="prepMapTopicSelect">
+<option value="">-- Whole Exam (no specific topic) --</option>
+</select>
+
+<div id="prepMapRefFieldWrap">
+<label id="prepMapRefLabel">Quiz Subject</label>
+<select id="prepMapRefPrimarySelect"></select>
+<div id="prepMapRefSecondaryWrap" style="margin-top:8px;">
+<label>Quiz Topic</label>
+<select id="prepMapRefSecondarySelect"></select>
+</div>
+</div>
+
+<button onclick="addPrepMapping()" style="margin-top:10px;">🔗 Add Mapping</button>
+
+<div id="prepMappingList" style="margin-top:16px;">
+<p style="color:#888;">Select an exam above to see its mappings.</p>
+</div>
+
+</div>
+<!-- ================================
+     Preparation Exam Manager (My Preparation feature) END
+     ================================ -->
+
 <script type="module">
 
 import {
@@ -1087,7 +1208,8 @@ updateDoc,
 onSnapshot,
 serverTimestamp,
 query,
-where
+where,
+orderBy
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -5775,6 +5897,776 @@ attachMonthlyMcqAdminListener();
 
 // ================================
 // Monthly Sujas MCQ System END
+// ================================
+
+// ================================
+// Preparation Exam Manager START (My Preparation feature)
+// Reuses the same db/guardAdmin already initialized above - no second
+// Firebase init, no separate admin login. Writes only to the new
+// `preparationExams` collection; the existing `exams` collection used
+// by Answer Keys/OMR above is never read or written here. Follows the
+// exact add/edit/delete/toggle/realtime pattern used by the Latest
+// News Manager for consistency across the admin panel.
+// ================================
+let prepExamLiveList = [];
+let prepExamEditingId = null;
+
+window.savePreparationExam = async function(){
+
+try{
+
+const examName = document.getElementById("prepExamName").value.trim();
+const examDate = document.getElementById("prepExamDate").value;
+const description = document.getElementById("prepExamDescription").value.trim();
+const icon = document.getElementById("prepExamIcon").value.trim();
+const status = document.getElementById("prepExamStatus").value;
+
+if(examName === ""){
+alert("Exam Name भरें");
+return;
+}
+
+if(prepExamEditingId){
+
+await updateDoc(
+doc(db,"preparationExams",prepExamEditingId),
+{
+examName,
+examDate,
+description,
+icon,
+status,
+updatedAt:new Date().toISOString()
+}
+);
+
+alert("Preparation Exam Updated ✅");
+
+}else{
+
+await addDoc(
+collection(db,"preparationExams"),
+{
+examName,
+examDate,
+description,
+icon,
+status,
+createdAt:new Date().toISOString(),
+updatedAt:new Date().toISOString()
+}
+);
+
+alert("Preparation Exam Added ✅");
+
+}
+
+resetPreparationExamForm();
+
+}
+catch(error){
+
+alert(error.message);
+
+}
+
+};
+
+function resetPreparationExamForm(){
+
+prepExamEditingId = null;
+
+document.getElementById("prepExamName").value = "";
+document.getElementById("prepExamDate").value = "";
+document.getElementById("prepExamDescription").value = "";
+document.getElementById("prepExamIcon").value = "";
+document.getElementById("prepExamStatus").value = "Active";
+
+document.getElementById("prepExamSaveBtn").textContent = "➕ Add Preparation Exam";
+document.getElementById("prepExamCancelBtn").style.display = "none";
+
+}
+
+window.cancelPreparationExamEdit = function(){
+
+resetPreparationExamForm();
+
+};
+
+window.editPreparationExam = function(id){
+
+const item = prepExamLiveList.find((e)=>e.id === id);
+
+if(!item) return;
+
+prepExamEditingId = id;
+
+document.getElementById("prepExamName").value = item.examName || "";
+document.getElementById("prepExamDate").value = item.examDate || "";
+document.getElementById("prepExamDescription").value = item.description || "";
+document.getElementById("prepExamIcon").value = item.icon || "";
+document.getElementById("prepExamStatus").value = item.status || "Active";
+
+document.getElementById("prepExamSaveBtn").textContent = "💾 Update Preparation Exam";
+document.getElementById("prepExamCancelBtn").style.display = "inline-block";
+
+document.getElementById("prepExamName").scrollIntoView({behavior:"smooth",block:"center"});
+
+};
+
+window.deletePreparationExam = async function(id){
+
+if(!confirm("यह Preparation Exam Delete करना है?\n\nयह सिर्फ Preparation Exam Master से हटेगा - किसी student का Mock Test result, account या अन्य data प्रभावित नहीं होगा."))
+return;
+
+await deleteDoc(
+doc(db,"preparationExams",id)
+);
+
+if(prepExamEditingId === id){
+resetPreparationExamForm();
+}
+
+alert("Preparation Exam Deleted ✅");
+
+};
+
+window.togglePreparationExamStatus = async function(id,currentStatus){
+
+const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+
+await updateDoc(
+doc(db,"preparationExams",id),
+{
+status:newStatus,
+updatedAt:new Date().toISOString()
+}
+);
+
+};
+
+function renderPrepStructureExamOptions(){
+
+const select = document.getElementById("prepStructureExamSelect");
+
+if(!select) return;
+
+const previousValue = select.value;
+
+select.innerHTML = '<option value="">-- Select Exam --</option>' +
+prepExamLiveList.map((item)=>
+`<option value="${item.id}">${(item.icon ? item.icon + " " : "")}${item.examName || "Exam"}</option>`
+).join("");
+
+if(previousValue && prepExamLiveList.some((item)=>item.id === previousValue)){
+select.value = previousValue;
+}
+
+}
+
+function renderPreparationExamTable(){
+
+const body = document.getElementById("prepExamTableBody");
+
+if(!body) return;
+
+renderPrepStructureExamOptions();
+
+if(!prepExamLiveList.length){
+body.innerHTML = '<tr><td colspan="5">कोई Preparation Exam नहीं मिली</td></tr>';
+return;
+}
+
+body.innerHTML = "";
+
+prepExamLiveList.forEach((item)=>{
+
+body.innerHTML += `
+
+<tr>
+<td>${item.examDate || ""}</td>
+<td>${item.icon ? item.icon + " " : ""}${item.examName || ""}</td>
+<td>
+<button
+onclick="togglePreparationExamStatus('${item.id}','${item.status}')"
+style="background:${item.status === "Active" ? "#28a745" : "#888"};padding:6px 12px;font-size:13px;">
+${item.status === "Active" ? "🟢 Active" : "🔴 Inactive"}
+</button>
+</td>
+<td>
+<button onclick="editPreparationExam('${item.id}')" style="padding:6px 12px;font-size:13px;">
+✏️ Edit
+</button>
+</td>
+<td>
+<button
+onclick="deletePreparationExam('${item.id}')"
+style="background:red;padding:6px 12px;font-size:13px;">
+🗑 Delete
+</button>
+</td>
+</tr>
+
+`;
+
+});
+
+}
+
+function attachPreparationExamAdminListener(){
+
+// Single realtime listener - keeps the table live in sync with
+// Firestore (add/edit/delete/status toggle), same pattern as the
+// Latest News Manager above.
+onSnapshot(collection(db,"preparationExams"), (snapshot)=>{
+
+const items = [];
+
+snapshot.forEach((docItem)=>{
+
+items.push({
+id:docItem.id,
+...docItem.data()
+});
+
+});
+
+// Newest exam date first; undated exams sort last.
+items.sort((a,b)=>{
+if(a.examDate && b.examDate) return (b.examDate || "").localeCompare(a.examDate || "");
+if(a.examDate) return -1;
+if(b.examDate) return 1;
+return (a.examName || "").localeCompare(b.examName || "");
+});
+
+prepExamLiveList = items;
+
+renderPreparationExamTable();
+
+});
+
+}
+
+attachPreparationExamAdminListener();
+
+// ================================
+// Preparation Exam Structure + Resource Mapping (My Preparation feature)
+// Subjects/Chapters/Topics are stored as flat collections, each carrying
+// examId (and subjectId/chapterId where relevant) so student-side pages
+// can query directly by examId without joining through parents. Mappings
+// link EXISTING content (quizTopics, downloads, notesPdfs, mockCategories)
+// to a preparation exam/topic - nothing here duplicates that content.
+// ================================
+let prepStructureExamId = null;
+let prepStructureSubjects = [];
+let prepStructureChapters = [];
+let prepStructureTopics = [];
+
+let quizSubjectsCache = null;
+let quizTopicsCacheBySubject = {};
+let downloadsCache = null;
+let notesPdfsCache = null;
+let mockCategoriesCache = null;
+let mockTestsCache = null;
+let dailySujasCache = null;
+
+window.onPrepStructureExamChange = async function(){
+
+const select = document.getElementById("prepStructureExamSelect");
+prepStructureExamId = select.value || null;
+
+if(!prepStructureExamId){
+document.getElementById("prepStructureTree").innerHTML = '<p style="color:#888;">Select an exam above to manage its structure.</p>';
+document.getElementById("prepStructureAnalytics").innerHTML = "";
+document.getElementById("prepMappingList").innerHTML = '<p style="color:#888;">Select an exam above to see its mappings.</p>';
+return;
+}
+
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+await onPrepMapTypeChange();
+await loadPrepMappings();
+
+};
+
+async function loadPrepStructure(){
+
+document.getElementById("prepStructureTree").innerHTML = "Loading...";
+
+const [subjectsSnap, chaptersSnap, topicsSnap] = await Promise.all([
+getDocs(query(collection(db,"preparationSubjects"), where("examId","==",prepStructureExamId))),
+getDocs(query(collection(db,"preparationChapters"), where("examId","==",prepStructureExamId))),
+getDocs(query(collection(db,"preparationTopics"), where("examId","==",prepStructureExamId)))
+]);
+
+prepStructureSubjects = subjectsSnap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+prepStructureChapters = chaptersSnap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+prepStructureTopics = topicsSnap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+
+renderPrepStructureTree();
+
+}
+
+async function loadPrepStructureAnalytics(){
+
+const el = document.getElementById("prepStructureAnalytics");
+el.innerHTML = "Loading analytics...";
+
+let selectedCount = 0;
+try{
+const snap = await getDoc(doc(db,"preparationExamStats",prepStructureExamId));
+if(snap.exists()) selectedCount = snap.data().selectedCount || 0;
+}catch(err){ console.error(err); }
+
+el.innerHTML =
+`👥 <strong>${selectedCount}</strong> student(s) have selected this exam &nbsp;|&nbsp; ` +
+`📘 ${prepStructureSubjects.length} subjects, ${prepStructureChapters.length} chapters, ${prepStructureTopics.length} topics defined.`;
+
+}
+
+function renderPrepStructureTree(){
+
+const container = document.getElementById("prepStructureTree");
+
+if(!prepStructureSubjects.length){
+container.innerHTML = '<p style="color:#888;">No subjects yet. Click "Add Subject" above.</p>';
+return;
+}
+
+let html = "";
+
+prepStructureSubjects.forEach((subject,sIdx)=>{
+
+const chapters = prepStructureChapters.filter((c)=>c.subjectId === subject.id);
+
+html += `
+<div style="border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:12px;background:#fafbfc;">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+<strong>📘 ${subject.name}</strong>
+<span>
+<button onclick="movePrepSubject('${subject.id}',-1)" ${sIdx===0?"disabled":""} style="padding:4px 8px;font-size:12px;">⬆</button>
+<button onclick="movePrepSubject('${subject.id}',1)" ${sIdx===prepStructureSubjects.length-1?"disabled":""} style="padding:4px 8px;font-size:12px;">⬇</button>
+<button onclick="editPrepSubject('${subject.id}')" style="padding:4px 8px;font-size:12px;">✏️</button>
+<button onclick="deletePrepSubject('${subject.id}')" style="padding:4px 8px;font-size:12px;background:red;color:#fff;">🗑</button>
+<button onclick="addPrepChapter('${subject.id}')" style="padding:4px 8px;font-size:12px;">➕ Chapter</button>
+</span>
+</div>
+<div style="margin-left:18px;margin-top:8px;">
+`;
+
+chapters.forEach((chapter,cIdx)=>{
+
+const topics = prepStructureTopics.filter((t)=>t.chapterId === chapter.id);
+
+html += `
+<div style="border-left:3px solid #0b4ea2;padding-left:10px;margin-bottom:10px;">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+<span>📗 ${chapter.name}</span>
+<span>
+<button onclick="movePrepChapter('${chapter.id}','${subject.id}',-1)" ${cIdx===0?"disabled":""} style="padding:3px 7px;font-size:11px;">⬆</button>
+<button onclick="movePrepChapter('${chapter.id}','${subject.id}',1)" ${cIdx===chapters.length-1?"disabled":""} style="padding:3px 7px;font-size:11px;">⬇</button>
+<button onclick="editPrepChapter('${chapter.id}')" style="padding:3px 7px;font-size:11px;">✏️</button>
+<button onclick="deletePrepChapter('${chapter.id}')" style="padding:3px 7px;font-size:11px;background:red;color:#fff;">🗑</button>
+<button onclick="addPrepTopic('${chapter.id}','${subject.id}')" style="padding:3px 7px;font-size:11px;">➕ Topic</button>
+</span>
+</div>
+<div style="margin-left:16px;margin-top:4px;">
+`;
+
+topics.forEach((topic,tIdx)=>{
+html += `
+<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:13px;flex-wrap:wrap;gap:6px;">
+<span>📄 ${topic.name}</span>
+<span>
+<button onclick="movePrepTopic('${topic.id}','${chapter.id}',-1)" ${tIdx===0?"disabled":""} style="padding:2px 6px;font-size:11px;">⬆</button>
+<button onclick="movePrepTopic('${topic.id}','${chapter.id}',1)" ${tIdx===topics.length-1?"disabled":""} style="padding:2px 6px;font-size:11px;">⬇</button>
+<button onclick="editPrepTopic('${topic.id}')" style="padding:2px 6px;font-size:11px;">✏️</button>
+<button onclick="deletePrepTopic('${topic.id}')" style="padding:2px 6px;font-size:11px;background:red;color:#fff;">🗑</button>
+</span>
+</div>
+`;
+});
+
+if(!topics.length) html += '<p style="color:#aaa;font-size:12px;">No topics yet.</p>';
+
+html += `</div></div>`;
+
+});
+
+if(!chapters.length) html += '<p style="color:#aaa;font-size:12px;">No chapters yet.</p>';
+
+html += `</div></div>`;
+
+});
+
+container.innerHTML = html;
+
+}
+
+// ---- Subject CRUD ----
+
+window.addPrepSubject = async function(){
+if(!prepStructureExamId){ alert("पहले ऊपर Exam Select करें"); return; }
+const name = prompt("Subject Name:");
+if(!name || !name.trim()) return;
+const maxOrder = prepStructureSubjects.reduce((m,s)=>Math.max(m,s.order||0),0);
+await addDoc(collection(db,"preparationSubjects"),{
+examId:prepStructureExamId, name:name.trim(), order:maxOrder+1, createdAt:new Date().toISOString()
+});
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.editPrepSubject = async function(id){
+const item = prepStructureSubjects.find((s)=>s.id===id);
+if(!item) return;
+const name = prompt("Subject Name:", item.name||"");
+if(name===null || !name.trim()) return;
+await updateDoc(doc(db,"preparationSubjects",id),{name:name.trim()});
+await loadPrepStructure();
+populatePrepMapTopicSelect();
+};
+
+window.deletePrepSubject = async function(id){
+const hasChapters = prepStructureChapters.some((c)=>c.subjectId===id);
+if(hasChapters){ alert("पहले इस Subject के सभी Chapters Delete करें।"); return; }
+if(!confirm("यह Subject Delete करें?")) return;
+await deleteDoc(doc(db,"preparationSubjects",id));
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.movePrepSubject = async function(id,direction){
+const idx = prepStructureSubjects.findIndex((s)=>s.id===id);
+const swapIdx = idx+direction;
+if(idx<0 || swapIdx<0 || swapIdx>=prepStructureSubjects.length) return;
+const a = prepStructureSubjects[idx], b = prepStructureSubjects[swapIdx];
+await Promise.all([
+updateDoc(doc(db,"preparationSubjects",a.id),{order:b.order||0}),
+updateDoc(doc(db,"preparationSubjects",b.id),{order:a.order||0})
+]);
+await loadPrepStructure();
+};
+
+// ---- Chapter CRUD ----
+
+window.addPrepChapter = async function(subjectId){
+const name = prompt("Chapter Name:");
+if(!name || !name.trim()) return;
+const siblingChapters = prepStructureChapters.filter((c)=>c.subjectId===subjectId);
+const maxOrder = siblingChapters.reduce((m,c)=>Math.max(m,c.order||0),0);
+await addDoc(collection(db,"preparationChapters"),{
+examId:prepStructureExamId, subjectId, name:name.trim(), order:maxOrder+1, createdAt:new Date().toISOString()
+});
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.editPrepChapter = async function(id){
+const item = prepStructureChapters.find((c)=>c.id===id);
+if(!item) return;
+const name = prompt("Chapter Name:", item.name||"");
+if(name===null || !name.trim()) return;
+await updateDoc(doc(db,"preparationChapters",id),{name:name.trim()});
+await loadPrepStructure();
+populatePrepMapTopicSelect();
+};
+
+window.deletePrepChapter = async function(id){
+const hasTopics = prepStructureTopics.some((t)=>t.chapterId===id);
+if(hasTopics){ alert("पहले इस Chapter के सभी Topics Delete करें।"); return; }
+if(!confirm("यह Chapter Delete करें?")) return;
+await deleteDoc(doc(db,"preparationChapters",id));
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.movePrepChapter = async function(id,subjectId,direction){
+const siblings = prepStructureChapters.filter((c)=>c.subjectId===subjectId);
+const idx = siblings.findIndex((c)=>c.id===id);
+const swapIdx = idx+direction;
+if(idx<0 || swapIdx<0 || swapIdx>=siblings.length) return;
+const a = siblings[idx], b = siblings[swapIdx];
+await Promise.all([
+updateDoc(doc(db,"preparationChapters",a.id),{order:b.order||0}),
+updateDoc(doc(db,"preparationChapters",b.id),{order:a.order||0})
+]);
+await loadPrepStructure();
+};
+
+// ---- Topic CRUD ----
+
+window.addPrepTopic = async function(chapterId,subjectId){
+const name = prompt("Topic Name:");
+if(!name || !name.trim()) return;
+const siblingTopics = prepStructureTopics.filter((t)=>t.chapterId===chapterId);
+const maxOrder = siblingTopics.reduce((m,t)=>Math.max(m,t.order||0),0);
+await addDoc(collection(db,"preparationTopics"),{
+examId:prepStructureExamId, subjectId, chapterId, name:name.trim(), order:maxOrder+1, createdAt:new Date().toISOString()
+});
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.editPrepTopic = async function(id){
+const item = prepStructureTopics.find((t)=>t.id===id);
+if(!item) return;
+const name = prompt("Topic Name:", item.name||"");
+if(name===null || !name.trim()) return;
+await updateDoc(doc(db,"preparationTopics",id),{name:name.trim()});
+await loadPrepStructure();
+populatePrepMapTopicSelect();
+};
+
+window.deletePrepTopic = async function(id){
+if(!confirm("यह Topic Delete करें? Student Progress और Mapping से इसका लिंक भी बेअसर हो जाएगा।")) return;
+await deleteDoc(doc(db,"preparationTopics",id));
+await loadPrepStructure();
+await loadPrepStructureAnalytics();
+populatePrepMapTopicSelect();
+};
+
+window.movePrepTopic = async function(id,chapterId,direction){
+const siblings = prepStructureTopics.filter((t)=>t.chapterId===chapterId);
+const idx = siblings.findIndex((t)=>t.id===id);
+const swapIdx = idx+direction;
+if(idx<0 || swapIdx<0 || swapIdx>=siblings.length) return;
+const a = siblings[idx], b = siblings[swapIdx];
+await Promise.all([
+updateDoc(doc(db,"preparationTopics",a.id),{order:b.order||0}),
+updateDoc(doc(db,"preparationTopics",b.id),{order:a.order||0})
+]);
+await loadPrepStructure();
+};
+
+// ---- Resource Mapping ----
+
+function populatePrepMapTopicSelect(){
+
+const select = document.getElementById("prepMapTopicSelect");
+if(!select) return;
+
+const subjectsById = Object.fromEntries(prepStructureSubjects.map((s)=>[s.id,s]));
+const chaptersById = Object.fromEntries(prepStructureChapters.map((c)=>[c.id,c]));
+
+select.innerHTML = '<option value="">-- Whole Exam (no specific topic) --</option>' +
+prepStructureTopics.map((t)=>{
+const chapter = chaptersById[t.chapterId];
+const subject = chapter ? subjectsById[chapter.subjectId] : null;
+const label = `${subject ? subject.name : "?"} > ${chapter ? chapter.name : "?"} > ${t.name}`;
+return `<option value="${t.id}" data-subject-id="${chapter ? chapter.subjectId : ""}" data-chapter-id="${t.chapterId}">${label}</option>`;
+}).join("");
+
+}
+
+async function loadQuizSubjectsCache(){
+if(quizSubjectsCache) return quizSubjectsCache;
+const snap = await getDocs(collection(db,"quizSubjects"));
+quizSubjectsCache = snap.docs.map((d)=>({id:d.id,...d.data()}));
+return quizSubjectsCache;
+}
+
+async function loadQuizTopicsCache(subjectId){
+if(quizTopicsCacheBySubject[subjectId]) return quizTopicsCacheBySubject[subjectId];
+const snap = await getDocs(query(collection(db,"quizTopics"),where("subjectId","==",subjectId)));
+const list = snap.docs.map((d)=>({id:d.id,...d.data()}));
+quizTopicsCacheBySubject[subjectId] = list;
+return list;
+}
+
+async function loadDownloadsCache(){
+if(downloadsCache) return downloadsCache;
+const snap = await getDocs(collection(db,"downloads"));
+downloadsCache = snap.docs.map((d)=>({id:d.id,...d.data()}));
+return downloadsCache;
+}
+
+async function loadNotesPdfsCache(){
+if(notesPdfsCache) return notesPdfsCache;
+const snap = await getDocs(collection(db,"notesPdfs"));
+notesPdfsCache = snap.docs.map((d)=>({id:d.id,...d.data()}));
+return notesPdfsCache;
+}
+
+async function loadMockCategoriesCache(){
+if(mockCategoriesCache) return mockCategoriesCache;
+const snap = await getDocs(collection(db,"mockCategories"));
+mockCategoriesCache = snap.docs.map((d)=>({id:d.id,...d.data()}));
+return mockCategoriesCache;
+}
+
+async function loadMockTestsCache(){
+if(mockTestsCache) return mockTestsCache;
+const snap = await getDocs(collection(db,"mockTests"));
+mockTestsCache = snap.docs.map((d)=>({id:d.id,...d.data()}));
+return mockTestsCache;
+}
+
+async function loadDailySujasCache(){
+if(dailySujasCache) return dailySujasCache;
+const snap = await getDocs(collection(db,"dailySujas"));
+dailySujasCache = snap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")));
+return dailySujasCache;
+}
+
+window.onPrepMapTypeChange = async function(){
+
+const type = document.getElementById("prepMapType").value;
+const label = document.getElementById("prepMapRefLabel");
+const secondaryWrap = document.getElementById("prepMapRefSecondaryWrap");
+const primarySelect = document.getElementById("prepMapRefPrimarySelect");
+const secondarySelect = document.getElementById("prepMapRefSecondarySelect");
+
+primarySelect.innerHTML = "<option>Loading...</option>";
+secondarySelect.innerHTML = "";
+primarySelect.onchange = null;
+
+if(type==="mcq"){
+label.textContent = "Quiz Subject";
+secondaryWrap.style.display = "block";
+const subjects = await loadQuizSubjectsCache();
+primarySelect.innerHTML = subjects.map((s)=>`<option value="${s.id}">${s.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Quiz Subject नहीं मिला</option>";
+primarySelect.onchange = async function(){
+const topics = await loadQuizTopicsCache(primarySelect.value);
+secondarySelect.innerHTML = topics.map((t)=>`<option value="${t.id}">${t.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Topic नहीं मिला</option>";
+};
+if(subjects.length) primarySelect.onchange();
+}else if(type==="pyq"){
+label.textContent = "PYQ Paper (from Downloads)";
+secondaryWrap.style.display = "none";
+const list = await loadDownloadsCache();
+primarySelect.innerHTML = list.map((d)=>`<option value="${d.id}">${d.paperName||"Untitled"}</option>`).join("") || "<option value=''>कोई Download नहीं मिला</option>";
+}else if(type==="notes"){
+label.textContent = "Notes PDF";
+secondaryWrap.style.display = "none";
+const list = await loadNotesPdfsCache();
+primarySelect.innerHTML = list.map((n)=>`<option value="${n.id}">${n.noteTitle||"Untitled"}</option>`).join("") || "<option value=''>कोई Note नहीं मिला</option>";
+}else if(type==="mock"){
+label.textContent = "Mock Category";
+secondaryWrap.style.display = "none";
+const list = await loadMockCategoriesCache();
+primarySelect.innerHTML = list.map((c)=>`<option value="${c.id}">${c.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Mock Category नहीं मिली</option>";
+}else if(type==="mockTest"){
+label.textContent = "Mock Test";
+secondaryWrap.style.display = "none";
+const list = await loadMockTestsCache();
+primarySelect.innerHTML = list.map((m)=>`<option value="${m.id}">${m.title||m.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Mock Test नहीं मिला</option>";
+}else if(type==="currentAffairs"){
+label.textContent = "Daily Suja / Current Affairs PDF";
+secondaryWrap.style.display = "none";
+const list = await loadDailySujasCache();
+primarySelect.innerHTML = list.map((d)=>`<option value="${d.id}">${d.title||"Untitled"}</option>`).join("") || "<option value=''>कोई Current Affairs PDF नहीं मिला</option>";
+}
+
+};
+
+window.addPrepMapping = async function(){
+
+if(!prepStructureExamId){ alert("पहले ऊपर Exam Select करें"); return; }
+
+const type = document.getElementById("prepMapType").value;
+const topicSelect = document.getElementById("prepMapTopicSelect");
+const topicId = topicSelect.value || null;
+const topicOption = topicId ? topicSelect.options[topicSelect.selectedIndex] : null;
+
+const primarySelect = document.getElementById("prepMapRefPrimarySelect");
+if(!primarySelect.value){ alert("Reference चुनें"); return; }
+
+const payload = {
+examId: prepStructureExamId,
+type,
+topicId: topicId || null,
+subjectId: topicOption ? (topicOption.dataset.subjectId || null) : null,
+chapterId: topicOption ? (topicOption.dataset.chapterId || null) : null,
+createdAt: new Date().toISOString()
+};
+
+if(type==="mcq"){
+const secondarySelect = document.getElementById("prepMapRefSecondarySelect");
+if(!secondarySelect.value){ alert("Quiz Topic चुनें"); return; }
+payload.refCollection = "quizTopics";
+payload.refId = secondarySelect.value;
+payload.refParentId = primarySelect.value;
+payload.refLabel = `${primarySelect.options[primarySelect.selectedIndex].textContent} > ${secondarySelect.options[secondarySelect.selectedIndex].textContent}`;
+}else if(type==="pyq"){
+const item = (downloadsCache||[]).find((d)=>d.id===primarySelect.value);
+payload.refCollection = "downloads";
+payload.refId = primarySelect.value;
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+payload.refUrl = item ? (item.paperLink||"") : "";
+}else if(type==="notes"){
+const item = (notesPdfsCache||[]).find((n)=>n.id===primarySelect.value);
+payload.refCollection = "notesPdfs";
+payload.refId = primarySelect.value;
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+payload.refUrl = item ? (item.pdfLink||"") : "";
+}else if(type==="mock"){
+payload.refCollection = "mockCategories";
+payload.refId = primarySelect.value;
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+}else if(type==="mockTest"){
+payload.refCollection = "mockTests";
+payload.refId = primarySelect.value;
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+}else if(type==="currentAffairs"){
+const item = (dailySujasCache||[]).find((d)=>d.id===primarySelect.value);
+payload.refCollection = "dailySujas";
+payload.refId = primarySelect.value;
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+payload.refUrl = item ? (item.pdfLink||"") : "";
+// optional Subject/Category: taken from the "Link to Topic" selector (Subject > Chapter > Topic label)
+payload.category = topicOption ? topicOption.textContent : "";
+}
+
+// Prevent duplicate mapping of the same item to the same exam/topic.
+const dupSnap = await getDocs(query(collection(db,"preparationMappings"), where("examId","==",prepStructureExamId), where("type","==",type)));
+if(dupSnap.docs.some((d)=>d.data().refId===payload.refId && (d.data().topicId||null)===payload.topicId)){ alert("यह Mapping पहले से मौजूद है"); return; }
+
+await addDoc(collection(db,"preparationMappings"), payload);
+alert("Mapping Added ✅");
+await loadPrepMappings();
+
+};
+
+async function loadPrepMappings(){
+
+const container = document.getElementById("prepMappingList");
+container.innerHTML = "Loading...";
+
+const snap = await getDocs(query(collection(db,"preparationMappings"), where("examId","==",prepStructureExamId)));
+const list = snap.docs.map((d)=>({id:d.id,...d.data()}));
+
+if(!list.length){
+container.innerHTML = '<p style="color:#888;">No mappings yet for this exam.</p>';
+return;
+}
+
+const typeIcon = { mcq:"📝", pyq:"📄", notes:"📘", mock:"🧪", mockTest:"🧪", currentAffairs:"🗞️" };
+
+container.innerHTML = list.map((m)=>`
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid #eee;border-radius:8px;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+<span>${typeIcon[m.type]||"🔗"} <strong>${(m.type||"").toUpperCase()}</strong> — ${m.refLabel||m.refId}<br>
+<small style="color:#888;">${m.topicId ? "Linked to a specific topic" : "Whole exam"}</small></span>
+<button onclick="deletePrepMapping('${m.id}')" style="background:red;color:#fff;padding:6px 10px;font-size:12px;">🗑 Delete</button>
+</div>
+`).join("");
+
+}
+
+window.deletePrepMapping = async function(id){
+if(!confirm("यह Mapping हटाएं?")) return;
+await deleteDoc(doc(db,"preparationMappings",id));
+await loadPrepMappings();
+};
+
+// ================================
+// Preparation Exam Manager END
 // ================================
 
 </script>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Syllabus | My Preparation</title>
+<style>
+  :root { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+  a { color: inherit; text-decoration: none; }
+  .page-shell { max-width: 900px; margin: 0 auto; padding: 22px 18px 48px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 1.4rem; color: #102a52; }
+  .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 12px; padding: 10px 16px; background: #fff; color: #0b4ea2; cursor: pointer; font-weight: 600; }
+  .status-bar { margin-bottom: 16px; padding: 12px 16px; border-radius: 14px; background: #eef4ff; color: #102a52; font-weight: 600; }
+  .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { border: 1px solid rgba(11,78,162,.25); background: #fff; color: #0b4ea2; border-radius: 999px; padding: 8px 16px; cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+  .tab-btn.active { background: #0b4ea2; color: #fff; }
+
+  .subject-block { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 18px; margin-bottom: 14px; overflow: hidden; }
+  .subject-head { padding: 14px 18px; font-weight: 700; color: #102a52; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f7faff; }
+  .subject-body { padding: 10px 18px 14px; display: none; }
+  .subject-body.open { display: block; }
+  .chapter-block { margin: 10px 0; }
+  .chapter-head { font-weight: 600; color: #22406c; margin-bottom: 6px; font-size: 0.95rem; }
+  .topic-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f8fafd; margin-bottom: 6px; flex-wrap: wrap; }
+  .topic-row .topic-name { font-size: 0.92rem; }
+  .status-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .status-btn { border: 1px solid rgba(35,49,79,.15); background: #fff; border-radius: 8px; padding: 5px 9px; font-size: 0.74rem; cursor: pointer; color: #556180; }
+  .status-btn.active-not_started { background: #eef1f6; color: #556180; border-color: #c6ccd8; }
+  .status-btn.active-in_progress { background: #fff3cd; color: #8a6400; border-color: #ffdf85; }
+  .status-btn.active-completed { background: #e4f8ec; color: #197a3a; border-color: #a9e3bf; }
+  .bookmark-btn { border: none; background: none; cursor: pointer; font-size: 1.05rem; }
+
+  .empty-state { padding: 26px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+  @media (max-width: 560px) { .topic-row { flex-direction: column; align-items: flex-start; } }
+</style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <h1>📘 Syllabus</h1>
+      <a class="button-secondary" id="backLink" href="my-preparation.html">⬅ Back</a>
+    </header>
+    <div id="statusBar" class="status-bar">Loading…</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabSyllabus" type="button">Full Syllabus</button>
+      <button class="tab-btn" id="tabRevision" type="button">🔖 Revision</button>
+    </div>
+
+    <div id="syllabusView"></div>
+    <div id="revisionView" style="display:none;"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import { watchStudentAuth, escapeHtml } from './preparation-shared.js';
+
+    const params = new URLSearchParams(location.search);
+    const examId = params.get('examId');
+    document.getElementById('backLink').href = examId ? `preparation-exam.html?examId=${encodeURIComponent(examId)}` : 'my-preparation.html';
+
+    const statusBar = document.getElementById('statusBar');
+    function setStatus(msg, kind) { statusBar.textContent = msg; statusBar.className = kind === 'error' ? 'status-bar error' : 'status-bar'; }
+    if (!examId) setStatus('No exam selected.', 'error');
+
+    let currentUid = null;
+    let subjects = [], chapters = [], topics = [];
+    let progressByTopicId = {};   // { topicId: { status } }
+    let revisionByTopicId = {};   // { topicId: { status: 'pending'|'done' } }
+
+    const STATUS_LABELS = { not_started: 'Not Started', in_progress: 'In Progress', completed: 'Completed' };
+
+    async function loadAll(uid) {
+      const [subjSnap, chapSnap, topicSnap, progressSnap, revisionSnap] = await Promise.all([
+        getDocs(query(collection(db, 'preparationSubjects'), where('examId', '==', examId))),
+        getDocs(query(collection(db, 'preparationChapters'), where('examId', '==', examId))),
+        getDocs(query(collection(db, 'preparationTopics'), where('examId', '==', examId))),
+        getDocs(query(collection(db, 'studentPreparations', uid, 'topicProgress'), where('preparationExamId', '==', examId))),
+        getDocs(query(collection(db, 'studentPreparations', uid, 'revision'), where('preparationExamId', '==', examId)))
+      ]);
+      subjects = subjSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+      chapters = chapSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+      topics = topicSnap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+      progressByTopicId = {}; progressSnap.forEach(d => { progressByTopicId[d.id] = d.data(); });
+      revisionByTopicId = {}; revisionSnap.forEach(d => { revisionByTopicId[d.id] = d.data(); });
+    }
+
+    function topicRowHtml(topic) {
+      const status = (progressByTopicId[topic.id] && progressByTopicId[topic.id].status) || 'not_started';
+      const flagged = revisionByTopicId[topic.id] && revisionByTopicId[topic.id].status === 'pending';
+      return `
+        <div class="topic-row" data-topic-id="${escapeHtml(topic.id)}">
+          <span class="topic-name">${escapeHtml(topic.name)}</span>
+          <span class="status-group">
+            <button class="status-btn active-${status === 'not_started' ? status : ''}" data-set-status="not_started">Not Started</button>
+            <button class="status-btn active-${status === 'in_progress' ? status : ''}" data-set-status="in_progress">In Progress</button>
+            <button class="status-btn active-${status === 'completed' ? status : ''}" data-set-status="completed">Completed</button>
+            <button class="bookmark-btn" data-toggle-bookmark title="${flagged ? 'Remove from Revision' : 'Mark for Revision'}">${flagged ? '🔖' : '📑'}</button>
+          </span>
+        </div>`;
+    }
+
+    function renderSyllabus() {
+      const container = document.getElementById('syllabusView');
+      if (!subjects.length) { container.innerHTML = '<div class="empty-state">The syllabus for this exam has not been set up yet. Please check back soon.</div>'; return; }
+
+      container.innerHTML = subjects.map((subject) => {
+        const subjectChapters = chapters.filter(c => c.subjectId === subject.id);
+        const chaptersHtml = subjectChapters.map((chapter) => {
+          const chapterTopics = topics.filter(t => t.chapterId === chapter.id);
+          return `
+            <div class="chapter-block">
+              <div class="chapter-head">📗 ${escapeHtml(chapter.name)}</div>
+              ${chapterTopics.map(topicRowHtml).join('') || '<p style="color:#aaa;font-size:0.85rem;">No topics yet.</p>'}
+            </div>`;
+        }).join('') || '<p style="color:#aaa;font-size:0.85rem;">No chapters yet.</p>';
+
+        return `
+          <div class="subject-block">
+            <div class="subject-head" data-toggle-subject>${escapeHtml(subject.name)} <span>▾</span></div>
+            <div class="subject-body">${chaptersHtml}</div>
+          </div>`;
+      }).join('');
+
+      container.querySelectorAll('[data-toggle-subject]').forEach(head => {
+        head.addEventListener('click', () => head.nextElementSibling.classList.toggle('open'));
+      });
+      if (container.firstElementChild) container.firstElementChild.querySelector('.subject-body').classList.add('open');
+
+      attachTopicHandlers(container);
+    }
+
+    function attachTopicHandlers(scope) {
+      scope.querySelectorAll('.topic-row').forEach(row => {
+        const topicId = row.dataset.topicId;
+        const topic = topics.find(t => t.id === topicId);
+        row.querySelectorAll('[data-set-status]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const status = btn.getAttribute('data-set-status');
+            progressByTopicId[topicId] = { ...(progressByTopicId[topicId] || {}), status };
+            renderActiveView();
+            try {
+              await setDoc(doc(db, 'studentPreparations', currentUid, 'topicProgress', topicId), {
+                status, preparationExamId: examId, subjectId: topic.subjectId, chapterId: topic.chapterId, updatedAt: new Date().toISOString()
+              }, { merge: true });
+            } catch (err) { console.error('Unable to save topic status:', err); }
+          });
+        });
+        const bookmarkBtn = row.querySelector('[data-toggle-bookmark]');
+        if (bookmarkBtn) {
+          bookmarkBtn.addEventListener('click', async () => {
+            const flaggedNow = revisionByTopicId[topicId] && revisionByTopicId[topicId].status === 'pending';
+            try {
+              if (flaggedNow) {
+                await deleteDoc(doc(db, 'studentPreparations', currentUid, 'revision', topicId));
+                delete revisionByTopicId[topicId];
+              } else {
+                await setDoc(doc(db, 'studentPreparations', currentUid, 'revision', topicId), {
+                  preparationExamId: examId, topicId, status: 'pending', markedAt: new Date().toISOString()
+                });
+                revisionByTopicId[topicId] = { status: 'pending' };
+              }
+            } catch (err) { console.error('Unable to update revision flag:', err); }
+            renderActiveView();
+          });
+        }
+      });
+    }
+
+    function renderRevision() {
+      const container = document.getElementById('revisionView');
+      const flaggedIds = Object.keys(revisionByTopicId).filter(id => revisionByTopicId[id].status === 'pending');
+      const weakIds = topics.filter(t => {
+        const status = (progressByTopicId[t.id] && progressByTopicId[t.id].status) || 'not_started';
+        return status !== 'completed' && !flaggedIds.includes(t.id);
+      }).map(t => t.id);
+
+      const renderGroup = (title, ids, note) => {
+        if (!ids.length) return '';
+        return `<h3 style="font-size:0.95rem;color:#102a52;margin:18px 0 8px;">${title}</h3>
+          ${ids.map(id => {
+            const topic = topics.find(t => t.id === id);
+            if (!topic) return '';
+            return `<div class="topic-row" data-topic-id="${escapeHtml(id)}">
+              <span class="topic-name">${escapeHtml(topic.name)}</span>
+              <span class="status-group">
+                <button class="status-btn" data-mark-revised="${escapeHtml(id)}">✅ Mark as Revised</button>
+                ${note ? '' : `<button class="bookmark-btn" data-toggle-bookmark title="Remove from Revision">🔖</button>`}
+              </span>
+            </div>`;
+          }).join('')}`;
+      };
+
+      const doneIds = Object.keys(revisionByTopicId).filter(id => revisionByTopicId[id].status === 'done');
+      const doneHtml = doneIds.length ? `<h3 style="font-size:0.95rem;color:#102a52;margin:18px 0 8px;">✅ Revised (${doneIds.length})</h3>` +
+        doneIds.map(id => {
+          const topic = topics.find(t => t.id === id);
+          if (!topic) return '';
+          return `<div class="topic-row"><span class="topic-name">${escapeHtml(topic.name)}</span>
+            <span class="status-group"><button class="status-btn" data-revise-again="${escapeHtml(id)}">🔁 Revise again</button></span></div>`;
+        }).join('') : '';
+      const html = renderGroup('🔖 Pending Revision', flaggedIds, false) + renderGroup('⚠️ Weak / Incomplete Topics', weakIds, true) + doneHtml;
+      container.innerHTML = html || '<div class="empty-state">Nothing needs revision right now — great job! Bookmark a topic from the Syllabus tab to add it here.</div>';
+
+      attachTopicHandlers(container);
+      container.querySelectorAll('[data-revise-again]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const topicId = btn.getAttribute('data-revise-again');
+          try {
+            await setDoc(doc(db, 'studentPreparations', currentUid, 'revision', topicId), {
+              preparationExamId: examId, topicId, status: 'pending', markedAt: new Date().toISOString()
+            });
+            revisionByTopicId[topicId] = { status: 'pending', preparationExamId: examId, topicId };
+          } catch (err) { console.error('Unable to re-queue revision:', err); }
+          renderRevision();
+        });
+      });
+      container.querySelectorAll('[data-mark-revised]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const topicId = btn.getAttribute('data-mark-revised');
+          try {
+            await setDoc(doc(db, 'studentPreparations', currentUid, 'revision', topicId), {
+              preparationExamId: examId, topicId, status: 'done', markedAt: new Date().toISOString()
+            });
+            revisionByTopicId[topicId] = { status: 'done', preparationExamId: examId, topicId };
+          } catch (err) { console.error('Unable to mark as revised:', err); }
+          renderRevision();
+        });
+      });
+    }
+
+    let activeTab = 'syllabus';
+    function renderActiveView() {
+      document.getElementById('syllabusView').style.display = activeTab === 'syllabus' ? 'block' : 'none';
+      document.getElementById('revisionView').style.display = activeTab === 'revision' ? 'block' : 'none';
+      if (activeTab === 'syllabus') renderSyllabus(); else renderRevision();
+    }
+
+    document.getElementById('tabSyllabus').addEventListener('click', () => {
+      activeTab = 'syllabus';
+      document.getElementById('tabSyllabus').classList.add('active');
+      document.getElementById('tabRevision').classList.remove('active');
+      renderActiveView();
+    });
+    document.getElementById('tabRevision').addEventListener('click', () => {
+      activeTab = 'revision';
+      document.getElementById('tabRevision').classList.add('active');
+      document.getElementById('tabSyllabus').classList.remove('active');
+      renderActiveView();
+    });
+
+    if (params.get('tab') === 'revision') {
+      activeTab = 'revision';
+    }
+
+    async function init(uid) {
+      currentUid = uid;
+      setStatus('Loading syllabus…');
+      try {
+        await loadAll(uid);
+        if (activeTab === 'revision') {
+          document.getElementById('tabRevision').classList.add('active');
+          document.getElementById('tabSyllabus').classList.remove('active');
+        }
+        renderActiveView();
+        setStatus('Tap a topic\'s status to update your progress — it saves automatically.');
+      } catch (err) {
+        console.error(err);
+        setStatus('Unable to load the syllabus right now. Please refresh.', 'error');
+      }
+    }
+
+    if (examId) {
+      watchStudentAuth(auth, onAuthStateChanged, {
+        onLogin: (user) => init(user.uid),
+        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+      });
+    }
+  </script>
+</body>
+</html>

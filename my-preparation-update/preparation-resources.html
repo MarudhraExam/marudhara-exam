@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Preparation | Marudhara Exam</title>
+<style>
+  :root { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+  a { color: inherit; text-decoration: none; }
+  .page-shell { max-width: 900px; margin: 0 auto; padding: 22px 18px 48px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 1.4rem; color: #102a52; }
+  .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 12px; padding: 10px 16px; background: #fff; color: #0b4ea2; cursor: pointer; font-weight: 600; }
+  .button-primary { border: 0; border-radius: 12px; padding: 9px 14px; background: #0b4ea2; color: #fff; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .button-primary:disabled { background: #9fb4d4; }
+  .status-bar { margin-bottom: 18px; padding: 12px 16px; border-radius: 14px; background: #eef4ff; color: #102a52; font-weight: 600; }
+  .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+  .res-card { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .res-card h3 { margin: 0 0 4px; font-size: 1rem; color: #102a52; }
+  .res-card p { margin: 0; font-size: 0.82rem; color: #5f6f8f; }
+  .res-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-block; font-size: 0.75rem; padding: 3px 9px; border-radius: 999px; background: #eef4ff; color: #0b4ea2; font-weight: 600; margin-top: 4px; }
+  .badge.done { background: #e4f8ec; color: #197a3a; }
+  .empty-state { padding: 28px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+  @media (max-width: 560px) { .res-card { flex-direction: column; align-items: flex-start; } }
+</style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <h1 id="pageTitle">My Preparation</h1>
+      <a class="button-secondary" id="backLink" href="my-preparation.html">⬅ Back</a>
+    </header>
+    <div id="statusBar" class="status-bar">Loading…</div>
+    <div id="resList"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, getDocs, query, where, doc, getDoc, setDoc, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import { watchStudentAuth, escapeHtml } from './preparation-shared.js';
+    import { activityDocId, loadMockStats, computeMcqStats } from './preparation-progress.js';
+
+    const fsApi = { collection, getDocs, query, where, doc, getDoc, getCountFromServer };
+    const params = new URLSearchParams(location.search);
+    const examId = params.get('examId');
+    const type = params.get('type') || 'mcq';
+    const TYPE_LABELS = { mcq: 'MCQ Practice', pyq: 'Previous Year Questions', notes: 'Study Material / Notes', currentAffairs: 'Current Affairs', mock: 'Mock Tests' };
+
+    const statusBar = document.getElementById('statusBar');
+    const resList = document.getElementById('resList');
+    document.getElementById('pageTitle').textContent = TYPE_LABELS[type] || 'My Preparation';
+    document.getElementById('backLink').href = examId ? `preparation-exam.html?examId=${encodeURIComponent(examId)}` : 'my-preparation.html';
+
+    function setStatus(msg, kind) { statusBar.textContent = msg; statusBar.className = kind === 'error' ? 'status-bar error' : 'status-bar'; }
+    if (!examId) { setStatus('No exam selected.', 'error'); }
+
+    let currentUid = null;
+    const ARCHIVE_NOTE = '';
+
+    // ONE query per page load: this student's activity of this type for THIS exam
+    // (docs are keyed type_examId_refId, so a resource shared by two exams has two
+    // independent records).
+    async function loadActivityDocs(activityType) {
+      const snap = await getDocs(query(
+        collection(db, 'studentPreparations', currentUid, 'studyActivity'),
+        where('preparationExamId', '==', examId),
+        where('type', '==', activityType)
+      ));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    async function loadMappings(t) {
+      const snap = await getDocs(query(collection(db, 'preparationMappings'), where('examId', '==', examId), where('type', '==', t)));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    async function logActivity(activityType, refId, extra) {
+      await setDoc(doc(db, 'studentPreparations', currentUid, 'studyActivity', activityDocId(activityType, examId, refId)), {
+        preparationExamId: examId, type: activityType, refId,
+        updatedAt: new Date().toISOString(), ...extra
+      }, { merge: true });
+    }
+
+    async function renderMcq() {
+      const mappings = await loadMappings('mcq');
+      if (!mappings.length) { resList.innerHTML = '<div class="empty-state">No MCQ Practice has been linked to this exam yet. Please check back soon.</div>'; return; }
+      const activity = await loadActivityDocs('mcq');
+      const stats = await computeMcqStats(fsApi, db, examId, mappings, activity);
+      const summary = `
+        <div class="res-card"><div>
+          <h3>Overall MCQ activity</h3>
+          <p>${stats.attempted} of ${stats.totalQuestions} questions attempted • ${stats.correct} correct • ${stats.wrong} wrong • Accuracy ${stats.accuracy ?? 0}% • ${stats.topicsPracticed}/${stats.topicsMapped} topics practiced</p>
+        </div></div>`;
+      resList.innerHTML = summary + mappings.map(m => {
+        const t = stats.byTopic[m.refId];
+        const link = `quiz-list.html?subject=${encodeURIComponent(m.refParentId || '')}&topic=${encodeURIComponent(m.refId)}&topicName=${encodeURIComponent(m.refLabel || 'Topic')}`;
+        const badge = t ? `<span class="badge done">${t.attempted} attempted • ${t.correct} correct • ${t.wrong} wrong • ${t.attempted ? Math.round(t.correct / t.attempted * 100) : 0}%</span>` : '';
+        return `<div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Topic')}</h3>${badge}</div>
+          <div class="res-actions"><a class="button-primary" href="${link}">📝 Practice</a></div></div>`;
+      }).join('');
+    }
+
+    async function renderPyqOrNotes() {
+      const mappings = await loadMappings(type);
+      if (!mappings.length) { resList.innerHTML = `<div class="empty-state">No ${TYPE_LABELS[type]} has been linked to this exam yet. Please check back soon.</div>`; return; }
+      const activity = {};
+      (await loadActivityDocs(type)).forEach(a => { activity[a.refId] = a; });
+
+      resList.innerHTML = mappings.map(m => {
+        const act = activity[m.refId];
+        const done = !!(act && (act.completed === true || (act.completed === undefined && act.completedAt)));
+        let actionsHtml, badgeHtml = '';
+        const open = `<a class="button-primary" href="${escapeHtml(m.refUrl || '#')}" target="_blank" rel="noopener">${type === 'pyq' ? '📄 Open Paper' : '📘 Open'}</a>`;
+        if (type === 'pyq') {
+          actionsHtml = `${open}<button class="button-primary" data-mark="${escapeHtml(m.refId)}" style="background:${done ? '#28a745' : '#0b4ea2'}">${done ? '✅ Completed (update score)' : 'Mark Completed'}</button>`;
+          if (done && act.score != null) badgeHtml = `<span class="badge done">Score / accuracy: ${escapeHtml(act.score)}%</span>`;
+        } else {
+          // Opening the PDF never completes it - only this explicit button does.
+          actionsHtml = `${open}<button class="button-primary" data-mark="${escapeHtml(m.refId)}" data-done="${done ? '1' : '0'}" style="background:${done ? '#28a745' : '#0b4ea2'}">${done ? '✅ Completed (undo)' : 'Mark as Completed'}</button>`;
+        }
+        return `<div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Resource')}</h3>${badgeHtml}</div><div class="res-actions">${actionsHtml}</div></div>`;
+      }).join('');
+
+      resList.querySelectorAll('[data-mark]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          const refId = btn.getAttribute('data-mark');
+          try {
+            if (type === 'pyq') {
+              const scoreInput = prompt('Optional: enter your score % for this paper (leave blank to skip)');
+              const n = scoreInput !== null && scoreInput.trim() !== '' ? Number(scoreInput) : NaN;
+              const score = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null;
+              await logActivity('pyq', refId, { completed: true, score, completedAt: new Date().toISOString() });
+            } else {
+              const wasDone = btn.getAttribute('data-done') === '1';
+              await logActivity('notes', refId, { completed: !wasDone, completedAt: wasDone ? null : new Date().toISOString() });
+            }
+          } catch (err) { console.error(err); alert('Could not save. Please try again.'); }
+          renderCurrent();
+        });
+      });
+    }
+
+    async function renderMock() {
+      const mappings = (await loadMappings('mock')).concat(await loadMappings('mockTest'));
+      if (!mappings.length) { resList.innerHTML = '<div class="empty-state">No Mock Test has been linked to this exam yet.</div>'; return; }
+      const s = await loadMockStats(fsApi, db, currentUid, mappings);
+      const summary = s ? `
+        <div class="res-card"><div>
+          <h3>Your mock test progress</h3>
+          <p>${s.available} available • ${s.attempted} attempted • ${s.completed} completed • Best ${s.best ?? '—'}% • Average ${s.average ?? '—'}% • Progress ${s.percent ?? 0}%</p>
+        </div></div>` : '';
+      resList.innerHTML = summary + mappings.map(m => `
+        <div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Mock Test')}</h3></div>
+          <div class="res-actions"><a class="button-primary" href="mock-tests/category.html?id=${encodeURIComponent(m.refId)}">🧪 Open Mock Tests</a></div>
+        </div>`).join('');
+    }
+
+    // Only Current Affairs the admin linked to THIS exam are shown (no longer
+    // "latest 5 for everyone"). Titles/links are stored on the mapping, so this
+    // is a single query with no extra reads of dailySujas.
+    async function renderCurrentAffairs() {
+      const mappings = await loadMappings('currentAffairs');
+      if (!mappings.length) { resList.innerHTML = '<div class="empty-state">No Current Affairs have been linked to this exam yet.</div>'; return; }
+      mappings.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      resList.innerHTML = mappings.map(m => `
+        <div class="res-card">
+          <div><h3>${escapeHtml(m.refLabel || 'Current Affairs')}</h3>${m.category ? `<p>${escapeHtml(m.category)}</p>` : ''}</div>
+          <div class="res-actions"><a class="button-primary" href="${escapeHtml(m.refUrl || '#')}" target="_blank" rel="noopener">👁 View</a></div>
+        </div>`).join('');
+    }
+
+    async function renderCurrent() {
+      if (type === 'currentAffairs') await renderCurrentAffairs();
+      else if (type === 'mock') await renderMock();
+      else if (type === 'mcq') await renderMcq();
+      else await renderPyqOrNotes();
+    }
+
+    async function init(uid) {
+      currentUid = uid;
+      setStatus('Loading…');
+      try {
+        await renderCurrent();
+        setStatus(`${TYPE_LABELS[type] || ''} for your preparation.`);
+      } catch (err) {
+        console.error(err);
+        setStatus('Unable to load this section right now.', 'error');
+      }
+    }
+
+    if (examId) {
+      watchStudentAuth(auth, onAuthStateChanged, {
+        onLogin: (user) => init(user.uid),
+        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+      });
+    }
+  </script>
+</body>
+</html>

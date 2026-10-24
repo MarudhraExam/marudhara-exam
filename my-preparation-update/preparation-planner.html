@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Study Planner | My Preparation</title>
+<style>
+  :root { font-family: Inter, "Segoe UI", Arial, sans-serif; background: #f4f7fb; color: #1f324f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: linear-gradient(180deg,#f8fbff 0%,#edf2f8 100%); }
+  a { color: inherit; text-decoration: none; }
+  .page-shell { max-width: 700px; margin: 0 auto; padding: 22px 18px 48px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 1.4rem; color: #102a52; }
+  .button-secondary { border: 1px solid rgba(11,78,162,.3); border-radius: 12px; padding: 10px 16px; background: #fff; color: #0b4ea2; cursor: pointer; font-weight: 600; }
+  .button-primary { border: 0; border-radius: 12px; padding: 12px 16px; background: #0b4ea2; color: #fff; cursor: pointer; font-weight: 600; }
+  .status-bar { margin-bottom: 16px; padding: 12px 16px; border-radius: 14px; background: #eef4ff; color: #102a52; font-weight: 600; }
+  .status-bar.error { background: #ffe7e6; color: #8a1f19; }
+
+  .add-task { background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 18px; padding: 16px; margin-bottom: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .add-task input[type=text] { flex: 1 1 220px; padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(35,49,79,.2); font-size: 0.95rem; }
+  .add-task select { padding: 11px 10px; border-radius: 12px; border: 1px solid rgba(35,49,79,.2); }
+
+  .summary-row { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .summary-card { flex: 1 1 140px; background: #fff; border-radius: 16px; padding: 14px 16px; border: 1px solid rgba(35,49,79,.1); text-align: center; }
+  .summary-card strong { display: block; font-size: 1.4rem; color: #0b4ea2; }
+  .summary-card span { font-size: 0.78rem; color: #5f6f8f; }
+
+  .task-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid rgba(35,49,79,.1); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+  .task-row input[type=checkbox] { width: 20px; height: 20px; accent-color: #0b4ea2; flex-shrink: 0; }
+  .task-row .task-title { flex: 1; font-size: 0.95rem; }
+  .task-row.done .task-title { text-decoration: line-through; color: #94a3b8; }
+  .task-type-badge { font-size: 0.72rem; padding: 3px 8px; border-radius: 999px; background: #eef4ff; color: #0b4ea2; font-weight: 600; }
+  .task-delete { border: none; background: none; color: #b22018; cursor: pointer; font-size: 1rem; }
+  .empty-state { padding: 26px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
+  @media (max-width: 480px) { .add-task { flex-direction: column; } }
+</style>
+</head>
+<body>
+  <div class="page-shell">
+    <header>
+      <h1>🗓️ Study Planner — Today</h1>
+      <a class="button-secondary" id="backLink" href="my-preparation.html">⬅ Back</a>
+    </header>
+    <div id="statusBar" class="status-bar">Loading…</div>
+
+    <div class="add-task">
+      <select id="taskType">
+        <option value="syllabus">📘 Study a topic</option>
+        <option value="mcq">📝 Solve MCQs</option>
+        <option value="mock">🧪 Attempt Mock</option>
+        <option value="revision">🔁 Revise topic</option>
+        <option value="notes">📄 Read notes</option>
+      </select>
+      <input type="text" id="taskTitle" placeholder="e.g. Indian Polity Chapter 3" />
+      <button class="button-primary" id="addTaskBtn" type="button">+ Add Target</button>
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-card"><strong id="targetCount">0</strong><span>Today's Target</span></div>
+      <div class="summary-card"><strong id="doneCount">0</strong><span>Completed Today</span></div>
+    </div>
+
+    <div id="taskList"></div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, getDocs, query, where, doc, setDoc, deleteDoc, addDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
+    import { watchStudentAuth, escapeHtml } from './preparation-shared.js';
+
+    const params = new URLSearchParams(location.search);
+    const examId = params.get('examId');
+    document.getElementById('backLink').href = examId ? `preparation-exam.html?examId=${encodeURIComponent(examId)}` : 'my-preparation.html';
+
+    const statusBar = document.getElementById('statusBar');
+    function setStatus(msg, kind) { statusBar.textContent = msg; statusBar.className = kind === 'error' ? 'status-bar error' : 'status-bar'; }
+    if (!examId) setStatus('No exam selected.', 'error');
+
+    const TYPE_LABELS = { syllabus: '📘 Study', mcq: '📝 MCQ', mock: '🧪 Mock', revision: '🔁 Revision', notes: '📄 Notes' };
+
+    let currentUid = null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    async function loadTasks() {
+      const snap = await getDocs(query(
+        collection(db, 'studentPreparations', currentUid, 'studyPlan'),
+        where('preparationExamId', '==', examId),
+        where('date', '==', todayStr)
+      ));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    }
+
+    function renderTasks(tasks) {
+      const list = document.getElementById('taskList');
+      document.getElementById('targetCount').textContent = tasks.length;
+      document.getElementById('doneCount').textContent = tasks.filter(t => t.completed).length;
+
+      if (!tasks.length) { list.innerHTML = '<div class="empty-state">No targets added for today yet. Add your first one above!</div>'; return; }
+
+      list.innerHTML = tasks.map(t => `
+        <div class="task-row ${t.completed ? 'done' : ''}" data-id="${escapeHtml(t.id)}">
+          <input type="checkbox" ${t.completed ? 'checked' : ''} data-toggle />
+          <span class="task-type-badge">${TYPE_LABELS[t.type] || t.type}</span>
+          <span class="task-title">${escapeHtml(t.title)}</span>
+          <button class="task-delete" data-delete title="Remove">✕</button>
+        </div>`).join('');
+
+      list.querySelectorAll('[data-toggle]').forEach(cb => {
+        cb.addEventListener('change', async () => {
+          const row = cb.closest('.task-row');
+          const id = row.dataset.id;
+          try {
+            await setDoc(doc(db, 'studentPreparations', currentUid, 'studyPlan', id), { completed: cb.checked, completedAt: cb.checked ? new Date().toISOString() : null }, { merge: true });
+          } catch (err) { console.error(err); }
+          refresh();
+        });
+      });
+      list.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const row = btn.closest('.task-row');
+          const id = row.dataset.id;
+          try { await deleteDoc(doc(db, 'studentPreparations', currentUid, 'studyPlan', id)); } catch (err) { console.error(err); }
+          refresh();
+        });
+      });
+    }
+
+    async function refresh() {
+      try {
+        const tasks = await loadTasks();
+        renderTasks(tasks);
+        setStatus(`Showing today's plan (${todayStr}).`);
+      } catch (err) {
+        console.error(err);
+        setStatus('Unable to load your planner right now.', 'error');
+      }
+    }
+
+    document.getElementById('addTaskBtn').addEventListener('click', async () => {
+      const titleInput = document.getElementById('taskTitle');
+      const typeSelect = document.getElementById('taskType');
+      const title = titleInput.value.trim();
+      if (!title) { alert('Please enter what you want to study/do.'); return; }
+      try {
+        await addDoc(collection(db, 'studentPreparations', currentUid, 'studyPlan'), {
+          preparationExamId: examId, type: typeSelect.value, title, date: todayStr, completed: false, createdAt: new Date().toISOString()
+        });
+        titleInput.value = '';
+        refresh();
+      } catch (err) {
+        console.error(err);
+        alert('Could not add this target right now. Please try again.');
+      }
+    });
+
+    async function init(uid) {
+      currentUid = uid;
+      await refresh();
+    }
+
+    if (examId) {
+      watchStudentAuth(auth, onAuthStateChanged, {
+        onLogin: (user) => init(user.uid),
+        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+      });
+    }
+  </script>
+</body>
+</html>
