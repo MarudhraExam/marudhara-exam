@@ -97,7 +97,13 @@
       try {
         const snap = await getDoc(doc(db, 'preparationExams', examId));
         if (snap.exists()) return { id: examId, ...snap.data() };
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        // firestore.rules only lets students read preparationExams docs that are
+        // Active. An Inactive/removed exam is denied BY DESIGN, so fall through
+        // to the student's own cached selectedExamsMeta below instead of
+        // treating it as a failure.
+        if (!err || err.code !== 'permission-denied') console.error(err);
+      }
       try {
         const prepSnap = await getDoc(doc(db, 'studentPreparations', uid));
         const meta = prepSnap.exists() && prepSnap.data().selectedExamsMeta && prepSnap.data().selectedExamsMeta[examId];
