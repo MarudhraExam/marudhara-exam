@@ -1159,7 +1159,7 @@ style="background:#888;margin-left:10px;display:none;">
 <option value="notes">Notes (PDF)</option>
 <option value="mock">Mock Test Category (all mocks in it)</option>
 <option value="mockTest">Single Mock Test</option>
-<option value="currentAffairs">Monthly Current Affairs MCQ</option>
+<option value="currentAffairs">Current Affairs (Daily Suja PDF)</option>
 </select>
 
 <label>Link to Topic (optional — leave blank to map at exam level, e.g. for Mock)</label>
@@ -6166,10 +6166,12 @@ let quizSubjectsCache = null;
 let quizTopicsCacheBySubject = {};
 let downloadsCache = null;
 let notesPdfsCache = null;
+let notesCategoriesCache = null;
+let notesSubjectsCache = null;
+let notesTopicsCache = null;
 let mockCategoriesCache = null;
 let mockTestsCache = null;
 let dailySujasCache = null;
-let monthlyMcqCache = null;
 
 window.onPrepStructureExamChange = async function(){
 
@@ -6516,20 +6518,6 @@ dailySujasCache = snap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>String
 return dailySujasCache;
 }
 
-async function loadMonthlyMcqCache(){
-if(monthlyMcqCache) return monthlyMcqCache;
-const snap = await getDocs(collection(db,"monthlySujasMcq"));
-monthlyMcqCache = snap.docs
-  .map((d)=>({id:d.id,...d.data()}))
-  .filter((item)=>item.visible !== false)
-  .sort((a,b)=>{
-    const yearDiff = Number(b.year||0) - Number(a.year||0);
-    if(yearDiff) return yearDiff;
-    return String(b.month||"").localeCompare(String(a.month||""));
-  });
-return monthlyMcqCache;
-}
-
 window.onPrepMapTypeChange = async function(){
 
 const type = document.getElementById("prepMapType").value;
@@ -6558,10 +6546,42 @@ secondaryWrap.style.display = "none";
 const list = await loadDownloadsCache();
 primarySelect.innerHTML = list.map((d)=>`<option value="${d.id}">${d.paperName||"Untitled"}</option>`).join("") || "<option value=''>कोई Download नहीं मिला</option>";
 }else if(type==="notes"){
-label.textContent = "Notes PDF";
+label.textContent = "Notes Folder (पूरी Folder के सभी PDFs)";
 secondaryWrap.style.display = "none";
-const list = await loadNotesPdfsCache();
-primarySelect.innerHTML = list.map((n)=>`<option value="${n.id}">${n.noteTitle||"Untitled"}</option>`).join("") || "<option value=''>कोई Note नहीं मिला</option>";
+const [pdfs, categories, subjects, topics] = await Promise.all([
+  loadNotesPdfsCache(),
+  (async()=>{ if(!notesCategoriesCache){ const snap=await getDocs(collection(db,"notesCategories")); notesCategoriesCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesCategoriesCache; })(),
+  (async()=>{ if(!notesSubjectsCache){ const snap=await getDocs(collection(db,"notesSubjects")); notesSubjectsCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesSubjectsCache; })(),
+  (async()=>{ if(!notesTopicsCache){ const snap=await getDocs(collection(db,"notesTopics")); notesTopicsCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesTopicsCache; })()
+]);
+const options = [];
+const categoryById = Object.fromEntries(categories.map(c=>[c.id,c]));
+const subjectById = Object.fromEntries(subjects.map(s=>[s.id,s]));
+const topicById = Object.fromEntries(topics.map(t=>[t.id,t]));
+const countFor = (kind,id)=>pdfs.filter(pdf=>{
+  const topic=topicById[pdf.topicId];
+  const subject=topic ? subjectById[topic.subjectId] : null;
+  if(kind==="topic") return pdf.topicId===id;
+  if(kind==="subject") return !!topic && topic.subjectId===id;
+  if(kind==="category") return !!topic && !!subject && subject.categoryId===id;
+  return false;
+}).length;
+categories.forEach(c=>{
+  const count=countFor("category",c.id);
+  if(count) options.push(`<option value="category|${c.id}">📁 ${c.name||"Untitled Category"} (${count} PDFs)</option>`);
+});
+subjects.forEach(sub=>{
+  const cat=categoryById[sub.categoryId];
+  const count=countFor("subject",sub.id);
+  if(count) options.push(`<option value="subject|${sub.id}">　📂 ${cat?cat.name+" > ":""}${sub.subjectName||"Untitled Subject"} (${count} PDFs)</option>`);
+});
+topics.forEach(t=>{
+  const sub=subjectById[t.subjectId];
+  const cat=sub ? categoryById[sub.categoryId] : null;
+  const count=countFor("topic",t.id);
+  if(count) options.push(`<option value="topic|${t.id}">　　📁 ${[cat&&cat.name,sub&&sub.name,t.topicName||"Untitled Topic"].filter(Boolean).join(" > ")} (${count} PDFs)</option>`);
+});
+primarySelect.innerHTML = options.join("") || "<option value=''>PDF वाले कोई Notes Folder नहीं मिले</option>";
 }else if(type==="mock"){
 label.textContent = "Mock Category";
 secondaryWrap.style.display = "none";
@@ -6573,10 +6593,10 @@ secondaryWrap.style.display = "none";
 const list = await loadMockTestsCache();
 primarySelect.innerHTML = list.map((m)=>`<option value="${m.id}">${m.title||m.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Mock Test नहीं मिला</option>";
 }else if(type==="currentAffairs"){
-label.textContent = "Monthly Current Affairs MCQ";
+label.textContent = "Daily Suja / Current Affairs PDF";
 secondaryWrap.style.display = "none";
-const list = await loadMonthlyMcqCache();
-primarySelect.innerHTML = list.map((item)=>`<option value="${item.id}">${item.title || ((item.month||"") + " " + (item.year||"")).trim() || "Untitled"}</option>`).join("") || "<option value=''>कोई Monthly Current Affairs MCQ नहीं मिला</option>";
+const list = await loadDailySujasCache();
+primarySelect.innerHTML = list.map((d)=>`<option value="${d.id}">${d.title||"Untitled"}</option>`).join("") || "<option value=''>कोई Current Affairs PDF नहीं मिला</option>";
 }
 
 };
@@ -6616,11 +6636,48 @@ payload.refId = primarySelect.value;
 payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
 payload.refUrl = item ? (item.paperLink||"") : "";
 }else if(type==="notes"){
-const item = (notesPdfsCache||[]).find((n)=>n.id===primarySelect.value);
-payload.refCollection = "notesPdfs";
-payload.refId = primarySelect.value;
-payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
-payload.refUrl = item ? (item.pdfLink||"") : "";
+// Folder selection expands into individual PDF mappings, preserving the
+// existing student-side mapping format and making every PDF in that folder available.
+const selectedFolder = primarySelect.value.split("|");
+const folderType = selectedFolder[0];
+const folderId = selectedFolder[1];
+const [pdfs, categories, subjects, topics] = await Promise.all([
+  loadNotesPdfsCache(),
+  (async()=>{ if(!notesCategoriesCache){ const snap=await getDocs(collection(db,"notesCategories")); notesCategoriesCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesCategoriesCache; })(),
+  (async()=>{ if(!notesSubjectsCache){ const snap=await getDocs(collection(db,"notesSubjects")); notesSubjectsCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesSubjectsCache; })(),
+  (async()=>{ if(!notesTopicsCache){ const snap=await getDocs(collection(db,"notesTopics")); notesTopicsCache=snap.docs.map(d=>({id:d.id,...d.data()})); } return notesTopicsCache; })()
+]);
+const topicById=Object.fromEntries(topics.map(t=>[t.id,t]));
+const matchingPdfs=pdfs.filter(pdf=>{
+  const topic=topicById[pdf.topicId];
+  if(folderType==="topic") return pdf.topicId===folderId;
+  if(!topic) return false;
+  if(folderType==="subject") return topic.subjectId===folderId;
+  if(folderType==="category"){
+    const subject=subjects.find(sub=>sub.id===topic.subjectId);
+    return !!subject && subject.categoryId===folderId;
+  }
+  return false;
+});
+if(!matchingPdfs.length){ alert("इस Folder में कोई PDF नहीं मिली।"); return; }
+const folderLabel=primarySelect.options[primarySelect.selectedIndex].textContent.replace(/^\s*[📁📂]\s*/,"").replace(/\s*\(\d+ PDFs\)$/,"");
+const topicOption = topicId ? topicSelect.options[topicSelect.selectedIndex] : null;
+const existingSnap=await getDocs(query(collection(db,"preparationMappings"),where("examId","==",prepStructureExamId),where("type","==","notes")));
+const existingKeys=new Set(existingSnap.docs.map(d=>`${d.data().refId}|${d.data().topicId||""}`));
+const newMappings=matchingPdfs.filter(pdf=>!existingKeys.has(`${pdf.id}|${topicId||""}`)).map(pdf=>({
+  ...payload,
+  refCollection:"notesPdfs",
+  refId:pdf.id,
+  refLabel:`${folderLabel} > ${pdf.noteTitle||"Untitled PDF"}`,
+  refUrl:pdf.pdfLink||"",
+  notesFolderType:folderType,
+  notesFolderId:folderId
+}));
+if(!newMappings.length){ alert("इस Folder की सभी PDFs पहले से mapped हैं।"); return; }
+for(const mapping of newMappings) await addDoc(collection(db,"preparationMappings"),mapping);
+alert(`${newMappings.length} PDF(s) की Mapping Added ✅`);
+await loadPrepMappings();
+return;
 }else if(type==="mock"){
 payload.refCollection = "mockCategories";
 payload.refId = primarySelect.value;
@@ -6630,13 +6687,12 @@ payload.refCollection = "mockTests";
 payload.refId = primarySelect.value;
 payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
 }else if(type==="currentAffairs"){
-const item = (monthlyMcqCache||[]).find((m)=>m.id===primarySelect.value);
-payload.refCollection = "monthlySujasMcq";
+const item = (dailySujasCache||[]).find((d)=>d.id===primarySelect.value);
+payload.refCollection = "dailySujas";
 payload.refId = primarySelect.value;
-payload.refLabel = item ? (item.title || `${item.month||""} ${item.year||""}`.trim()) : primarySelect.options[primarySelect.selectedIndex].textContent;
-payload.refUrl = item ? (item.pdfUrl||"") : "";
-payload.month = item ? (item.month||"") : "";
-payload.year = item ? (item.year||"") : "";
+payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
+payload.refUrl = item ? (item.pdfLink||"") : "";
+// optional Subject/Category: taken from the "Link to Topic" selector (Subject > Chapter > Topic label)
 payload.category = topicOption ? topicOption.textContent : "";
 }
 
