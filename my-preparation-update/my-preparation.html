@@ -87,6 +87,17 @@
   .empty-state { padding: 24px; border-radius: 18px; background: #fff; border: 1px dashed rgba(35,49,79,.15); color: #556180; text-align: center; }
   .hidden { display: none !important; }
 
+  /* Android WebView fallback: keep the dashboard document alive while the
+     exam page runs in a same-origin frame. Some app shells blank the main
+     WebView when navigating to newly added nested pages. */
+  .prep-embedded-view { position: fixed; inset: 0; z-index: 10000; display: none; background: #f4f7fb; }
+  .prep-embedded-view.open { display: block; }
+  .prep-embedded-view iframe { display: block; width: 100%; height: 100%; min-height: 100%; border: 0; background: #f4f7fb; }
+  .prep-embedded-fallback { position: absolute; inset: 0; display: none; padding: 28px 20px; background: #f4f7fb; color: #1f324f; z-index: 2; }
+  .prep-embedded-fallback.open { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; text-align: center; }
+  .prep-embedded-fallback p { max-width: 460px; line-height: 1.5; }
+  .prep-embedded-fallback .fallback-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
   @media (max-width: 640px) {
     header { flex-direction: column; align-items: flex-start; }
     .prep-grid { grid-template-columns: 1fr; }
@@ -153,6 +164,20 @@
     </div>
   </div>
 
+  <!-- Android WebView route fallback: used only on Android to avoid a broken
+       top-level navigation to the newly added preparation subpage. -->
+  <div id="prepEmbeddedView" class="prep-embedded-view" aria-hidden="true">
+    <iframe id="prepEmbeddedFrame" title="My Preparation exam dashboard" src="about:blank" loading="eager"></iframe>
+    <div id="prepEmbeddedFallback" class="prep-embedded-fallback" role="alert">
+      <h2>Preparation page could not load inside the app.</h2>
+      <p>The app's embedded page navigation did not render this screen. You can try opening it directly or return to My Preparation.</p>
+      <div class="fallback-actions">
+        <button id="prepEmbeddedOpenDirect" class="button-primary" type="button">Open page directly</button>
+        <button id="prepEmbeddedClose" class="button-secondary" type="button">Back to My Preparation</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
 import { db, auth } from '../firebase.js';
     import { collection, getDocs, query, where, doc, getDoc, setDoc, increment } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
@@ -173,6 +198,127 @@ import { db, auth } from '../firebase.js';
        shows its own Login/Register/Forgot Password UI.
        ================================================================ */
     function renderIcon(icon) { return renderIconHtml(icon); }
+
+    // Android-only navigation fallback. Keep normal browser navigation on
+    // desktop; on Android, load the exam page inside this already-working
+    // WebView document instead of replacing the top-level URL.
+    const PREP_BASE_PATH = '/my-preparation-update/';
+    const PREP_DASHBOARD_PATH = PREP_BASE_PATH + 'my-preparation.html';
+    const PREP_EXAM_PATH = PREP_BASE_PATH + 'preparation-exam.html';
+    const prepEmbeddedView = document.getElementById('prepEmbeddedView');
+    const prepEmbeddedFrame = document.getElementById('prepEmbeddedFrame');
+    const prepEmbeddedFallback = document.getElementById('prepEmbeddedFallback');
+    const prepEmbeddedOpenDirect = document.getElementById('prepEmbeddedOpenDirect');
+    const prepEmbeddedClose = document.getElementById('prepEmbeddedClose');
+    let prepEmbeddedLoadTimer = null;
+    let prepEmbeddedLastUrl = '';
+
+    function isAndroidWebView() {
+      const ua = String(navigator.userAgent || '');
+      // The official wrapper normally supplies a WebView marker, but some
+      // builders keep a generic Android UA. Treat Android as the fallback.
+      return /MarudharaExamAndroidApp/i.test(ua) ||
+        !!window.AndroidBridge || !!window.Android || /Android/i.test(ua);
+    }
+
+    function embeddedViewIsOpen() {
+      return prepEmbeddedView.classList.contains('open');
+    }
+
+    function closeEmbeddedView(restoreHistory = true) {
+      if (!embeddedViewIsOpen()) return;
+      prepEmbeddedView.classList.remove('open');
+      prepEmbeddedView.setAttribute('aria-hidden', 'true');
+      prepEmbeddedFallback.classList.remove('open');
+      prepEmbeddedFrame.src = 'about:blank';
+      document.body.style.overflow = '';
+      if (prepEmbeddedLoadTimer) clearTimeout(prepEmbeddedLoadTimer);
+      prepEmbeddedLoadTimer = null;
+      if (restoreHistory && history.state && history.state.__marudharaPrepEmbedded) {
+        history.back();
+      }
+    }
+
+    function openEmbeddedExam(url) {
+      prepEmbeddedLastUrl = url.href;
+      prepEmbeddedFallback.classList.remove('open');
+      prepEmbeddedFrame.dataset.pageLoaded = 'false';
+      prepEmbeddedView.classList.add('open');
+      prepEmbeddedView.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      const previousState = history.state && typeof history.state === 'object' ? history.state : {};
+      history.pushState({ ...previousState, __marudharaPrepEmbedded: true }, '', location.href);
+      prepEmbeddedFrame.src = url.href;
+      if (prepEmbeddedLoadTimer) clearTimeout(prepEmbeddedLoadTimer);
+      prepEmbeddedLoadTimer = setTimeout(() => {
+        if (embeddedViewIsOpen() && prepEmbeddedFrame.dataset.pageLoaded !== 'true') {
+          prepEmbeddedFallback.classList.add('open');
+        }
+      }, 12000);
+    }
+
+    prepEmbeddedFrame.addEventListener('load', () => {
+      if (!embeddedViewIsOpen()) return;
+      try {
+        const childUrl = new URL(prepEmbeddedFrame.contentWindow.location.href);
+        if (childUrl.href === 'about:blank') return;
+        if (childUrl.origin !== location.origin) {
+          prepEmbeddedFallback.classList.add('open');
+          return;
+        }
+
+        // The child page's Back link eventually loads the list page. Close
+        // the embedded view and reveal the already-rendered parent dashboard.
+        if (childUrl.pathname === PREP_DASHBOARD_PATH) {
+          closeEmbeddedView(true);
+          return;
+        }
+
+        const childDocument = prepEmbeddedFrame.contentDocument;
+        const isPreparationPage = childUrl.pathname.startsWith(PREP_BASE_PATH);
+        const isExistingLoginPage = childUrl.pathname === '/mock-tests/index.html';
+        if (isPreparationPage && !(childDocument && childDocument.querySelector('.page-shell'))) {
+          prepEmbeddedFallback.classList.add('open');
+          return;
+        }
+        if (!isPreparationPage && !isExistingLoginPage) {
+          const outsideUrl = childUrl.href;
+          closeEmbeddedView(true);
+          window.location.href = outsideUrl;
+          return;
+        }
+
+        prepEmbeddedFrame.dataset.pageLoaded = 'true';
+        prepEmbeddedFallback.classList.remove('open');
+        if (prepEmbeddedLoadTimer) clearTimeout(prepEmbeddedLoadTimer);
+        prepEmbeddedLoadTimer = null;
+      } catch (err) {
+        // Frame-blocking/navigation errors are surfaced instead of leaving
+        // users with a permanently blank content area.
+        prepEmbeddedFallback.classList.add('open');
+      }
+    });
+
+    prepEmbeddedOpenDirect.addEventListener('click', () => {
+      if (prepEmbeddedLastUrl) window.location.href = prepEmbeddedLastUrl;
+    });
+    prepEmbeddedClose.addEventListener('click', () => closeEmbeddedView(true));
+
+    window.addEventListener('popstate', () => {
+      if (embeddedViewIsOpen()) closeEmbeddedView(false);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!isAndroidWebView() || event.defaultPrevented || event.button !== 0 ||
+          event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+      if (!anchor) return;
+      let url;
+      try { url = new URL(anchor.getAttribute('href'), document.baseURI); } catch { return; }
+      if (url.origin !== location.origin || url.pathname !== PREP_EXAM_PATH) return;
+      event.preventDefault();
+      openEmbeddedExam(url);
+    }, true);
 
     /* ================================================================
        DOM refs
