@@ -38,7 +38,7 @@
   </div>
 
   <script type="module">
-    import { db, auth } from './firebase.js';
+    import { db, auth } from '../firebase.js';
     import { collection, getDocs, query, where, doc, getDoc, setDoc, getCountFromServer } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
     import { watchStudentAuth, escapeHtml } from './preparation-shared.js';
@@ -97,7 +97,7 @@
         </div></div>`;
       resList.innerHTML = summary + mappings.map(m => {
         const t = stats.byTopic[m.refId];
-        const link = `quiz-list.html?subject=${encodeURIComponent(m.refParentId || '')}&topic=${encodeURIComponent(m.refId)}&topicName=${encodeURIComponent(m.refLabel || 'Topic')}`;
+        const link = `../quiz-list.html?subject=${encodeURIComponent(m.refParentId || '')}&topic=${encodeURIComponent(m.refId)}&topicName=${encodeURIComponent(m.refLabel || 'Topic')}`;
         const badge = t ? `<span class="badge done">${t.attempted} attempted • ${t.correct} correct • ${t.wrong} wrong • ${t.attempted ? Math.round(t.correct / t.attempted * 100) : 0}%</span>` : '';
         return `<div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Topic')}</h3>${badge}</div>
           <div class="res-actions"><a class="button-primary" href="${link}">📝 Practice</a></div></div>`;
@@ -156,7 +156,7 @@
         </div></div>` : '';
       resList.innerHTML = summary + mappings.map(m => `
         <div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Mock Test')}</h3></div>
-          <div class="res-actions"><a class="button-primary" href="mock-tests/category.html?id=${encodeURIComponent(m.refId)}">🧪 Open Mock Tests</a></div>
+          <div class="res-actions"><a class="button-primary" href="../mock-tests/category.html?id=${encodeURIComponent(m.refId)}">🧪 Open Mock Tests</a></div>
         </div>`).join('');
     }
 
@@ -196,7 +196,7 @@
     if (examId) {
       watchStudentAuth(auth, onAuthStateChanged, {
         onLogin: (user) => init(user.uid),
-        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+        onLoggedOut: () => { window.location.href = '../mock-tests/index.html?returnTo=my-preparation'; }
       });
     }
   </script>

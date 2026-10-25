@@ -1270,6 +1270,20 @@ try {
     // lastLogin — then reuses the existing mockExamSession session
     // (unchanged shape) so every other page on the site keeps working
     // without any changes.
+    // Safe return to My Preparation: only the fixed token
+    // ?returnTo=my-preparation is honoured and it maps to ONE hard-coded
+    // same-site path. No URL is ever read from the query string, so this
+    // cannot be used as an open redirect.
+    function redirectToPreparationIfRequested() {
+      try {
+        if (new URLSearchParams(window.location.search).get('returnTo') === 'my-preparation') {
+          window.location.replace('../my-preparation-update/my-preparation.html');
+          return true;
+        }
+      } catch (err) { console.error('Return redirect failed:', err); }
+      return false;
+    }
+
     async function completeLogin(user, name, mobile) {
       const userRef = doc(db, 'users', user.uid);
       let existing = null;
@@ -1296,6 +1310,7 @@ try {
       }
 
       saveStoredStudent({ studentName: resolvedName, studentMobile: resolvedMobile });
+      if (redirectToPreparationIfRequested()) return;
       hideLoginModal();
       await loadDashboard();
     }
@@ -1462,6 +1477,10 @@ try {
             console.error('Unable to restore user profile:', err);
           }
         }
+        // Already-signed-in student arriving from My Preparation. Skip while a
+        // login/signup is in flight: completeLogin() redirects after it has
+        // saved the profile.
+        if (!loginBtn.disabled && !signupBtn.disabled && redirectToPreparationIfRequested()) return;
         hideLoginModal();
         await loadDashboard();
       } else {

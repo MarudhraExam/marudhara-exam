@@ -65,7 +65,7 @@
   </div>
 
   <script type="module">
-    import { db, auth } from './firebase.js';
+    import { db, auth } from '../firebase.js';
     import { collection, getDocs, query, where, doc, setDoc, deleteDoc, addDoc } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
     import { watchStudentAuth, escapeHtml } from './preparation-shared.js';
@@ -163,7 +163,7 @@
     if (examId) {
       watchStudentAuth(auth, onAuthStateChanged, {
         onLogin: (user) => init(user.uid),
-        onLoggedOut: () => { window.location.href = 'mock-tests/index.html'; }
+        onLoggedOut: () => { window.location.href = '../mock-tests/index.html?returnTo=my-preparation'; }
       });
     }
   </script>
