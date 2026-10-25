@@ -48,7 +48,7 @@
 <body>
   <div class="page-shell">
     <div class="top-actions">
-      <a class="button-secondary" href="my-preparation.html">⬅ My Preparation</a>
+      <a class="button-secondary" href="/my-preparation-update/my-preparation.html">⬅ My Preparation</a>
     </div>
     <div id="statusBar" class="status-bar">Loading…</div>
 
@@ -146,7 +146,7 @@
         const prepData = prepDocSnap.exists() ? prepDocSnap.data() : null;
         const selected = (prepData && prepData.selectedExams) || [];
         if (!selected.some(e => e.preparationExamId === examId)) {
-          window.location.href = 'my-preparation.html';
+          window.location.href = '/my-preparation-update/my-preparation.html';
           return;
         }
 
@@ -183,20 +183,20 @@
         const planDone = planTasks.filter(t => t.completed).length;
 
         document.getElementById('tileGrid').innerHTML = [
-          tileHtml(`preparation-syllabus.html?examId=${examId}`, '📘 Syllabus', syllabusPct, topics.length ? `${topics.length} topics` : 'Not set up yet'),
-          tileHtml(`preparation-resources.html?examId=${examId}&type=notes`, '📄 Notes / Study Material', notesPct, notes ? `${notes.completed}/${notes.total} completed` : 'None linked yet'),
-          tileHtml(`preparation-resources.html?examId=${examId}&type=mcq`, '📝 MCQ Practice', mcqPct, mcq ? `${mcq.attempted}/${mcq.totalQuestions} questions • ${mcq.accuracy ?? 0}% accuracy` : 'None linked yet'),
-          tileHtml(`preparation-resources.html?examId=${examId}&type=pyq`, '📜 Previous Year Questions', pyqPct, pyq ? `${pyq.completed}/${pyq.total} papers done` : 'None linked yet'),
-          tileHtml(`preparation-resources.html?examId=${examId}&type=mock`, '🧪 Mock Tests', mockPct, mock ? `${mockAttemptedTotal}/${mockAvailableTotal} attempted${mockBestOverall != null ? ` • Best ${mockBestOverall}% • Avg ${mock.average}%` : ''}` : 'None linked yet'),
-          tileHtml(`preparation-resources.html?examId=${examId}&type=currentAffairs`, '🗞️ Current Affairs', null, caMappings.length ? `${caMappings.length} linked for this exam` : 'None linked yet'),
-          tileHtml(`preparation-syllabus.html?examId=${examId}&tab=revision`, '🔁 Revision', revisionPct, `${revisionPending} pending`),
-          tileHtml(`preparation-planner.html?examId=${examId}`, '🗓️ Study Planner', null, `${planDone}/${planTasks.length} done today`)
+          tileHtml(`/my-preparation-update/preparation-syllabus.html?examId=${encodeURIComponent(examId)}`, '📘 Syllabus', syllabusPct, topics.length ? `${topics.length} topics` : 'Not set up yet'),
+          tileHtml(`/my-preparation-update/preparation-resources.html?examId=${encodeURIComponent(examId)}&type=notes`, '📄 Notes / Study Material', notesPct, notes ? `${notes.completed}/${notes.total} completed` : 'None linked yet'),
+          tileHtml(`/my-preparation-update/preparation-resources.html?examId=${encodeURIComponent(examId)}&type=mcq`, '📝 MCQ Practice', mcqPct, mcq ? `${mcq.attempted}/${mcq.totalQuestions} questions • ${mcq.accuracy ?? 0}% accuracy` : 'None linked yet'),
+          tileHtml(`/my-preparation-update/preparation-resources.html?examId=${encodeURIComponent(examId)}&type=pyq`, '📜 Previous Year Questions', pyqPct, pyq ? `${pyq.completed}/${pyq.total} papers done` : 'None linked yet'),
+          tileHtml(`/my-preparation-update/preparation-resources.html?examId=${encodeURIComponent(examId)}&type=mock`, '🧪 Mock Tests', mockPct, mock ? `${mockAttemptedTotal}/${mockAvailableTotal} attempted${mockBestOverall != null ? ` • Best ${mockBestOverall}% • Avg ${mock.average}%` : ''}` : 'None linked yet'),
+          tileHtml(`/my-preparation-update/preparation-resources.html?examId=${encodeURIComponent(examId)}&type=currentAffairs`, '🗞️ Current Affairs', null, caMappings.length ? `${caMappings.length} linked for this exam` : 'None linked yet'),
+          tileHtml(`/my-preparation-update/preparation-syllabus.html?examId=${encodeURIComponent(examId)}&tab=revision`, '🔁 Revision', revisionPct, `${revisionPending} pending`),
+          tileHtml(`/my-preparation-update/preparation-planner.html?examId=${encodeURIComponent(examId)}`, '🗓️ Study Planner', null, `${planDone}/${planTasks.length} done today`)
         ].join('');
 
         // ---- Today's Target widget ----
         document.getElementById('todayTargetBox').innerHTML = planTasks.length
-          ? `<p>${planDone} of ${planTasks.length} tasks completed today.</p><a class="button-secondary" href="preparation-planner.html?examId=${examId}">Open Planner</a>`
-          : `<p class="empty-note">No targets set for today yet.</p><a class="button-secondary" href="preparation-planner.html?examId=${examId}">+ Add Today's Target</a>`;
+          ? `<p>${planDone} of ${planTasks.length} tasks completed today.</p><a class="button-secondary" href="/my-preparation-update/preparation-planner.html?examId=${encodeURIComponent(examId)}">Open Planner</a>`
+          : `<p class="empty-note">No targets set for today yet.</p><a class="button-secondary" href="/my-preparation-update/preparation-planner.html?examId=${encodeURIComponent(examId)}">+ Add Today's Target</a>`;
 
         // ---- Weak areas ----
         const weakTopics = topics.filter(t => {
@@ -227,7 +227,7 @@
     if (examId) {
       watchStudentAuth(auth, onAuthStateChanged, {
         onLogin: (user) => init(user.uid),
-        onLoggedOut: () => { window.location.href = '../mock-tests/index.html?returnTo=my-preparation'; }
+        onLoggedOut: () => { window.location.href = '/mock-tests/index.html?returnTo=my-preparation'; }
       });
     }
   </script>
