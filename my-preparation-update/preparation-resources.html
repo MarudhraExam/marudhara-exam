@@ -93,7 +93,7 @@
       const summary = `
         <div class="res-card"><div>
           <h3>Overall MCQ activity</h3>
-          <p>${stats.attempted} of ${stats.totalQuestions} questions attempted • ${stats.correct} correct • ${stats.wrong} wrong • Accuracy ${stats.accuracy ?? 0}% • ${stats.topicsPracticed}/${stats.topicsMapped} topics practiced</p>
+          <p>${stats.attempted} of ${stats.totalQuestions} questions attempted • ${stats.correct} correct • ${stats.wrong} wrong • Accuracy ${stats.accuracy != null ? stats.accuracy : 0}% • ${stats.topicsPracticed}/${stats.topicsMapped} topics practiced</p>
         </div></div>`;
       resList.innerHTML = summary + mappings.map(m => {
         const t = stats.byTopic[m.refId];
@@ -152,7 +152,7 @@
       const summary = s ? `
         <div class="res-card"><div>
           <h3>Your mock test progress</h3>
-          <p>${s.available} available • ${s.attempted} attempted • ${s.completed} completed • Best ${s.best ?? '—'}% • Average ${s.average ?? '—'}% • Progress ${s.percent ?? 0}%</p>
+          <p>${s.available} available • ${s.attempted} attempted • ${s.completed} completed • Best ${s.best != null ? s.best : '—'}% • Average ${s.average != null ? s.average : '—'}% • Progress ${s.percent != null ? s.percent : 0}%</p>
         </div></div>` : '';
       resList.innerHTML = summary + mappings.map(m => `
         <div class="res-card"><div><h3>${escapeHtml(m.refLabel || 'Mock Test')}</h3></div>

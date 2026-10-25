@@ -48,11 +48,52 @@ export function clearStoredStudent() {
 // logged-in student -> onLogin(user); anyone else -> onLoggedOut() (the
 // caller is expected to redirect to mock-tests/index.html, the ONE existing
 // login/register screen - this file never renders any login UI itself).
+//
+// Safety rules (so a student is never bounced to login while Firebase Auth is
+// still restoring the saved session, and never initialised twice):
+//   1. Nothing is decided until Firebase Auth has resolved its INITIAL state
+//      (auth.authStateReady()), so "not resolved yet" is never treated as
+//      "logged out".
+//   2. onLogin runs ONCE per uid. Repeated emissions for the same signed-in
+//      student (cross-tab sync, token refresh, etc.) do not re-initialise the
+//      page.
+//   3. A signed-out / non-student emission only triggers onLoggedOut() after a
+//      short grace period during which auth.currentUser is re-checked, and
+//      onLoggedOut() fires at most once per page load - no redirect loops.
+const LOGGED_OUT_GRACE_MS = 800;
+
 export function watchStudentAuth(auth, onAuthStateChanged, { onLogin, onLoggedOut }) {
-  onAuthStateChanged(auth, (user) => {
-    if (user && isStudentUser(user)) onLogin(user);
-    else onLoggedOut();
-  });
+  let activeUid = null;
+  let loggedOutTimer = null;
+  let loggedOutHandled = false;
+
+  function handleUser(user) {
+    if (user && isStudentUser(user)) {
+      if (loggedOutTimer) { clearTimeout(loggedOutTimer); loggedOutTimer = null; }
+      if (activeUid === user.uid) return; // same session re-emitted - already initialised
+      activeUid = user.uid;
+      loggedOutHandled = false;
+      onLogin(user);
+      return;
+    }
+    if (loggedOutHandled || loggedOutTimer) return;
+    loggedOutTimer = setTimeout(() => {
+      loggedOutTimer = null;
+      const current = auth.currentUser;
+      if (current && isStudentUser(current)) { handleUser(current); return; }
+      if (loggedOutHandled) return;
+      loggedOutHandled = true;
+      activeUid = null;
+      onLoggedOut();
+    }, LOGGED_OUT_GRACE_MS);
+  }
+
+  const subscribe = () => onAuthStateChanged(auth, handleUser);
+  if (auth && typeof auth.authStateReady === 'function') {
+    auth.authStateReady().then(subscribe, subscribe);
+  } else {
+    subscribe();
+  }
 }
 
 export function escapeHtml(value) {

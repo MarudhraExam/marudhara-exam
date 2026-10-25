@@ -428,7 +428,7 @@ window.location.href = '../mock-tests/index.html';
           <div class="prep-progress-bar"><div class="prep-progress-fill" style="width:${pct}%"></div></div>
           <p class="prep-date">📅 ${escapeHtml(formatExamDate(e.examDate))} • ${escapeHtml(daysRemainingLabel(e.examDate))}</p>
           <div class="prep-card-actions">
-            <a class="button-primary" style="display:block;text-align:center;" href="/my-preparation-update/preparation-exam.html?examId=${encodeURIComponent(ref.preparationExamId)}">Continue Preparation</a>
+            <a class="button-primary" style="display:block;text-align:center;" href="preparation-exam.html?examId=${encodeURIComponent(ref.preparationExamId)}">Continue Preparation</a>
           </div>
         </div>`;
       }).join('');
