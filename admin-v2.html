@@ -1159,7 +1159,7 @@ style="background:#888;margin-left:10px;display:none;">
 <option value="notes">Notes (PDF)</option>
 <option value="mock">Mock Test Category (all mocks in it)</option>
 <option value="mockTest">Single Mock Test</option>
-<option value="currentAffairs">Current Affairs (Daily Suja PDF)</option>
+<option value="currentAffairs">Monthly Current Affairs MCQ</option>
 </select>
 
 <label>Link to Topic (optional — leave blank to map at exam level, e.g. for Mock)</label>
@@ -6169,6 +6169,7 @@ let notesPdfsCache = null;
 let mockCategoriesCache = null;
 let mockTestsCache = null;
 let dailySujasCache = null;
+let monthlyMcqCache = null;
 
 window.onPrepStructureExamChange = async function(){
 
@@ -6515,6 +6516,20 @@ dailySujasCache = snap.docs.map((d)=>({id:d.id,...d.data()})).sort((a,b)=>String
 return dailySujasCache;
 }
 
+async function loadMonthlyMcqCache(){
+if(monthlyMcqCache) return monthlyMcqCache;
+const snap = await getDocs(collection(db,"monthlySujasMcq"));
+monthlyMcqCache = snap.docs
+  .map((d)=>({id:d.id,...d.data()}))
+  .filter((item)=>item.visible !== false)
+  .sort((a,b)=>{
+    const yearDiff = Number(b.year||0) - Number(a.year||0);
+    if(yearDiff) return yearDiff;
+    return String(b.month||"").localeCompare(String(a.month||""));
+  });
+return monthlyMcqCache;
+}
+
 window.onPrepMapTypeChange = async function(){
 
 const type = document.getElementById("prepMapType").value;
@@ -6558,10 +6573,10 @@ secondaryWrap.style.display = "none";
 const list = await loadMockTestsCache();
 primarySelect.innerHTML = list.map((m)=>`<option value="${m.id}">${m.title||m.name||"Untitled"}</option>`).join("") || "<option value=''>कोई Mock Test नहीं मिला</option>";
 }else if(type==="currentAffairs"){
-label.textContent = "Daily Suja / Current Affairs PDF";
+label.textContent = "Monthly Current Affairs MCQ";
 secondaryWrap.style.display = "none";
-const list = await loadDailySujasCache();
-primarySelect.innerHTML = list.map((d)=>`<option value="${d.id}">${d.title||"Untitled"}</option>`).join("") || "<option value=''>कोई Current Affairs PDF नहीं मिला</option>";
+const list = await loadMonthlyMcqCache();
+primarySelect.innerHTML = list.map((item)=>`<option value="${item.id}">${item.title || ((item.month||"") + " " + (item.year||"")).trim() || "Untitled"}</option>`).join("") || "<option value=''>कोई Monthly Current Affairs MCQ नहीं मिला</option>";
 }
 
 };
@@ -6615,12 +6630,13 @@ payload.refCollection = "mockTests";
 payload.refId = primarySelect.value;
 payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
 }else if(type==="currentAffairs"){
-const item = (dailySujasCache||[]).find((d)=>d.id===primarySelect.value);
-payload.refCollection = "dailySujas";
+const item = (monthlyMcqCache||[]).find((m)=>m.id===primarySelect.value);
+payload.refCollection = "monthlySujasMcq";
 payload.refId = primarySelect.value;
-payload.refLabel = primarySelect.options[primarySelect.selectedIndex].textContent;
-payload.refUrl = item ? (item.pdfLink||"") : "";
-// optional Subject/Category: taken from the "Link to Topic" selector (Subject > Chapter > Topic label)
+payload.refLabel = item ? (item.title || `${item.month||""} ${item.year||""}`.trim()) : primarySelect.options[primarySelect.selectedIndex].textContent;
+payload.refUrl = item ? (item.pdfUrl||"") : "";
+payload.month = item ? (item.month||"") : "";
+payload.year = item ? (item.year||"") : "";
 payload.category = topicOption ? topicOption.textContent : "";
 }
 
